@@ -1288,8 +1288,12 @@ import { PillGroup } from './PillGroup';
 
 describe('shared components', () => {
   it('CodeBlock renders the code text', () => {
-    render(<CodeBlock sample={{ lang: 'typescript', code: 'const answer = 42;' }} />);
-    expect(screen.getByText(/const answer = 42/)).toBeInTheDocument();
+    // Prism tokenizes code into per-token <span>s, so the string is split
+    // across sibling elements — getByText(/regex/) (single-node matcher)
+    // would miss it. Assert on aggregated textContent instead: this verifies
+    // the real highlighted output synchronously, with no async/act() noise.
+    const { container } = render(<CodeBlock sample={{ lang: 'typescript', code: 'const answer = 42;' }} />);
+    expect(container).toHaveTextContent('const answer = 42;');
   });
 
   it('FlipCard shows front, then back after onFlip driven by parent', async () => {
