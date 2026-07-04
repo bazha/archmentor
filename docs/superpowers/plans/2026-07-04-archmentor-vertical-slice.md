@@ -1991,14 +1991,18 @@ import { useStore } from '@/store/useStore';
 beforeEach(() => useStore.getState().resetProgress());
 
 describe('Review', () => {
-  it('shows a due card and grading buttons', () => {
+  it('shows a due card and reveals grading buttons after flip', async () => {
     render(<Review />);
+    // Grade buttons are gated behind the flip (you self-grade only after
+    // trying to recall), so flip first, then assert they appear.
     expect(screen.getByRole('button', { name: /перевернуть/i })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /перевернуть/i }));
     expect(screen.getByRole('button', { name: 'Good' })).toBeInTheDocument();
   });
 
   it('grading a card writes SRS state and advances the queue', async () => {
     render(<Review />);
+    await userEvent.click(screen.getByRole('button', { name: /перевернуть/i }));
     await userEvent.click(screen.getByRole('button', { name: 'Good' }));
     expect(Object.keys(useStore.getState().srs).length).toBeGreaterThan(0);
   });
@@ -2032,16 +2036,15 @@ export function Review() {
   const srs = useStore((s) => s.srs);
   const reviewConcept = useStore((s) => s.reviewConcept);
   const [flipped, setFlipped] = useState(false);
-  const [done, setDone] = useState(0);
 
   // New concepts (no SRS state) count as due, plus existing due cards.
+  // Subscribing to `srs` means grading a card re-renders and recomputes the
+  // queue (the graded card's due date moves out), advancing to the next card.
   const queue = useMemo(() => {
-    const state = useStore.getState();
-    const dueExisting = new Set(selectDueConceptIds(state, today));
-    const newOnes = concepts.filter((c) => !state.srs[c.id]).map((c) => c.id);
+    const dueExisting = new Set(selectDueConceptIds(useStore.getState(), today));
+    const newOnes = concepts.filter((c) => !srs[c.id]).map((c) => c.id);
     return [...new Set([...newOnes, ...dueExisting])];
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [today, done]);
+  }, [srs, today]);
 
   const currentId = queue[0];
   const concept = currentId ? getConcept(currentId) : undefined;
@@ -2050,7 +2053,6 @@ export function Review() {
     if (!concept) return;
     reviewConcept(concept.id, q, today);
     setFlipped(false);
-    setDone((d) => d + 1);
   }
 
   if (!concept) {
