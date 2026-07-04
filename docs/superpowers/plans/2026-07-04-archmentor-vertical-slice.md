@@ -290,7 +290,7 @@ Expected: 1 passing test.
 ```bash
 npm run build
 ```
-Expected: `tsc -b` passes and `vite build` writes `dist/` with no errors.
+Expected: `tsc --noEmit` passes and `vite build` writes `dist/` with no errors.
 
 - [ ] **Step 6: Commit**
 
