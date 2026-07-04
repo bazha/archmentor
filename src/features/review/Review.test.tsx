@@ -21,4 +21,13 @@ describe('Review', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Good' }));
     expect(Object.keys(useStore.getState().srs).length).toBeGreaterThan(0);
   });
+
+  it('grading advances the queue to the next card (DOM-level)', async () => {
+    render(<Review />);
+    const remaining = () => Number(screen.getByText(/осталось:/).textContent!.match(/\d+/)![0]);
+    const before = remaining();
+    await userEvent.click(screen.getByRole('button', { name: /перевернуть/i }));
+    await userEvent.click(screen.getByRole('button', { name: 'Good' }));
+    expect(remaining()).toBe(before - 1);
+  });
 });

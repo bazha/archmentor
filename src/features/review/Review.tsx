@@ -14,19 +14,18 @@ const GRADES: { label: string; quality: Quality; cls: string }[] = [
 
 export function Review() {
   const today = todayISO();
-  useStore((s) => s.srs);
+  const srs = useStore((s) => s.srs);
   const reviewConcept = useStore((s) => s.reviewConcept);
   const [flipped, setFlipped] = useState(false);
-  const [done, setDone] = useState(0);
 
   // New concepts (no SRS state) count as due, plus existing due cards.
+  // Subscribing to `srs` means grading a card re-renders and recomputes the
+  // queue (the graded card's due date moves out), advancing to the next card.
   const queue = useMemo(() => {
-    const state = useStore.getState();
-    const dueExisting = new Set(selectDueConceptIds(state, today));
-    const newOnes = concepts.filter((c) => !state.srs[c.id]).map((c) => c.id);
+    const dueExisting = new Set(selectDueConceptIds(useStore.getState(), today));
+    const newOnes = concepts.filter((c) => !srs[c.id]).map((c) => c.id);
     return [...new Set([...newOnes, ...dueExisting])];
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [today, done]);
+  }, [srs, today]);
 
   const currentId = queue[0];
   const concept = currentId ? getConcept(currentId) : undefined;
@@ -35,7 +34,6 @@ export function Review() {
     if (!concept) return;
     reviewConcept(concept.id, q, today);
     setFlipped(false);
-    setDone((d) => d + 1);
   }
 
   if (!concept) {
