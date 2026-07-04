@@ -93,6 +93,13 @@ export function selectDueConceptIds(state: AppState, today: string): string[] {
   return Object.values(state.srs).filter((s) => isDue(s.due, today)).map((s) => s.conceptId);
 }
 
+/** The review queue: concepts with no SRS state yet (new cards) plus existing due cards. */
+export function selectReviewQueue(state: AppState, concepts: Concept[], today: string): string[] {
+  const due = new Set(selectDueConceptIds(state, today));
+  const newOnes = concepts.filter((c) => !state.srs[c.id]).map((c) => c.id);
+  return [...new Set([...newOnes, ...due])];
+}
+
 export function isMastered(state: AppState, conceptId: string): boolean {
   return (state.srs[conceptId]?.repetitions ?? 0) >= MASTERY_REPETITIONS;
 }

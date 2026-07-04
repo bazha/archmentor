@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useStore, selectDueConceptIds, selectGradeProgress, isMastered } from './useStore';
+import { useStore, selectDueConceptIds, selectGradeProgress, selectReviewQueue, isMastered } from './useStore';
 import type { Concept } from '@/content/schema';
 
 const c = (id: string, grade: Concept['grade']): Concept => ({
@@ -57,5 +57,14 @@ describe('store', () => {
     expect(p.total).toBe(2);
     expect(p.seen).toBe(1);
     expect(p.mastered).toBe(0);
+  });
+
+  it('selectReviewQueue treats new concepts as due and drops a card after review', () => {
+    const list = [c('srp', 'junior'), c('ocp', 'junior'), c('strategy', 'middle')];
+    expect(selectReviewQueue(useStore.getState(), list, '2026-07-04').sort()).toEqual(['ocp', 'srp', 'strategy']);
+    useStore.getState().reviewConcept('srp', 4, '2026-07-04'); // now has SRS, due 2026-07-05
+    const q = selectReviewQueue(useStore.getState(), list, '2026-07-04');
+    expect(q).not.toContain('srp');
+    expect(q.sort()).toEqual(['ocp', 'strategy']);
   });
 });

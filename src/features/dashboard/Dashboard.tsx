@@ -1,14 +1,14 @@
 import { Link } from 'react-router-dom';
 import { concepts } from '@/content/index';
 import { ProgressBar } from '@/components/ProgressBar';
-import { useStore, selectGradeProgress, selectDueConceptIds } from '@/store/useStore';
+import { useStore, selectGradeProgress, selectReviewQueue } from '@/store/useStore';
 import { GRADE_ORDER, GRADE_LABEL } from '@/lib/labels';
 import { todayISO } from '@/lib/date';
 
 export function Dashboard() {
   const state = useStore();
   const today = todayISO();
-  const dueCount = selectDueConceptIds(state, today).length;
+  const dueCount = selectReviewQueue(state, concepts, today).length;
 
   return (
     <div className="space-y-8">

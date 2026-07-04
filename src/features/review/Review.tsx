@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { concepts, getConcept } from '@/content/index';
 import { FlipCard } from '@/components/FlipCard';
-import { useStore, selectDueConceptIds } from '@/store/useStore';
+import { useStore, selectReviewQueue } from '@/store/useStore';
 import { QUALITY, type Quality } from '@/domain/srs/sm2';
 import { todayISO } from '@/lib/date';
 
@@ -21,11 +21,10 @@ export function Review() {
   // New concepts (no SRS state) count as due, plus existing due cards.
   // Subscribing to `srs` means grading a card re-renders and recomputes the
   // queue (the graded card's due date moves out), advancing to the next card.
-  const queue = useMemo(() => {
-    const dueExisting = new Set(selectDueConceptIds(useStore.getState(), today));
-    const newOnes = concepts.filter((c) => !srs[c.id]).map((c) => c.id);
-    return [...new Set([...newOnes, ...dueExisting])];
-  }, [srs, today]);
+  const queue = useMemo(
+    () => selectReviewQueue(useStore.getState(), concepts, today),
+    [srs, today],
+  );
 
   const currentId = queue[0];
   const concept = currentId ? getConcept(currentId) : undefined;
