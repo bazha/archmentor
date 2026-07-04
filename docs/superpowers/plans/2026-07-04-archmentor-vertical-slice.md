@@ -13,7 +13,7 @@
 - **TypeScript strict mode** — `"strict": true` in tsconfig; no `any` in committed code.
 - **Language rule** — UI copy and explanations in **Russian**; pattern/principle names and technical terms in **English** (e.g. `Strategy`, `Single Responsibility Principle`).
 - **Code samples** — all `codeExample`/`Question.code` are `lang: 'typescript'`, idiomatic, and demonstrate exactly one concept.
-- **Purity rule** — domain functions (`src/domain/**`, `src/lib/date.ts`) never call `Date.now()` / `new Date()` internally; the current date is always passed in as an ISO `YYYY-MM-DD` string argument.
+- **Purity rule** — domain functions (`src/domain/**`) and all date helpers except `todayISO` never call `Date.now()` / `new Date()` internally; the current date is always passed in as an ISO `YYYY-MM-DD` string argument. **`todayISO` is the single sanctioned clock boundary** — it is the only function permitted to read the current time (via a `new Date()` default arg), and UI code obtains "today" only by calling it.
 - **Node** — Node 18+ (Vite 5 requirement).
 - **Package manager** — npm.
 - **Test runner** — Vitest; test files are colocated as `*.test.ts(x)`.
@@ -87,7 +87,7 @@ interface Settings { theme: 'dark' | 'light'; gradeFilter: Grade | 'all'; catego
 ### Task 1: Project scaffold & tooling
 
 **Files:**
-- Create: `package.json`, `vite.config.ts`, `tsconfig.json`, `tsconfig.node.json`, `index.html`, `postcss.config.js`, `tailwind.config.js`, `src/main.tsx`, `src/app/App.tsx`, `src/styles/index.css`, `src/vite-env.d.ts`
+- Create: `package.json`, `vite.config.ts`, `tsconfig.json`, `index.html`, `postcss.config.js`, `tailwind.config.js`, `src/main.tsx`, `src/app/App.tsx`, `src/styles/index.css`, `src/vite-env.d.ts`, `src/test-setup.ts`
 - Test: `src/lib/smoke.test.ts`
 
 **Interfaces:**
@@ -103,11 +103,11 @@ interface Settings { theme: 'dark' | 'light'; gradeFilter: Grade | 'all'; catego
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc -b --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -159,11 +159,13 @@ interface Settings { theme: 'dark' | 'light'; gradeFilter: Grade | 'all'; catego
     "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
     "paths": { "@/*": ["src/*"] },
-    "types": ["vitest/globals", "@testing-library/jest-dom"]
+    "types": ["vitest/globals"]
   },
   "include": ["src"]
 }
 ```
+
+Note: jest-dom matcher types (`toBeInTheDocument`, etc.) are made available to `tsc` via the `src/test-setup.ts` import below (it augments `vitest`'s `Assertion` interface, and `test-setup.ts` is inside `include`), so no extra `types` entry is needed.
 
 `vite.config.ts`:
 ```ts
