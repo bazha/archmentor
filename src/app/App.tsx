@@ -6,6 +6,7 @@ import { Learn } from '@/features/learn/Learn';
 import { Review } from '@/features/review/Review';
 import { Quiz } from '@/features/quiz/Quiz';
 import { Library } from '@/features/library/Library';
+import { ConceptPage } from '@/features/library/ConceptPage';
 import { Progress } from '@/features/progress/Progress';
 
 const router = createBrowserRouter([
@@ -17,6 +18,7 @@ const router = createBrowserRouter([
       { path: 'review', element: <Review /> },
       { path: 'quiz', element: <Quiz /> },
       { path: 'library', element: <Library /> },
+      { path: 'library/:conceptId', element: <ConceptPage /> },
       { path: 'progress', element: <Progress /> },
     ],
   },
