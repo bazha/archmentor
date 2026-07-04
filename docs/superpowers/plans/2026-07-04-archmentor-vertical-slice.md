@@ -2282,8 +2282,10 @@ beforeEach(() => useStore.getState().resetProgress());
 describe('Dashboard', () => {
   it('renders a progress bar per grade', () => {
     render(<MemoryRouter><Dashboard /></MemoryRouter>);
-    expect(screen.getByText('Junior')).toBeInTheDocument();
-    expect(screen.getByText('Lead')).toBeInTheDocument();
+    // ProgressBar renders its label as one node ("Junior — освоено 0/12"),
+    // and the <h1> also contains "Junior"/"Lead", so match the label text.
+    expect(screen.getByText(/Junior — освоено/)).toBeInTheDocument();
+    expect(screen.getByText(/Lead — освоено/)).toBeInTheDocument();
     expect(screen.getAllByRole('progressbar').length).toBe(4);
   });
 
