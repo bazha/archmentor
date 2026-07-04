@@ -34,7 +34,10 @@ export function review(state: SrsState, quality: Quality, today: string): SrsSta
     repetitions = state.repetitions + 1;
     if (repetitions === 1) interval = 1;
     else if (repetitions === 2) interval = 6;
-    else interval = Math.round(state.interval * ease);
+    // Canonical SM-2 multiplies by the ease as it stood BEFORE this review's
+    // update (state.ease); the updated `ease` is still written to the returned
+    // state, just not used in this multiply.
+    else interval = Math.round(state.interval * state.ease);
   }
 
   return {

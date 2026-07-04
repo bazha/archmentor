@@ -30,6 +30,14 @@ describe('SM-2', () => {
     expect(s.interval).toBe(15);
   });
 
+  it('rep>=3 interval uses PRE-update ease, then ease drops (canonical SM-2)', () => {
+    let s = review(initSrs('x', '2026-07-04'), QUALITY.good, '2026-07-04'); // int 1, ease 2.5
+    s = review(s, QUALITY.good, '2026-07-05'); // int 6, ease 2.5
+    s = review(s, QUALITY.hard, '2026-07-11'); // int = round(6 * 2.5) = 15 (pre-update ease)
+    expect(s.interval).toBe(15);           // NOT round(6 * 2.36) = 14
+    expect(s.ease).toBeCloseTo(2.36, 5);   // ease still updated on the returned state
+  });
+
   it('failure (Again) resets repetitions and interval to 1', () => {
     let s = review(initSrs('x', '2026-07-04'), QUALITY.good, '2026-07-04');
     s = review(s, QUALITY.good, '2026-07-05');
