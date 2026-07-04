@@ -439,18 +439,22 @@ export function validateContent(concepts: Concept[], questions: Question[]): voi
     qIds.add(q.id);
   }
 
-  for (const c of concepts) {
-    for (const r of c.related) {
-      if (!ids.has(r)) throw new Error(`concept "${c.id}" has related "${r}" that is not a known concept`);
-    }
-  }
-
+  // Question checks run before the concept `related` check so that a
+  // dangling `related` in a fixture doesn't mask a correctIndex/conceptId
+  // assertion. All checks are fail-fast and independent — order only affects
+  // which error surfaces first when multiple violations coexist.
   for (const q of questions) {
     if (q.correctIndex >= q.options.length) {
       throw new Error(`question "${q.id}" correctIndex ${q.correctIndex} is out of range (${q.options.length} options)`);
     }
     if (q.conceptId && !ids.has(q.conceptId)) {
       throw new Error(`question "${q.id}" conceptId "${q.conceptId}" is not a known concept`);
+    }
+  }
+
+  for (const c of concepts) {
+    for (const r of c.related) {
+      if (!ids.has(r)) throw new Error(`concept "${c.id}" has related "${r}" that is not a known concept`);
     }
   }
 }
