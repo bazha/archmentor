@@ -2000,11 +2000,22 @@ describe('Review', () => {
     expect(screen.getByRole('button', { name: 'Good' })).toBeInTheDocument();
   });
 
-  it('grading a card writes SRS state and advances the queue', async () => {
+  it('grading a card writes SRS state', async () => {
     render(<Review />);
     await userEvent.click(screen.getByRole('button', { name: /перевернуть/i }));
     await userEvent.click(screen.getByRole('button', { name: 'Good' }));
     expect(Object.keys(useStore.getState().srs).length).toBeGreaterThan(0);
+  });
+
+  it('grading advances the queue to the next card (DOM-level)', async () => {
+    // Guards the actual re-render/recompute path, not just the store write:
+    // the visible "осталось: N" count must drop by one after grading.
+    render(<Review />);
+    const remaining = () => Number(screen.getByText(/осталось:/).textContent!.match(/\d+/)![0]);
+    const before = remaining();
+    await userEvent.click(screen.getByRole('button', { name: /перевернуть/i }));
+    await userEvent.click(screen.getByRole('button', { name: 'Good' }));
+    expect(remaining()).toBe(before - 1);
   });
 });
 ```
@@ -2092,7 +2103,7 @@ export function Review() {
 - [ ] **Step 4: Run tests to verify they pass**
 
 Run: `npx vitest run src/features/review/Review.test.tsx`
-Expected: PASS (2 tests).
+Expected: PASS (3 tests).
 
 - [ ] **Step 5: Commit**
 
