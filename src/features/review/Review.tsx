@@ -1,3 +1,72 @@
+import { useMemo, useState } from 'react';
+import { concepts, getConcept } from '@/content/index';
+import { FlipCard } from '@/components/FlipCard';
+import { useStore, selectDueConceptIds } from '@/store/useStore';
+import { QUALITY, type Quality } from '@/domain/srs/sm2';
+import { todayISO } from '@/lib/date';
+
+const GRADES: { label: string; quality: Quality; cls: string }[] = [
+  { label: 'Again', quality: QUALITY.again, cls: 'bg-red-500/80' },
+  { label: 'Hard', quality: QUALITY.hard, cls: 'bg-amber-500/80' },
+  { label: 'Good', quality: QUALITY.good, cls: 'bg-emerald-500/80' },
+  { label: 'Easy', quality: QUALITY.easy, cls: 'bg-sky-500/80' },
+];
+
 export function Review() {
-  return <h1 className="text-2xl font-semibold">Повторение</h1>;
+  const today = todayISO();
+  useStore((s) => s.srs);
+  const reviewConcept = useStore((s) => s.reviewConcept);
+  const [flipped, setFlipped] = useState(false);
+  const [done, setDone] = useState(0);
+
+  // New concepts (no SRS state) count as due, plus existing due cards.
+  const queue = useMemo(() => {
+    const state = useStore.getState();
+    const dueExisting = new Set(selectDueConceptIds(state, today));
+    const newOnes = concepts.filter((c) => !state.srs[c.id]).map((c) => c.id);
+    return [...new Set([...newOnes, ...dueExisting])];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [today, done]);
+
+  const currentId = queue[0];
+  const concept = currentId ? getConcept(currentId) : undefined;
+
+  function grade(q: Quality) {
+    if (!concept) return;
+    reviewConcept(concept.id, q, today);
+    setFlipped(false);
+    setDone((d) => d + 1);
+  }
+
+  if (!concept) {
+    return (
+      <div className="text-center py-16">
+        <h1 className="text-2xl font-semibold">Повторение</h1>
+        <p className="mt-2 text-slate-400">На сегодня всё повторено 🎉 Возвращайтесь завтра.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 max-w-2xl mx-auto">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Повторение</h1>
+        <span className="text-sm text-slate-400">осталось: {queue.length}</span>
+      </div>
+      <FlipCard
+        front={<span className="text-xl font-semibold">{concept.name}<span className="block text-sm font-normal text-slate-400 mt-2">{concept.tagline}</span></span>}
+        back={<span>{concept.definition}</span>}
+        flipped={flipped} onFlip={() => setFlipped((f) => !f)}
+      />
+      {flipped && (
+        <div className="grid grid-cols-4 gap-2">
+          {GRADES.map((g) => (
+            <button key={g.label} onClick={() => grade(g.quality)}
+              className={`rounded-lg py-2 text-sm font-medium text-white ${g.cls} hover:opacity-90`}>{g.label}</button>
+          ))}
+        </div>
+      )}
+      {!flipped && <p className="text-center text-sm text-slate-500">Вспомните определение, затем переверните карточку и оцените себя.</p>}
+    </div>
+  );
 }
