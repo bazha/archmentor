@@ -8,8 +8,8 @@ import { PillGroup } from './PillGroup';
 
 describe('shared components', () => {
   it('CodeBlock renders the code text', () => {
-    render(<CodeBlock sample={{ lang: 'typescript', code: 'const answer = 42;' }} />);
-    expect(screen.getByText(/const answer = 42/)).toBeInTheDocument();
+    const { container } = render(<CodeBlock sample={{ lang: 'typescript', code: 'const answer = 42;' }} />);
+    expect(container).toHaveTextContent('const answer = 42;');
   });
 
   it('FlipCard shows front, then back after onFlip driven by parent', async () => {
