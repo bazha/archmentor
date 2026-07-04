@@ -610,6 +610,17 @@ describe('SM-2', () => {
     expect(s.interval).toBe(15);
   });
 
+  it('rep>=3 interval uses PRE-update ease, then ease drops (canonical SM-2)', () => {
+    // Regression guard: earlier tests only used QUALITY.good (q=4, ease delta 0),
+    // so they could not distinguish pre- vs post-update ease. Here the third
+    // review lowers the grade, which MUST NOT retroactively shrink this interval.
+    let s = review(initSrs('x', '2026-07-04'), QUALITY.good, '2026-07-04'); // int 1, ease 2.5
+    s = review(s, QUALITY.good, '2026-07-05'); // int 6, ease 2.5
+    s = review(s, QUALITY.hard, '2026-07-11'); // int = round(6 * 2.5) = 15 (pre-update ease)
+    expect(s.interval).toBe(15);           // NOT round(6 * 2.36) = 14
+    expect(s.ease).toBeCloseTo(2.36, 5);   // ease still updated on the returned state
+  });
+
   it('failure (Again) resets repetitions and interval to 1', () => {
     let s = review(initSrs('x', '2026-07-04'), QUALITY.good, '2026-07-04');
     s = review(s, QUALITY.good, '2026-07-05');
@@ -682,7 +693,10 @@ export function review(state: SrsState, quality: Quality, today: string): SrsSta
     repetitions = state.repetitions + 1;
     if (repetitions === 1) interval = 1;
     else if (repetitions === 2) interval = 6;
-    else interval = Math.round(state.interval * ease);
+    // Canonical SM-2: the interval uses the E-Factor as it stood BEFORE this
+    // review's update (state.ease), NOT the freshly-updated `ease`. The ease
+    // update above is applied to the returned state, but not to this multiply.
+    else interval = Math.round(state.interval * state.ease);
   }
 
   return {
