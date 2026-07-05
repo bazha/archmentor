@@ -75,6 +75,10 @@ export const useStore = create<AppState>()(
       name: 'archmentor',
       version: 1,
       migrate: (persisted: unknown, version: number) => migrate(persisted, version),
+      merge: (persisted: unknown, current: AppState): AppState => {
+        const p = (persisted ?? {}) as Partial<PersistedState>;
+        return { ...current, ...p, settings: { ...current.settings, ...(p.settings ?? {}) } };
+      },
       partialize: (s): PersistedState => ({
         srs: s.srs, quizResults: s.quizResults, conceptProgress: s.conceptProgress,
         streak: s.streak, settings: s.settings,
