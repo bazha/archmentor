@@ -10,6 +10,7 @@
   --muted: 71 85 105;            /* slate-600 */
   --accent: 79 70 229;           /* indigo-600 */
   --accent-soft: 79 70 229;      /* indigo-600 */
+  --accent-strong: 67 56 202;    /* indigo-700 — darker hover on accent fills */
   color-scheme: light;
 }
 
@@ -21,6 +22,7 @@
   --muted: 148 163 184;          /* slate-400 */
   --accent: 79 70 229;           /* indigo-600 */
   --accent-soft: 129 140 248;    /* indigo-400 */
+  --accent-strong: 67 56 202;    /* indigo-700 — darker hover on accent fills */
   color-scheme: dark;
 }
 

@@ -42,5 +42,8 @@ describe('theme token contrast (WCAG AA)', () => {
     it(`${name}: white on accent fill >= 4.5:1`, () => {
       expect(ratio(WHITE, t['accent'])).toBeGreaterThanOrEqual(4.5);
     });
+    it(`${name}: white on accent-strong (hover) fill >= 4.5:1`, () => {
+      expect(ratio(WHITE, t['accent-strong'])).toBeGreaterThanOrEqual(4.5);
+    });
   }
 });

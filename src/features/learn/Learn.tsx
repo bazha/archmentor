@@ -54,7 +54,7 @@ export function Learn() {
         flipped={flipped} onFlip={() => setFlipped((f) => !f)}
       />
       <div className="flex justify-end">
-        <button onClick={next} className="rounded-lg bg-accent px-4 py-2 font-medium text-white hover:opacity-90">Следующая →</button>
+        <button onClick={next} className="rounded-lg bg-accent px-4 py-2 font-medium text-white hover:bg-accent-strong">Следующая →</button>
       </div>
     </div>
   );

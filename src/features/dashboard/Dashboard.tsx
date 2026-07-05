@@ -40,7 +40,7 @@ export function Dashboard() {
         })}
       </section>
 
-      <Link to="/learn" className="inline-block rounded-lg bg-accent px-5 py-2.5 font-medium text-white hover:opacity-90">
+      <Link to="/learn" className="inline-block rounded-lg bg-accent px-5 py-2.5 font-medium text-white hover:bg-accent-strong">
         Продолжить обучение →
       </Link>
     </div>

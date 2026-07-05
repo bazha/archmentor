@@ -38,7 +38,7 @@ export function Review() {
 
   if (!concept) {
     return (
-      <div className="text-center py-16">
+      <div className="text-center">
         <h1 className="text-2xl font-semibold">Повторение</h1>
         <EmptyState icon="🎉" title="На сегодня всё повторено" hint="Возвращайтесь завтра — карточки появятся по расписанию." cta={{ to: '/learn', label: 'Учить новое' }} />
       </div>
