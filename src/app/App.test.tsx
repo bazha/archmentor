@@ -1,9 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { RouterProvider, createMemoryRouter } from 'react-router-dom';
 import { Layout } from './Layout';
 import { Dashboard } from '@/features/dashboard/Dashboard';
 import { Library } from '@/features/library/Library';
+import { useStore } from '@/store/useStore';
 
 function renderAt(path: string) {
   const router = createMemoryRouter(
@@ -17,6 +18,8 @@ function renderAt(path: string) {
 }
 
 describe('app shell', () => {
+  beforeEach(() => useStore.getState().setSettings({ lang: 'ru' }));
+
   it('renders nav and dashboard at /', () => {
     renderAt('/');
     expect(screen.getByText('ArchMentor')).toBeInTheDocument();

@@ -21,6 +21,7 @@ export function Learn() {
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const markSeen = useStore((s) => s.markSeen);
+  const lang = useStore((s) => s.settings.lang);
 
   const deck = useMemo(() => {
     if (conceptId) { const c = getConcept(conceptId); return c ? [c] : []; }
@@ -46,7 +47,7 @@ export function Learn() {
       {!conceptId && <PillGroup options={GRADE_OPTIONS} value={grade} onChange={(g) => { setGrade(g); setIndex(0); setFlipped(false); }} />}
       <div className="flex gap-2">
         <Badge tone="grade">{GRADE_LABEL[current.grade]}</Badge>
-        <Badge tone="category">{CATEGORY_LABEL[current.category]}</Badge>
+        <Badge tone="category">{CATEGORY_LABEL[lang][current.category]}</Badge>
       </div>
       <FlipCard
         front={<span className="text-xl font-semibold">{current.name}<span className="block text-sm font-normal text-muted mt-2">{current.tagline}</span></span>}

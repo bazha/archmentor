@@ -7,15 +7,15 @@ import { CATEGORY_LABEL } from '@/lib/labels';
 import { useStore, isMastered } from '@/store/useStore';
 import type { Category } from '@/content/schema';
 
-const CATEGORY_OPTIONS: { value: Category | 'all'; label: string }[] = [
-  { value: 'all', label: 'Все' },
-  ...(Object.keys(CATEGORY_LABEL) as Category[]).map((c) => ({ value: c, label: CATEGORY_LABEL[c] })),
-];
-
 export function Library() {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<Category | 'all'>('all');
   const state = useStore();
+  const lang = useStore((s) => s.settings.lang);
+  const CATEGORY_OPTIONS: { value: Category | 'all'; label: string }[] = [
+    { value: 'all' as const, label: 'Все' },
+    ...(Object.keys(CATEGORY_LABEL[lang]) as Category[]).map((c) => ({ value: c, label: CATEGORY_LABEL[lang][c] })),
+  ];
 
   const filtered = useMemo(
     () =>

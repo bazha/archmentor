@@ -4,6 +4,7 @@ import { CodeBlock } from '@/components/CodeBlock';
 import { Badge } from '@/components/Badge';
 import { EmptyState } from '@/components/EmptyState';
 import { GRADE_LABEL, CATEGORY_LABEL } from '@/lib/labels';
+import { useStore } from '@/store/useStore';
 
 function List({ title, items }: { title: string; items: string[] }) {
   return (
@@ -16,6 +17,7 @@ function List({ title, items }: { title: string; items: string[] }) {
 
 export function ConceptPage() {
   const { conceptId } = useParams();
+  const lang = useStore((s) => s.settings.lang);
   const c = conceptId ? getConcept(conceptId) : undefined;
   if (!c) return <EmptyState icon="🧭" title="Концепт не найден" cta={{ to: '/library', label: '← В библиотеку' }} />;
 
@@ -27,7 +29,7 @@ export function ConceptPage() {
         <p className="mt-1 text-muted">{c.tagline}</p>
         <div className="mt-3 flex gap-2">
           <Badge tone="grade">{GRADE_LABEL[c.grade]}</Badge>
-          <Badge tone="category">{CATEGORY_LABEL[c.category]}</Badge>
+          <Badge tone="category">{CATEGORY_LABEL[lang][c.category]}</Badge>
         </div>
       </header>
       <section><h3 className="font-semibold mb-1">Определение</h3><p className="text-content">{c.definition}</p></section>
