@@ -5,7 +5,10 @@ import { MemoryRouter } from 'react-router-dom';
 import { Quiz } from './Quiz';
 import { useStore } from '@/store/useStore';
 
-beforeEach(() => useStore.getState().resetProgress());
+beforeEach(() => {
+  useStore.getState().resetProgress();
+  useStore.getState().setSettings({ lang: 'ru' });
+});
 
 describe('Quiz', () => {
   it('shows a question with options and reveals explanation after answering', async () => {
@@ -24,6 +27,8 @@ describe('Quiz empty filter', () => {
     const { Quiz: FreshQuiz } = await import('./Quiz');
     const { render, screen } = await import('@testing-library/react');
     const { MemoryRouter } = await import('react-router-dom');
+    const { useStore: freshUseStore } = await import('@/store/useStore');
+    freshUseStore.getState().setSettings({ lang: 'ru' });
     render(<MemoryRouter><FreshQuiz /></MemoryRouter>);
     expect(screen.getByText('Нет вопросов')).toBeInTheDocument();
     vi.doUnmock('@/content/index');

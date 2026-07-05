@@ -4,7 +4,10 @@ import { MemoryRouter } from 'react-router-dom';
 import { Progress } from './Progress';
 import { useStore } from '@/store/useStore';
 
-beforeEach(() => useStore.getState().resetProgress());
+beforeEach(() => {
+  useStore.getState().resetProgress();
+  useStore.getState().setSettings({ lang: 'ru' });
+});
 
 describe('Progress', () => {
   it('shows quiz accuracy and per-grade mastery', () => {

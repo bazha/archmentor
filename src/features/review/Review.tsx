@@ -5,6 +5,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { useStore, selectReviewQueue } from '@/store/useStore';
 import { QUALITY, type Quality } from '@/domain/srs/sm2';
 import { todayISO } from '@/lib/date';
+import { useT } from '@/i18n/useT';
 
 const GRADES: { label: string; quality: Quality; cls: string }[] = [
   { label: 'Again', quality: QUALITY.again, cls: 'bg-red-500/80' },
@@ -18,6 +19,7 @@ export function Review() {
   const srs = useStore((s) => s.srs);
   const reviewConcept = useStore((s) => s.reviewConcept);
   const [flipped, setFlipped] = useState(false);
+  const t = useT();
 
   // New concepts (no SRS state) count as due, plus existing due cards.
   // Subscribing to `srs` means grading a card re-renders and recomputes the
@@ -39,8 +41,8 @@ export function Review() {
   if (!concept) {
     return (
       <div className="text-center">
-        <h1 className="text-2xl font-semibold">Повторение</h1>
-        <EmptyState icon="🎉" title="На сегодня всё повторено" hint="Возвращайтесь завтра — карточки появятся по расписанию." cta={{ to: '/learn', label: 'Учить новое' }} />
+        <h1 className="text-2xl font-semibold">{t('review.title')}</h1>
+        <EmptyState icon="🎉" title={t('review.doneTitle')} hint={t('review.doneHint')} cta={{ to: '/learn', label: t('review.learnNew') }} />
       </div>
     );
   }
@@ -48,8 +50,8 @@ export function Review() {
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Повторение</h1>
-        <span className="text-sm text-muted">осталось: {queue.length}</span>
+        <h1 className="text-2xl font-semibold">{t('review.title')}</h1>
+        <span className="text-sm text-muted">{t('review.remaining', { n: queue.length })}</span>
       </div>
       <FlipCard
         front={<span className="text-xl font-semibold">{concept.name}<span className="block text-sm font-normal text-muted mt-2">{concept.tagline}</span></span>}
@@ -64,7 +66,7 @@ export function Review() {
           ))}
         </div>
       )}
-      {!flipped && <p className="text-center text-sm text-muted">Вспомните определение, затем переверните карточку и оцените себя.</p>}
+      {!flipped && <p className="text-center text-sm text-muted">{t('review.recallHint')}</p>}
     </div>
   );
 }

@@ -8,12 +8,8 @@ import { Badge } from '@/components/Badge';
 import { useStore } from '@/store/useStore';
 import { todayISO } from '@/lib/date';
 import { GRADE_ORDER, GRADE_LABEL, CATEGORY_LABEL } from '@/lib/labels';
+import { useT } from '@/i18n/useT';
 import type { Grade } from '@/content/schema';
-
-const GRADE_OPTIONS: { value: Grade | 'all'; label: string }[] = [
-  { value: 'all', label: 'Все' },
-  ...GRADE_ORDER.map((g) => ({ value: g, label: GRADE_LABEL[g] })),
-];
 
 export function Learn() {
   const { conceptId } = useParams();
@@ -22,6 +18,12 @@ export function Learn() {
   const [flipped, setFlipped] = useState(false);
   const markSeen = useStore((s) => s.markSeen);
   const lang = useStore((s) => s.settings.lang);
+  const t = useT();
+
+  const GRADE_OPTIONS: { value: Grade | 'all'; label: string }[] = [
+    { value: 'all', label: t('common.all') },
+    ...GRADE_ORDER.map((g) => ({ value: g, label: GRADE_LABEL[g] })),
+  ];
 
   const deck = useMemo(() => {
     if (conceptId) { const c = getConcept(conceptId); return c ? [c] : []; }
@@ -36,13 +38,13 @@ export function Learn() {
     setIndex((i) => (i + 1) % Math.max(deck.length, 1));
   }
 
-  if (!current) return <EmptyState icon="🃏" title="Нет карточек" hint="Для выбранного фильтра карточек нет." />;
+  if (!current) return <EmptyState icon="🃏" title={t('learn.emptyTitle')} hint={t('learn.emptyHint')} />;
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Учить</h1>
-        <span className="text-sm text-muted">{index + 1} / {deck.length}</span>
+        <h1 className="text-2xl font-semibold">{t('learn.title')}</h1>
+        <span className="text-sm text-muted">{t('common.counter', { index: index + 1, total: deck.length })}</span>
       </div>
       {!conceptId && <PillGroup options={GRADE_OPTIONS} value={grade} onChange={(g) => { setGrade(g); setIndex(0); setFlipped(false); }} />}
       <div className="flex gap-2">
@@ -51,11 +53,11 @@ export function Learn() {
       </div>
       <FlipCard
         front={<span className="text-xl font-semibold">{current.name}<span className="block text-sm font-normal text-muted mt-2">{current.tagline}</span></span>}
-        back={<span>{current.definition}<span className="block mt-3 text-sm text-muted">Когда: {current.whenToUse.join('; ')}</span></span>}
+        back={<span>{current.definition}<span className="block mt-3 text-sm text-muted">{t('learn.whenPrefix', { list: current.whenToUse.join('; ') })}</span></span>}
         flipped={flipped} onFlip={() => setFlipped((f) => !f)}
       />
       <div className="flex justify-end">
-        <button onClick={next} className="rounded-lg bg-accent px-4 py-2 font-medium text-white hover:bg-accent-strong">Следующая →</button>
+        <button onClick={next} className="rounded-lg bg-accent px-4 py-2 font-medium text-white hover:bg-accent-strong">{t('learn.next')}</button>
       </div>
     </div>
   );

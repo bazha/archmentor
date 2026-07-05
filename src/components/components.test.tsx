@@ -1,10 +1,13 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { CodeBlock } from './CodeBlock';
 import { FlipCard } from './FlipCard';
 import { ProgressBar } from './ProgressBar';
 import { PillGroup } from './PillGroup';
+import { useStore } from '@/store/useStore';
+
+beforeEach(() => useStore.getState().setSettings({ lang: 'ru' }));
 
 describe('shared components', () => {
   it('CodeBlock renders the code text', () => {
