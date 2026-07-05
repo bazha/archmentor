@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useStore, selectDueConceptIds, selectGradeProgress, selectReviewQueue, isMastered } from './useStore';
 import type { Concept } from '@/content/schema';
+import { detectLang } from '@/i18n/lang';
 
 const c = (id: string, grade: Concept['grade']): Concept => ({
   id, name: id, category: 'solid', grade, tagline: 't', definition: 'd', problem: 'p', solution: 's',
@@ -66,5 +67,15 @@ describe('store', () => {
     const q = selectReviewQueue(useStore.getState(), list, '2026-07-04');
     expect(q).not.toContain('srp');
     expect(q.sort()).toEqual(['ocp', 'strategy']);
+  });
+});
+
+describe('settings.lang', () => {
+  it('defaults to the detected language and updates via setSettings', () => {
+    expect(useStore.getState().settings.lang).toBe(detectLang());
+    useStore.getState().setSettings({ lang: 'en' });
+    expect(useStore.getState().settings.lang).toBe('en');
+    useStore.getState().setSettings({ lang: 'ru' });
+    expect(useStore.getState().settings.lang).toBe('ru');
   });
 });

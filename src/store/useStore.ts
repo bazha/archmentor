@@ -3,10 +3,11 @@ import { persist } from 'zustand/middleware';
 import { initSrs, review, type SrsState, type Quality } from '@/domain/srs/sm2';
 import { daysBetween, isDue } from '@/lib/date';
 import type { Concept, Grade, Category } from '@/content/schema';
+import { detectLang, type Lang } from '@/i18n/lang';
 
 export interface QuizResult { questionId: string; selectedIndex: number; correct: boolean; at: string; }
 export interface Streak { current: number; longest: number; lastActiveDate: string | null; }
-export interface Settings { theme: 'dark' | 'light'; gradeFilter: Grade | 'all'; categoryFilter: Category | 'all'; }
+export interface Settings { theme: 'dark' | 'light'; lang: Lang; gradeFilter: Grade | 'all'; categoryFilter: Category | 'all'; }
 
 const MASTERY_REPETITIONS = 2;
 
@@ -30,7 +31,7 @@ const initialData = (): PersistedState => ({
   quizResults: [],
   conceptProgress: {},
   streak: { current: 0, longest: 0, lastActiveDate: null },
-  settings: { theme: 'dark', gradeFilter: 'all', categoryFilter: 'all' },
+  settings: { theme: 'dark', lang: detectLang(), gradeFilter: 'all', categoryFilter: 'all' },
 });
 
 function bumpStreak(streak: Streak, today: string): Streak {
