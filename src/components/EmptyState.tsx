@@ -10,7 +10,7 @@ export function EmptyState({
       {hint && <p className="text-sm text-muted">{hint}</p>}
       {cta && (
         <Link to={cta.to}
-          className="inline-block rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+          className="inline-block rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft">
           {cta.label}
         </Link>
       )}

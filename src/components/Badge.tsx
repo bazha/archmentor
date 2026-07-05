@@ -2,8 +2,8 @@ import type { ReactNode } from 'react';
 
 const TONES: Record<string, string> = {
   grade: 'bg-accent/20 text-accent-soft',
-  category: 'bg-surface-muted text-muted',
-  neutral: 'bg-surface-muted text-muted',
+  category: 'bg-surface-muted text-content',
+  neutral: 'bg-surface-muted text-content',
 };
 
 export function Badge({ children, tone = 'neutral' }: { children: ReactNode; tone?: 'grade' | 'category' | 'neutral' }) {

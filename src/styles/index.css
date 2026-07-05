@@ -9,7 +9,7 @@
   --content: 15 23 42;           /* slate-900 */
   --muted: 71 85 105;            /* slate-600 */
   --accent: 79 70 229;           /* indigo-600 */
-  --accent-soft: 99 102 241;     /* indigo-500 */
+  --accent-soft: 79 70 229;      /* indigo-600 */
   color-scheme: light;
 }
 
@@ -19,7 +19,7 @@
   --surface-muted: 51 65 85;     /* slate-700 */
   --content: 241 245 249;        /* slate-100 */
   --muted: 148 163 184;          /* slate-400 */
-  --accent: 99 102 241;          /* indigo-500 */
+  --accent: 79 70 229;           /* indigo-600 */
   --accent-soft: 129 140 248;    /* indigo-400 */
   color-scheme: dark;
 }

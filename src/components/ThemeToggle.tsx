@@ -10,7 +10,7 @@ export function ThemeToggle() {
       onClick={() => setSettings({ theme: next })}
       aria-label={`Переключить на ${next === 'dark' ? 'тёмную' : 'светлую'} тему`}
       aria-pressed={theme === 'dark'}
-      className="rounded-lg px-2 py-1.5 text-muted hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      className="rounded-lg px-2 py-1.5 text-muted hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
     >
       {theme === 'dark' ? '☀️' : '🌙'}
     </button>

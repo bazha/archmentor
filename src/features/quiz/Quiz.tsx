@@ -49,7 +49,7 @@ export function Quiz() {
       <div className="text-center py-12 space-y-4">
         <h1 className="text-2xl font-semibold">Готово!</h1>
         <p className="text-lg">Результат: {correct} / {total}</p>
-        <button onClick={restart} className="rounded-lg bg-accent px-4 py-2 font-medium">Пройти заново</button>
+        <button onClick={restart} className="rounded-lg bg-accent px-4 py-2 font-medium text-white">Пройти заново</button>
       </div>
     );
   }
@@ -81,7 +81,7 @@ export function Quiz() {
           <h3 className="font-semibold mb-1">Разбор</h3>
           <p className="text-content">{q.explanation}</p>
           <div className="mt-3 flex justify-end">
-            <button onClick={nextQuestion} className="rounded-lg bg-accent px-4 py-2 font-medium">Дальше →</button>
+            <button onClick={nextQuestion} className="rounded-lg bg-accent px-4 py-2 font-medium text-white">Дальше →</button>
           </div>
         </div>
       )}

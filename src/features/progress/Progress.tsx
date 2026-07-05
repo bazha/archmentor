@@ -44,7 +44,7 @@ export function Progress() {
       </section>
 
       <button onClick={() => { if (confirm('Сбросить весь прогресс?')) reset(); }}
-        className="rounded-lg border border-red-500/50 text-red-400 px-4 py-2 text-sm hover:bg-red-500/10">
+        className="rounded-lg border border-red-500/50 text-red-600 dark:text-red-400 px-4 py-2 text-sm hover:bg-red-500/10">
         Сбросить прогресс
       </button>
     </div>

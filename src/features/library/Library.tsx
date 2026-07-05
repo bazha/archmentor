@@ -33,7 +33,7 @@ export function Library() {
       <input
         value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Поиск по названию…"
         aria-label="Поиск концептов"
-        className="w-full rounded-lg bg-surface-raised border border-surface-muted px-3 py-2 outline-none focus:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        className="w-full rounded-lg bg-surface-raised border border-surface-muted px-3 py-2 outline-none focus:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
       />
       <PillGroup options={CATEGORY_OPTIONS} value={category} onChange={setCategory} />
       {filtered.length === 0 ? (
