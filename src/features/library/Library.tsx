@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { concepts } from '@/content/index';
 import { ConceptCard } from './ConceptCard';
 import { PillGroup } from '@/components/PillGroup';
+import { EmptyState } from '@/components/EmptyState';
 import { CATEGORY_LABEL } from '@/lib/labels';
 import { useStore, isMastered } from '@/store/useStore';
 import type { Category } from '@/content/schema';
@@ -36,7 +37,7 @@ export function Library() {
       />
       <PillGroup options={CATEGORY_OPTIONS} value={category} onChange={setCategory} />
       {filtered.length === 0 ? (
-        <p className="text-muted">Ничего не найдено.</p>
+        <EmptyState icon="🔍" title="Ничего не найдено" hint="Попробуйте изменить запрос или фильтры." />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
           {filtered.map((c) => <ConceptCard key={c.id} concept={c} mastered={isMastered(state, c.id)} />)}

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { concepts, getConcept } from '@/content/index';
 import { FlipCard } from '@/components/FlipCard';
+import { EmptyState } from '@/components/EmptyState';
 import { useStore, selectReviewQueue } from '@/store/useStore';
 import { QUALITY, type Quality } from '@/domain/srs/sm2';
 import { todayISO } from '@/lib/date';
@@ -39,7 +40,7 @@ export function Review() {
     return (
       <div className="text-center py-16">
         <h1 className="text-2xl font-semibold">Повторение</h1>
-        <p className="mt-2 text-muted">На сегодня всё повторено 🎉 Возвращайтесь завтра.</p>
+        <EmptyState icon="🎉" title="На сегодня всё повторено" hint="Возвращайтесь завтра — карточки появятся по расписанию." cta={{ to: '/learn', label: 'Учить новое' }} />
       </div>
     );
   }

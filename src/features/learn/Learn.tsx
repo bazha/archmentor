@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { concepts, getConcept } from '@/content/index';
 import { FlipCard } from '@/components/FlipCard';
+import { EmptyState } from '@/components/EmptyState';
 import { PillGroup } from '@/components/PillGroup';
 import { Badge } from '@/components/Badge';
 import { useStore } from '@/store/useStore';
@@ -34,7 +35,7 @@ export function Learn() {
     setIndex((i) => (i + 1) % Math.max(deck.length, 1));
   }
 
-  if (!current) return <p className="text-muted">Нет карточек для выбранного фильтра.</p>;
+  if (!current) return <EmptyState icon="🃏" title="Нет карточек" hint="Для выбранного фильтра карточек нет." />;
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">

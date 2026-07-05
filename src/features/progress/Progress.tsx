@@ -31,6 +31,10 @@ export function Progress() {
         </div>
       </section>
 
+      {total === 0 && (
+        <p className="text-sm text-muted">Пройдите квиз, чтобы увидеть точность и освоение.</p>
+      )}
+
       <section className="space-y-4">
         <h2 className="text-xl font-semibold">Освоение по грейдам</h2>
         {GRADE_ORDER.map((g) => {

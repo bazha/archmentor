@@ -2,6 +2,7 @@ import { Link, useParams } from 'react-router-dom';
 import { getConcept } from '@/content/index';
 import { CodeBlock } from '@/components/CodeBlock';
 import { Badge } from '@/components/Badge';
+import { EmptyState } from '@/components/EmptyState';
 import { GRADE_LABEL, CATEGORY_LABEL } from '@/lib/labels';
 
 function List({ title, items }: { title: string; items: string[] }) {
@@ -16,7 +17,7 @@ function List({ title, items }: { title: string; items: string[] }) {
 export function ConceptPage() {
   const { conceptId } = useParams();
   const c = conceptId ? getConcept(conceptId) : undefined;
-  if (!c) return <div><p className="text-muted">Концепт не найден.</p><Link to="/library" className="text-accent-soft">← В библиотеку</Link></div>;
+  if (!c) return <EmptyState icon="🧭" title="Концепт не найден" cta={{ to: '/library', label: '← В библиотеку' }} />;
 
   return (
     <article className="space-y-6">

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
@@ -14,5 +14,18 @@ describe('Quiz', () => {
     await userEvent.click(firstOption);
     expect(screen.getByText(/Разбор/i)).toBeInTheDocument();
     expect(useStore.getState().quizResults).toHaveLength(1);
+  });
+});
+
+describe('Quiz empty filter', () => {
+  it('shows an empty state when no questions match', async () => {
+    vi.doMock('@/content/index', () => ({ questions: [] }));
+    vi.resetModules();
+    const { Quiz: FreshQuiz } = await import('./Quiz');
+    const { render, screen } = await import('@testing-library/react');
+    const { MemoryRouter } = await import('react-router-dom');
+    render(<MemoryRouter><FreshQuiz /></MemoryRouter>);
+    expect(screen.getByText('Нет вопросов')).toBeInTheDocument();
+    vi.doUnmock('@/content/index');
   });
 });

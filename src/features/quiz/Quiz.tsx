@@ -3,6 +3,7 @@ import { questions as allQuestions } from '@/content/index';
 import { selectQuestions, isCorrect, scoreSession, type QuizFilter } from '@/domain/quiz/selection';
 import { CodeBlock } from '@/components/CodeBlock';
 import { PillGroup } from '@/components/PillGroup';
+import { EmptyState } from '@/components/EmptyState';
 import { useStore } from '@/store/useStore';
 import { todayISO } from '@/lib/date';
 import type { QuestionType } from '@/content/schema';
@@ -37,6 +38,10 @@ export function Quiz() {
 
   function nextQuestion() { setSelected(null); setI((n) => n + 1); }
   function restart() { setSelected(null); setI(0); setAnswers({}); }
+
+  if (deck.length === 0) {
+    return <EmptyState icon="🧪" title="Нет вопросов" hint="Для выбранного режима вопросов пока нет." />;
+  }
 
   if (!q) {
     const { correct, total } = scoreSession(deck, answers);
