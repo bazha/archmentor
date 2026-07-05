@@ -3,6 +3,7 @@ import { questions as allQuestions } from '@/content/index';
 import { selectQuestions, isCorrect, scoreSession, type QuizFilter } from '@/domain/quiz/selection';
 import { CodeBlock } from '@/components/CodeBlock';
 import { PillGroup } from '@/components/PillGroup';
+import { EmptyState } from '@/components/EmptyState';
 import { useStore } from '@/store/useStore';
 import { todayISO } from '@/lib/date';
 import type { QuestionType } from '@/content/schema';
@@ -38,13 +39,17 @@ export function Quiz() {
   function nextQuestion() { setSelected(null); setI((n) => n + 1); }
   function restart() { setSelected(null); setI(0); setAnswers({}); }
 
+  if (deck.length === 0) {
+    return <EmptyState icon="🧪" title="Нет вопросов" hint="Для выбранного режима вопросов пока нет." />;
+  }
+
   if (!q) {
     const { correct, total } = scoreSession(deck, answers);
     return (
       <div className="text-center py-12 space-y-4">
         <h1 className="text-2xl font-semibold">Готово!</h1>
         <p className="text-lg">Результат: {correct} / {total}</p>
-        <button onClick={restart} className="rounded-lg bg-accent px-4 py-2 font-medium">Пройти заново</button>
+        <button onClick={restart} className="rounded-lg bg-accent px-4 py-2 font-medium text-white">Пройти заново</button>
       </div>
     );
   }
@@ -53,7 +58,7 @@ export function Quiz() {
     <div className="space-y-6 max-w-2xl mx-auto">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Квиз</h1>
-        <span className="text-sm text-slate-400">{i + 1} / {deck.length}</span>
+        <span className="text-sm text-muted">{i + 1} / {deck.length}</span>
       </div>
       <PillGroup options={MODE_OPTIONS} value={mode} onChange={(m) => { setMode(m); restart(); }} />
       <p className="text-lg">{q.prompt}</p>
@@ -74,9 +79,9 @@ export function Quiz() {
       {selected !== null && (
         <div className="rounded-lg bg-surface-raised border border-surface-muted p-4">
           <h3 className="font-semibold mb-1">Разбор</h3>
-          <p className="text-slate-300">{q.explanation}</p>
+          <p className="text-content">{q.explanation}</p>
           <div className="mt-3 flex justify-end">
-            <button onClick={nextQuestion} className="rounded-lg bg-accent px-4 py-2 font-medium">Дальше →</button>
+            <button onClick={nextQuestion} className="rounded-lg bg-accent px-4 py-2 font-medium text-white">Дальше →</button>
           </div>
         </div>
       )}

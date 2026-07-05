@@ -2,5 +2,35 @@
 @tailwind components;
 @tailwind utilities;
 
-:root { color-scheme: dark; }
-body { @apply bg-surface text-slate-100 antialiased; }
+:root {
+  --surface: 248 250 252;        /* slate-50  */
+  --surface-raised: 255 255 255; /* white     */
+  --surface-muted: 226 232 240;  /* slate-200 */
+  --content: 15 23 42;           /* slate-900 */
+  --muted: 71 85 105;            /* slate-600 */
+  --accent: 79 70 229;           /* indigo-600 */
+  --accent-soft: 79 70 229;      /* indigo-600 */
+  color-scheme: light;
+}
+
+.dark {
+  --surface: 15 23 42;           /* slate-900 */
+  --surface-raised: 30 41 59;    /* slate-800 */
+  --surface-muted: 51 65 85;     /* slate-700 */
+  --content: 241 245 249;        /* slate-100 */
+  --muted: 148 163 184;          /* slate-400 */
+  --accent: 79 70 229;           /* indigo-600 */
+  --accent-soft: 129 140 248;    /* indigo-400 */
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-surface text-content antialiased;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

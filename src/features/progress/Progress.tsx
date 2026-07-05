@@ -16,20 +16,24 @@ export function Progress() {
 
       <section className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-xl bg-surface-raised border border-surface-muted p-4">
-          <div className="text-sm text-slate-400">Точность квизов</div>
+          <div className="text-sm text-muted">Точность квизов</div>
           <div className="text-3xl font-bold">{accuracy}%</div>
-          <div className="text-xs text-slate-500 mt-1">{correct} из {total}</div>
+          <div className="text-xs text-muted mt-1">{correct} из {total}</div>
         </div>
         <div className="rounded-xl bg-surface-raised border border-surface-muted p-4">
-          <div className="text-sm text-slate-400">Серия дней</div>
+          <div className="text-sm text-muted">Серия дней</div>
           <div className="text-3xl font-bold">{state.streak.current}🔥</div>
         </div>
         <div className="rounded-xl bg-surface-raised border border-surface-muted p-4">
-          <div className="text-sm text-slate-400">Освоено концептов</div>
+          <div className="text-sm text-muted">Освоено концептов</div>
           <div className="text-3xl font-bold">{concepts.filter((c) => isMastered(state, c.id)).length}</div>
-          <div className="text-xs text-slate-500 mt-1">из {concepts.length}</div>
+          <div className="text-xs text-muted mt-1">из {concepts.length}</div>
         </div>
       </section>
+
+      {total === 0 && (
+        <p className="text-sm text-muted">Пройдите квиз, чтобы увидеть точность и освоение.</p>
+      )}
 
       <section className="space-y-4">
         <h2 className="text-xl font-semibold">Освоение по грейдам</h2>
@@ -40,7 +44,7 @@ export function Progress() {
       </section>
 
       <button onClick={() => { if (confirm('Сбросить весь прогресс?')) reset(); }}
-        className="rounded-lg border border-red-500/50 text-red-400 px-4 py-2 text-sm hover:bg-red-500/10">
+        className="rounded-lg border border-red-500/50 text-red-600 dark:text-red-400 px-4 py-2 text-sm hover:bg-red-500/10">
         Сбросить прогресс
       </button>
     </div>

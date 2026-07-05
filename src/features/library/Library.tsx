@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { concepts } from '@/content/index';
 import { ConceptCard } from './ConceptCard';
 import { PillGroup } from '@/components/PillGroup';
+import { EmptyState } from '@/components/EmptyState';
 import { CATEGORY_LABEL } from '@/lib/labels';
 import { useStore, isMastered } from '@/store/useStore';
 import type { Category } from '@/content/schema';
@@ -31,11 +32,12 @@ export function Library() {
       <h1 className="text-2xl font-semibold">Библиотека</h1>
       <input
         value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Поиск по названию…"
-        className="w-full rounded-lg bg-surface-raised border border-surface-muted px-3 py-2 outline-none focus:border-accent"
+        aria-label="Поиск концептов"
+        className="w-full rounded-lg bg-surface-raised border border-surface-muted px-3 py-2 outline-none focus:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
       />
       <PillGroup options={CATEGORY_OPTIONS} value={category} onChange={setCategory} />
       {filtered.length === 0 ? (
-        <p className="text-slate-400">Ничего не найдено.</p>
+        <EmptyState icon="🔍" title="Ничего не найдено" hint="Попробуйте изменить запрос или фильтры." />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
           {filtered.map((c) => <ConceptCard key={c.id} concept={c} mastered={isMastered(state, c.id)} />)}

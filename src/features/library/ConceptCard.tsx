@@ -11,7 +11,7 @@ export function ConceptCard({ concept, mastered }: { concept: Concept; mastered:
         <h3 className="font-semibold">{concept.name}</h3>
         {mastered && <Badge tone="grade">✓ освоено</Badge>}
       </div>
-      <p className="mt-1 text-sm text-slate-400">{concept.tagline}</p>
+      <p className="mt-1 text-sm text-muted">{concept.tagline}</p>
       <div className="mt-3 flex gap-2">
         <Badge tone="grade">{GRADE_LABEL[concept.grade]}</Badge>
         <Badge tone="category">{CATEGORY_LABEL[concept.category]}</Badge>
