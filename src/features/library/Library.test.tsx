@@ -32,4 +32,9 @@ describe('Library', () => {
     expect(screen.getByText(/Плюсы/)).toBeInTheDocument();
     expect(screen.getByText(/Минусы/)).toBeInTheDocument();
   });
+
+  it('search input has an accessible name', () => {
+    renderLib();
+    expect(screen.getByRole('textbox', { name: /поиск/i })).toBeInTheDocument();
+  });
 });
