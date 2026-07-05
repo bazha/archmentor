@@ -6,6 +6,15 @@ export default defineConfig(({ mode }) => ({
   base: mode === 'production' ? '/archmentor/' : '/',
   plugins: [react()],
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (id.includes('/src/content/')) return 'content';
+        },
+      },
+    },
+  },
   test: {
     globals: true,
     environment: 'jsdom',
