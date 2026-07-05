@@ -2,7 +2,8 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath, URL } from 'node:url';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
+  base: mode === 'production' ? '/archmentor/' : '/',
   plugins: [react()],
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   test: {
@@ -10,4 +11,4 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test-setup.ts'],
   },
-} as any);
+} as any));
