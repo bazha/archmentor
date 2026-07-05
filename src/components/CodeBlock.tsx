@@ -1,6 +1,9 @@
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter';
+import typescript from 'react-syntax-highlighter/dist/esm/languages/prism/typescript';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import type { CodeSample } from '@/content/schema';
+
+SyntaxHighlighter.registerLanguage('typescript', typescript);
 
 export function CodeBlock({ sample }: { sample: CodeSample }) {
   return (

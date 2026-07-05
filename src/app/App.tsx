@@ -2,24 +2,18 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { Layout } from './Layout';
 import { ErrorBoundary } from './ErrorBoundary';
 import { Dashboard } from '@/features/dashboard/Dashboard';
-import { Learn } from '@/features/learn/Learn';
-import { Review } from '@/features/review/Review';
-import { Quiz } from '@/features/quiz/Quiz';
-import { Library } from '@/features/library/Library';
-import { ConceptPage } from '@/features/library/ConceptPage';
-import { Progress } from '@/features/progress/Progress';
 
 const router = createBrowserRouter([
   {
     path: '/', element: <Layout />,
     children: [
       { index: true, element: <Dashboard /> },
-      { path: 'learn/:conceptId?', element: <Learn /> },
-      { path: 'review', element: <Review /> },
-      { path: 'quiz', element: <Quiz /> },
-      { path: 'library', element: <Library /> },
-      { path: 'library/:conceptId', element: <ConceptPage /> },
-      { path: 'progress', element: <Progress /> },
+      { path: 'learn/:conceptId?', lazy: () => import('@/features/learn/Learn').then((m) => ({ Component: m.Learn })) },
+      { path: 'review', lazy: () => import('@/features/review/Review').then((m) => ({ Component: m.Review })) },
+      { path: 'quiz', lazy: () => import('@/features/quiz/Quiz').then((m) => ({ Component: m.Quiz })) },
+      { path: 'library', lazy: () => import('@/features/library/Library').then((m) => ({ Component: m.Library })) },
+      { path: 'library/:conceptId', lazy: () => import('@/features/library/ConceptPage').then((m) => ({ Component: m.ConceptPage })) },
+      { path: 'progress', lazy: () => import('@/features/progress/Progress').then((m) => ({ Component: m.Progress })) },
     ],
   },
 ], { basename: import.meta.env.BASE_URL });
