@@ -5,8 +5,17 @@ export default {
   theme: {
     extend: {
       colors: {
-        surface: { DEFAULT: '#0f172a', raised: '#1e293b', muted: '#334155' },
-        accent: { DEFAULT: '#6366f1', soft: '#818cf8' },
+        surface: {
+          DEFAULT: 'rgb(var(--surface) / <alpha-value>)',
+          raised: 'rgb(var(--surface-raised) / <alpha-value>)',
+          muted: 'rgb(var(--surface-muted) / <alpha-value>)',
+        },
+        content: 'rgb(var(--content) / <alpha-value>)',
+        muted: 'rgb(var(--muted) / <alpha-value>)',
+        accent: {
+          DEFAULT: 'rgb(var(--accent) / <alpha-value>)',
+          soft: 'rgb(var(--accent-soft) / <alpha-value>)',
+        },
       },
     },
   },
