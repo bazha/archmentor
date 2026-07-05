@@ -34,13 +34,13 @@ export function Learn() {
     setIndex((i) => (i + 1) % Math.max(deck.length, 1));
   }
 
-  if (!current) return <p className="text-slate-400">Нет карточек для выбранного фильтра.</p>;
+  if (!current) return <p className="text-muted">Нет карточек для выбранного фильтра.</p>;
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Учить</h1>
-        <span className="text-sm text-slate-400">{index + 1} / {deck.length}</span>
+        <span className="text-sm text-muted">{index + 1} / {deck.length}</span>
       </div>
       {!conceptId && <PillGroup options={GRADE_OPTIONS} value={grade} onChange={(g) => { setGrade(g); setIndex(0); setFlipped(false); }} />}
       <div className="flex gap-2">
@@ -48,8 +48,8 @@ export function Learn() {
         <Badge tone="category">{CATEGORY_LABEL[current.category]}</Badge>
       </div>
       <FlipCard
-        front={<span className="text-xl font-semibold">{current.name}<span className="block text-sm font-normal text-slate-400 mt-2">{current.tagline}</span></span>}
-        back={<span>{current.definition}<span className="block mt-3 text-sm text-slate-400">Когда: {current.whenToUse.join('; ')}</span></span>}
+        front={<span className="text-xl font-semibold">{current.name}<span className="block text-sm font-normal text-muted mt-2">{current.tagline}</span></span>}
+        back={<span>{current.definition}<span className="block mt-3 text-sm text-muted">Когда: {current.whenToUse.join('; ')}</span></span>}
         flipped={flipped} onFlip={() => setFlipped((f) => !f)}
       />
       <div className="flex justify-end">

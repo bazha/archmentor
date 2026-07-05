@@ -8,7 +8,7 @@ export function PillGroup<T extends string>({
           key={o.value}
           onClick={() => onChange(o.value)}
           className={`rounded-full px-3 py-1 text-sm border transition ${
-            o.value === value ? 'bg-accent border-accent text-white' : 'border-surface-muted text-slate-300 hover:border-accent-soft'
+            o.value === value ? 'bg-accent border-accent text-white' : 'border-surface-muted text-muted hover:border-accent-soft'
           }`}
         >
           {o.label}

@@ -8,7 +8,7 @@ function List({ title, items }: { title: string; items: string[] }) {
   return (
     <div>
       <h3 className="font-semibold mb-1">{title}</h3>
-      <ul className="list-disc list-inside text-slate-300 space-y-1">{items.map((i) => <li key={i}>{i}</li>)}</ul>
+      <ul className="list-disc list-inside text-content space-y-1">{items.map((i) => <li key={i}>{i}</li>)}</ul>
     </div>
   );
 }
@@ -16,22 +16,22 @@ function List({ title, items }: { title: string; items: string[] }) {
 export function ConceptPage() {
   const { conceptId } = useParams();
   const c = conceptId ? getConcept(conceptId) : undefined;
-  if (!c) return <div><p className="text-slate-400">Концепт не найден.</p><Link to="/library" className="text-accent-soft">← В библиотеку</Link></div>;
+  if (!c) return <div><p className="text-muted">Концепт не найден.</p><Link to="/library" className="text-accent-soft">← В библиотеку</Link></div>;
 
   return (
     <article className="space-y-6">
       <Link to="/library" className="text-sm text-accent-soft">← В библиотеку</Link>
       <header>
         <h1 className="text-3xl font-bold">{c.name}</h1>
-        <p className="mt-1 text-slate-400">{c.tagline}</p>
+        <p className="mt-1 text-muted">{c.tagline}</p>
         <div className="mt-3 flex gap-2">
           <Badge tone="grade">{GRADE_LABEL[c.grade]}</Badge>
           <Badge tone="category">{CATEGORY_LABEL[c.category]}</Badge>
         </div>
       </header>
-      <section><h3 className="font-semibold mb-1">Определение</h3><p className="text-slate-300">{c.definition}</p></section>
-      <section><h3 className="font-semibold mb-1">Проблема</h3><p className="text-slate-300">{c.problem}</p></section>
-      <section><h3 className="font-semibold mb-1">Решение</h3><p className="text-slate-300">{c.solution}</p></section>
+      <section><h3 className="font-semibold mb-1">Определение</h3><p className="text-content">{c.definition}</p></section>
+      <section><h3 className="font-semibold mb-1">Проблема</h3><p className="text-content">{c.problem}</p></section>
+      <section><h3 className="font-semibold mb-1">Решение</h3><p className="text-content">{c.solution}</p></section>
       <section><h3 className="font-semibold mb-2">Пример кода</h3><CodeBlock sample={c.codeExample} /></section>
       <div className="grid gap-6 sm:grid-cols-2">
         <List title="Плюсы" items={c.pros} />

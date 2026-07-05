@@ -39,7 +39,7 @@ export function Review() {
     return (
       <div className="text-center py-16">
         <h1 className="text-2xl font-semibold">Повторение</h1>
-        <p className="mt-2 text-slate-400">На сегодня всё повторено 🎉 Возвращайтесь завтра.</p>
+        <p className="mt-2 text-muted">На сегодня всё повторено 🎉 Возвращайтесь завтра.</p>
       </div>
     );
   }
@@ -48,10 +48,10 @@ export function Review() {
     <div className="space-y-6 max-w-2xl mx-auto">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Повторение</h1>
-        <span className="text-sm text-slate-400">осталось: {queue.length}</span>
+        <span className="text-sm text-muted">осталось: {queue.length}</span>
       </div>
       <FlipCard
-        front={<span className="text-xl font-semibold">{concept.name}<span className="block text-sm font-normal text-slate-400 mt-2">{concept.tagline}</span></span>}
+        front={<span className="text-xl font-semibold">{concept.name}<span className="block text-sm font-normal text-muted mt-2">{concept.tagline}</span></span>}
         back={<span>{concept.definition}</span>}
         flipped={flipped} onFlip={() => setFlipped((f) => !f)}
       />
@@ -63,7 +63,7 @@ export function Review() {
           ))}
         </div>
       )}
-      {!flipped && <p className="text-center text-sm text-slate-500">Вспомните определение, затем переверните карточку и оцените себя.</p>}
+      {!flipped && <p className="text-center text-sm text-muted">Вспомните определение, затем переверните карточку и оцените себя.</p>}
     </div>
   );
 }

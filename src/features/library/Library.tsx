@@ -35,7 +35,7 @@ export function Library() {
       />
       <PillGroup options={CATEGORY_OPTIONS} value={category} onChange={setCategory} />
       {filtered.length === 0 ? (
-        <p className="text-slate-400">Ничего не найдено.</p>
+        <p className="text-muted">Ничего не найдено.</p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
           {filtered.map((c) => <ConceptCard key={c.id} concept={c} mastered={isMastered(state, c.id)} />)}

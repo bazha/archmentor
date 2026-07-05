@@ -18,7 +18,7 @@ export function Layout() {
           {NAV.map((n) => (
             <NavLink key={n.to} to={n.to} end={n.end}
               className={({ isActive }) =>
-                `px-3 py-1.5 rounded-lg text-sm whitespace-nowrap ${isActive ? 'bg-surface-raised text-white' : 'text-slate-400 hover:text-white'}`}>
+                `px-3 py-1.5 rounded-lg text-sm whitespace-nowrap ${isActive ? 'bg-surface-raised text-content' : 'text-muted hover:text-content'}`}>
               {n.label}
             </NavLink>
           ))}

@@ -16,17 +16,17 @@ export function Dashboard() {
 
       <section className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-xl bg-surface-raised border border-surface-muted p-4">
-          <div className="text-sm text-slate-400">Серия дней</div>
+          <div className="text-sm text-muted">Серия дней</div>
           <div className="text-3xl font-bold">{state.streak.current}🔥</div>
-          <div className="text-xs text-slate-500 mt-1">рекорд: {state.streak.longest}</div>
+          <div className="text-xs text-muted mt-1">рекорд: {state.streak.longest}</div>
         </div>
         <Link to="/review" className="rounded-xl bg-surface-raised border border-surface-muted p-4 hover:border-accent-soft">
-          <div className="text-sm text-slate-400">К повторению сегодня</div>
+          <div className="text-sm text-muted">К повторению сегодня</div>
           <div className="text-3xl font-bold">{dueCount}</div>
           <div className="text-xs text-accent-soft mt-1">Начать повторение →</div>
         </Link>
         <Link to="/quiz" className="rounded-xl bg-surface-raised border border-surface-muted p-4 hover:border-accent-soft">
-          <div className="text-sm text-slate-400">Проверить себя</div>
+          <div className="text-sm text-muted">Проверить себя</div>
           <div className="text-3xl font-bold">Квиз</div>
           <div className="text-xs text-accent-soft mt-1">Определи паттерн →</div>
         </Link>

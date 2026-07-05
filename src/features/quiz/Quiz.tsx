@@ -53,7 +53,7 @@ export function Quiz() {
     <div className="space-y-6 max-w-2xl mx-auto">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Квиз</h1>
-        <span className="text-sm text-slate-400">{i + 1} / {deck.length}</span>
+        <span className="text-sm text-muted">{i + 1} / {deck.length}</span>
       </div>
       <PillGroup options={MODE_OPTIONS} value={mode} onChange={(m) => { setMode(m); restart(); }} />
       <p className="text-lg">{q.prompt}</p>
@@ -74,7 +74,7 @@ export function Quiz() {
       {selected !== null && (
         <div className="rounded-lg bg-surface-raised border border-surface-muted p-4">
           <h3 className="font-semibold mb-1">Разбор</h3>
-          <p className="text-slate-300">{q.explanation}</p>
+          <p className="text-content">{q.explanation}</p>
           <div className="mt-3 flex justify-end">
             <button onClick={nextQuestion} className="rounded-lg bg-accent px-4 py-2 font-medium">Дальше →</button>
           </div>

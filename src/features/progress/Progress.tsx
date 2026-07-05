@@ -16,18 +16,18 @@ export function Progress() {
 
       <section className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-xl bg-surface-raised border border-surface-muted p-4">
-          <div className="text-sm text-slate-400">Точность квизов</div>
+          <div className="text-sm text-muted">Точность квизов</div>
           <div className="text-3xl font-bold">{accuracy}%</div>
-          <div className="text-xs text-slate-500 mt-1">{correct} из {total}</div>
+          <div className="text-xs text-muted mt-1">{correct} из {total}</div>
         </div>
         <div className="rounded-xl bg-surface-raised border border-surface-muted p-4">
-          <div className="text-sm text-slate-400">Серия дней</div>
+          <div className="text-sm text-muted">Серия дней</div>
           <div className="text-3xl font-bold">{state.streak.current}🔥</div>
         </div>
         <div className="rounded-xl bg-surface-raised border border-surface-muted p-4">
-          <div className="text-sm text-slate-400">Освоено концептов</div>
+          <div className="text-sm text-muted">Освоено концептов</div>
           <div className="text-3xl font-bold">{concepts.filter((c) => isMastered(state, c.id)).length}</div>
-          <div className="text-xs text-slate-500 mt-1">из {concepts.length}</div>
+          <div className="text-xs text-muted mt-1">из {concepts.length}</div>
         </div>
       </section>
 
