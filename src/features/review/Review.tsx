@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { concepts, getConcept } from '@/content/index';
+import { concepts } from '@/content/index';
+import { useConcept } from '@/content/localize';
 import { FlipCard } from '@/components/FlipCard';
 import { EmptyState } from '@/components/EmptyState';
 import { useStore, selectReviewQueue } from '@/store/useStore';
@@ -30,7 +31,8 @@ export function Review() {
   );
 
   const currentId = queue[0];
-  const concept = currentId ? getConcept(currentId) : undefined;
+  const view = useConcept(currentId ?? '');
+  const concept = currentId ? view : undefined;
 
   function grade(q: Quality) {
     if (!concept) return;

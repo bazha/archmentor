@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { concepts } from '@/content/index';
+import { useConcepts } from '@/content/localize';
 import { ConceptCard } from './ConceptCard';
 import { PillGroup } from '@/components/PillGroup';
 import { EmptyState } from '@/components/EmptyState';
@@ -19,14 +19,15 @@ export function Library() {
     ...(Object.keys(CATEGORY_LABEL[lang]) as Category[]).map((c) => ({ value: c, label: CATEGORY_LABEL[lang][c] })),
   ];
 
+  const list = useConcepts();
   const filtered = useMemo(
     () =>
-      concepts.filter(
+      list.filter(
         (c) =>
           (category === 'all' || c.category === category) &&
           (query === '' || `${c.name} ${c.aka?.join(' ') ?? ''} ${c.tagline}`.toLowerCase().includes(query.toLowerCase())),
       ),
-    [query, category],
+    [list, query, category],
   );
 
   return (

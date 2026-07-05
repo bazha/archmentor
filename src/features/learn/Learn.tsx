@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { concepts, getConcept } from '@/content/index';
+import { useConcepts, useConcept } from '@/content/localize';
 import { FlipCard } from '@/components/FlipCard';
 import { EmptyState } from '@/components/EmptyState';
 import { PillGroup } from '@/components/PillGroup';
@@ -25,10 +25,13 @@ export function Learn() {
     ...GRADE_ORDER.map((g) => ({ value: g, label: GRADE_LABEL[g] })),
   ];
 
+  const allConcepts = useConcepts();
+  const singleConcept = useConcept(conceptId ?? '');
+
   const deck = useMemo(() => {
-    if (conceptId) { const c = getConcept(conceptId); return c ? [c] : []; }
-    return concepts.filter((c) => grade === 'all' || c.grade === grade);
-  }, [conceptId, grade]);
+    if (conceptId) return singleConcept ? [singleConcept] : [];
+    return allConcepts.filter((c) => grade === 'all' || c.grade === grade);
+  }, [conceptId, grade, allConcepts, singleConcept]);
 
   const current = deck[index];
 

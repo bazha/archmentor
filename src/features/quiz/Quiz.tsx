@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { questions as allQuestions } from '@/content/index';
+import { useQuestions } from '@/content/localize';
 import { selectQuestions, isCorrect, scoreSession, type QuizFilter } from '@/domain/quiz/selection';
 import { CodeBlock } from '@/components/CodeBlock';
 import { PillGroup } from '@/components/PillGroup';
@@ -13,6 +13,7 @@ const identityShuffle = <T,>(a: T[]) => a;
 
 export function Quiz() {
   const recordQuiz = useStore((s) => s.recordQuiz);
+  const allQuestions = useQuestions();
   const t = useT();
   const [mode, setMode] = useState<QuestionType | 'all'>('all');
   const [i, setI] = useState(0);
@@ -27,7 +28,7 @@ export function Quiz() {
   ];
 
   const filter: QuizFilter = mode === 'all' ? {} : { type: mode };
-  const deck = useMemo(() => selectQuestions(allQuestions, filter, identityShuffle), [mode]);
+  const deck = useMemo(() => selectQuestions(allQuestions, filter, identityShuffle), [allQuestions, mode]);
   const q = deck[i];
 
   function answer(index: number) {

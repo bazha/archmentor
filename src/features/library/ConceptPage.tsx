@@ -1,5 +1,6 @@
 import { Link, useParams } from 'react-router-dom';
 import { getConcept } from '@/content/index';
+import { useConcept } from '@/content/localize';
 import { CodeBlock } from '@/components/CodeBlock';
 import { Badge } from '@/components/Badge';
 import { EmptyState } from '@/components/EmptyState';
@@ -20,7 +21,7 @@ export function ConceptPage() {
   const { conceptId } = useParams();
   const lang = useStore((s) => s.settings.lang);
   const t = useT();
-  const c = conceptId ? getConcept(conceptId) : undefined;
+  const c = useConcept(conceptId ?? '');
   if (!c) return <EmptyState icon="🧭" title={t('concept.notFoundTitle')} cta={{ to: '/library', label: t('concept.backToLibrary') }} />;
 
   return (

@@ -1,11 +1,11 @@
 import { Link } from 'react-router-dom';
-import type { Concept } from '@/content/schema';
+import type { ConceptView } from '@/content/localize';
 import { Badge } from '@/components/Badge';
 import { GRADE_LABEL, CATEGORY_LABEL } from '@/lib/labels';
 import { useStore } from '@/store/useStore';
 import { useT } from '@/i18n/useT';
 
-export function ConceptCard({ concept, mastered }: { concept: Concept; mastered: boolean }) {
+export function ConceptCard({ concept, mastered }: { concept: ConceptView; mastered: boolean }) {
   const lang = useStore((s) => s.settings.lang);
   const t = useT();
   return (

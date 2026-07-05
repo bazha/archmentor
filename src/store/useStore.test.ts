@@ -3,9 +3,13 @@ import { useStore, selectDueConceptIds, selectGradeProgress, selectReviewQueue, 
 import type { Concept } from '@/content/schema';
 import { detectLang } from '@/i18n/lang';
 
+const loc = (s: string) => ({ ru: s, en: s });
+const locList = (a: string[]) => ({ ru: a, en: a });
+
 const c = (id: string, grade: Concept['grade']): Concept => ({
-  id, name: id, category: 'solid', grade, tagline: 't', definition: 'd', problem: 'p', solution: 's',
-  codeExample: { lang: 'typescript', code: 'x' }, pros: ['a'], cons: ['a'], tradeoffs: ['a'], whenToUse: ['a'], related: [],
+  id, name: id, category: 'solid', grade, tagline: loc('t'), definition: loc('d'), problem: loc('p'), solution: loc('s'),
+  codeExample: { lang: 'typescript', code: loc('x') },
+  pros: locList(['a']), cons: locList(['a']), tradeoffs: locList(['a']), whenToUse: locList(['a']), related: [],
 });
 
 beforeEach(() => {

@@ -1,15 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { selectQuestions, isCorrect, scoreSession } from './selection';
-import type { Question } from '@/content/schema';
+import { selectQuestions, isCorrect, scoreSession, type QuizQuestionLike } from './selection';
 
 const identity = <T,>(a: T[]) => a; // deterministic shuffle for tests
 
-const q = (over: Partial<Question>): Question => ({
+const q = (over: Partial<QuizQuestionLike>): QuizQuestionLike => ({
   id: 'q1', type: 'concept', category: 'solid', grade: 'junior',
-  prompt: 'p', options: ['a', 'b'], correctIndex: 0, explanation: 'e', ...over,
+  options: ['a', 'b'], correctIndex: 0, ...over,
 });
 
-const pool: Question[] = [
+const pool: QuizQuestionLike[] = [
   q({ id: 'q1', category: 'solid', grade: 'junior', type: 'concept' }),
   q({ id: 'q2', category: 'behavioral', grade: 'middle', type: 'identify-pattern' }),
   q({ id: 'q3', category: 'behavioral', grade: 'middle', type: 'concept' }),
