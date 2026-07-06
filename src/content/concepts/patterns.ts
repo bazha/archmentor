@@ -11,19 +11,19 @@ export const patterns: Concept[] = [
     grade: "middle",
     tagline: {
       ru: "Взаимозаменяемые алгоритмы за общим интерфейсом",
-      en: "Взаимозаменяемые алгоритмы за общим интерфейсом",
+      en: "Interchangeable algorithms behind a common interface",
     },
     definition: {
       ru: "Определяет семейство алгоритмов, инкапсулирует каждый из них и делает их взаимозаменяемыми. Strategy позволяет менять алгоритм независимо от клиента, который им пользуется.",
-      en: "Определяет семейство алгоритмов, инкапсулирует каждый из них и делает их взаимозаменяемыми. Strategy позволяет менять алгоритм независимо от клиента, который им пользуется.",
+      en: "Defines a family of algorithms, encapsulates each one, and makes them interchangeable. Strategy lets the algorithm vary independently from the clients that use it.",
     },
     problem: {
       ru: "Класс жёстко зашивает один способ поведения (расчёт цены, сортировку, сжатие). Добавление или замена варианта требует правки самого класса и плодит условные операторы.",
-      en: "Класс жёстко зашивает один способ поведения (расчёт цены, сортировку, сжатие). Добавление или замена варианта требует правки самого класса и плодит условные операторы.",
+      en: "A class hard-codes a single way of behaving (price calculation, sorting, compression). Adding or replacing a variant requires editing the class itself and breeds conditional statements.",
     },
     solution: {
       ru: "Выносим алгоритм за интерфейс Strategy. Контекст хранит ссылку на выбранную стратегию и делегирует ей работу; клиент подставляет нужную стратегию извне.",
-      en: "Выносим алгоритм за интерфейс Strategy. Контекст хранит ссылку на выбранную стратегию и делегирует ей работу; клиент подставляет нужную стратегию извне.",
+      en: "Extract the algorithm behind a Strategy interface. The context holds a reference to the chosen strategy and delegates the work to it; the client supplies the desired strategy from the outside.",
     },
     codeExample: {
       lang: "typescript",
@@ -49,12 +49,12 @@ export const patterns: Concept[] = [
           "",
           "class Checkout {",
           "  constructor(private strategy: PricingStrategy) {}",
-          "  setStrategy(s: PricingStrategy) { this.strategy = s; } // выбор делает клиент",
+          "  setStrategy(s: PricingStrategy) { this.strategy = s; } // the client makes the choice",
           "  total(base: number) { return this.strategy.price(base); }",
           "}",
           "",
           "const checkout = new Checkout(new Regular());",
-          "checkout.setStrategy(new Vip()); // алгоритм заменён извне, без внутренних переходов",
+          "checkout.setStrategy(new Vip()); // the algorithm is swapped from outside, with no internal transitions",
         ].join('\n'),
       },
     },
@@ -65,9 +65,9 @@ export const patterns: Concept[] = [
         "Убирает разрастание условных операторов",
       ],
       en: [
-        "Замена алгоритма во время выполнения",
-        "Изоляция вариантов поведения",
-        "Убирает разрастание условных операторов",
+        "Swap the algorithm at runtime",
+        "Isolates behavior variants",
+        "Eliminates the sprawl of conditional statements",
       ],
     },
     cons: {
@@ -76,8 +76,8 @@ export const patterns: Concept[] = [
         "Клиент должен знать о существующих стратегиях",
       ],
       en: [
-        "Растёт число классов",
-        "Клиент должен знать о существующих стратегиях",
+        "Increases the number of classes",
+        "The client has to know about the available strategies",
       ],
     },
     tradeoffs: {
@@ -85,7 +85,7 @@ export const patterns: Concept[] = [
         "Гибкость выбора алгоритма против количества классов",
       ],
       en: [
-        "Гибкость выбора алгоритма против количества классов",
+        "Flexibility in choosing the algorithm versus the number of classes",
       ],
     },
     whenToUse: {
@@ -94,8 +94,8 @@ export const patterns: Concept[] = [
         "Нужно переключать алгоритм в рантайме извне",
       ],
       en: [
-        "Есть несколько вариантов одного поведения",
-        "Нужно переключать алгоритм в рантайме извне",
+        "There are several variants of one behavior",
+        "You need to switch the algorithm at runtime from the outside",
       ],
     },
     whenNotToUse: {
@@ -103,7 +103,7 @@ export const patterns: Concept[] = [
         "Вариант поведения всегда один и не меняется",
       ],
       en: [
-        "Вариант поведения всегда один и не меняется",
+        "There is always a single behavior variant that never changes",
       ],
     },
     related: [
@@ -125,19 +125,19 @@ export const patterns: Concept[] = [
     grade: "middle",
     tagline: {
       ru: "Один-ко-многим: подписчики узнают об изменениях автоматически",
-      en: "Один-ко-многим: подписчики узнают об изменениях автоматически",
+      en: "One-to-many: subscribers are notified of changes automatically",
     },
     definition: {
       ru: "Определяет зависимость «один ко многим» между объектами так, что при изменении состояния одного объекта все зависящие от него автоматически уведомляются и обновляются.",
-      en: "Определяет зависимость «один ко многим» между объектами так, что при изменении состояния одного объекта все зависящие от него автоматически уведомляются и обновляются.",
+      en: "Defines a one-to-many dependency between objects so that when one object changes state, all its dependents are notified and updated automatically.",
     },
     problem: {
       ru: "Несколько объектов должны реагировать на изменение состояния источника, но жёсткая привязка источника к каждому получателю делает систему негибкой: добавление нового получателя требует правки источника.",
-      en: "Несколько объектов должны реагировать на изменение состояния источника, но жёсткая привязка источника к каждому получателю делает систему негибкой: добавление нового получателя требует правки источника.",
+      en: "Several objects need to react when a source's state changes, but hard-wiring the source to each recipient makes the system inflexible: adding a new recipient forces you to modify the source.",
     },
     solution: {
       ru: "Источник (subject) хранит список подписчиков (observers) и при изменении состояния вызывает у каждого метод обновления. Подписчики добавляются и удаляются динамически, источник о них ничего конкретного не знает.",
-      en: "Источник (subject) хранит список подписчиков (observers) и при изменении состояния вызывает у каждого метод обновления. Подписчики добавляются и удаляются динамически, источник о них ничего конкретного не знает.",
+      en: "The subject keeps a list of observers and, whenever its state changes, calls an update method on each of them. Observers are added and removed dynamically, and the subject knows nothing concrete about them.",
     },
     codeExample: {
       lang: "typescript",
@@ -171,7 +171,7 @@ export const patterns: Concept[] = [
           "}",
           "",
           "class PhoneDisplay implements Observer {",
-          "  update(t: number) { console.log(`Телефон: ${t}°`); }",
+          "  update(t: number) { console.log(`Phone: ${t}°`); }",
           "}",
         ].join('\n'),
       },
@@ -183,9 +183,9 @@ export const patterns: Concept[] = [
         "Поддержка вещания «один ко многим»",
       ],
       en: [
-        "Слабая связанность источника и подписчиков",
-        "Подписчиков можно добавлять и убирать в рантайме",
-        "Поддержка вещания «один ко многим»",
+        "Loose coupling between the subject and its observers",
+        "Observers can be added and removed at runtime",
+        "Supports one-to-many broadcast communication",
       ],
     },
     cons: {
@@ -195,9 +195,9 @@ export const patterns: Concept[] = [
         "Риск утечек памяти при забытой отписке",
       ],
       en: [
-        "Порядок уведомления не гарантирован",
-        "Каскадные обновления трудно отлаживать",
-        "Риск утечек памяти при забытой отписке",
+        "The order in which observers are notified is not guaranteed",
+        "Cascading updates are hard to debug",
+        "Risk of memory leaks when observers forget to unsubscribe",
       ],
     },
     tradeoffs: {
@@ -205,7 +205,7 @@ export const patterns: Concept[] = [
         "Развязка компонентов против предсказуемости потока уведомлений",
       ],
       en: [
-        "Развязка компонентов против предсказуемости потока уведомлений",
+        "Decoupling components versus predictability of the notification flow",
       ],
     },
     whenToUse: {
@@ -214,8 +214,8 @@ export const patterns: Concept[] = [
         "Число и состав получателей заранее неизвестны",
       ],
       en: [
-        "Изменение одного объекта должно отражаться на других без жёсткой привязки",
-        "Число и состав получателей заранее неизвестны",
+        "A change in one object must be reflected in others without tight coupling",
+        "The number and identity of the recipients are not known in advance",
       ],
     },
     whenNotToUse: {
@@ -223,7 +223,7 @@ export const patterns: Concept[] = [
         "Получатель ровно один и связь простая — достаточно прямого вызова",
       ],
       en: [
-        "Получатель ровно один и связь простая — достаточно прямого вызова",
+        "There is exactly one recipient and the relationship is simple — a direct call is enough",
       ],
     },
     related: [
@@ -244,19 +244,19 @@ export const patterns: Concept[] = [
     grade: "middle",
     tagline: {
       ru: "Подкласс решает, какой объект создать",
-      en: "Подкласс решает, какой объект создать",
+      en: "The subclass decides which object to create",
     },
     definition: {
       ru: "Определяет интерфейс для создания объекта, но позволяет подклассам решать, какой класс инстанцировать. Factory Method делегирует создание объекта подклассам.",
-      en: "Определяет интерфейс для создания объекта, но позволяет подклассам решать, какой класс инстанцировать. Factory Method делегирует создание объекта подклассам.",
+      en: "Defines an interface for creating an object, but lets subclasses decide which class to instantiate. Factory Method lets a class defer instantiation to subclasses.",
     },
     problem: {
       ru: "Базовый класс должен работать с продуктом, но не знает заранее его конкретный тип. Прямое создание через new в базовом классе привязало бы его к конкретной реализации.",
-      en: "Базовый класс должен работать с продуктом, но не знает заранее его конкретный тип. Прямое создание через new в базовом классе привязало бы его к конкретной реализации.",
+      en: "The base class needs to work with a product but doesn't know its concrete type ahead of time. Creating it directly with new inside the base class would couple that class to a specific implementation.",
     },
     solution: {
       ru: "Объявляем в базовом классе фабричный метод, возвращающий продукт по интерфейсу. Каждый подкласс переопределяет этот единственный метод и создаёт свою конкретную реализацию, а общий алгоритм остаётся в базовом классе.",
-      en: "Объявляем в базовом классе фабричный метод, возвращающий продукт по интерфейсу. Каждый подкласс переопределяет этот единственный метод и создаёт свою конкретную реализацию, а общий алгоритм остаётся в базовом классе.",
+      en: "Declare a factory method in the base class that returns the product through its interface. Each subclass overrides this single method to create its own concrete implementation, while the shared algorithm stays in the base class.",
     },
     codeExample: {
       lang: "typescript",
@@ -284,10 +284,10 @@ export const patterns: Concept[] = [
           "class WindowsButton implements Button { render() { return '[ Button ]'; } }",
           "",
           "abstract class Dialog {",
-          "  // фабричный метод: конкретный продукт выбирает подкласс",
+          "  // factory method: the subclass chooses the concrete product",
           "  protected abstract createButton(): Button;",
           "  render(): string {",
-          "    const button = this.createButton(); // общий алгоритм в базовом классе",
+          "    const button = this.createButton(); // shared algorithm in the base class",
           "    return button.render();",
           "  }",
           "}",
@@ -304,9 +304,9 @@ export const patterns: Concept[] = [
         "Расширяется новым подклассом (соответствует OCP)",
       ],
       en: [
-        "Убирает привязку базового класса к конкретным продуктам",
-        "Создание сосредоточено в одном методе",
-        "Расширяется новым подклассом (соответствует OCP)",
+        "Decouples the base class from concrete products",
+        "Object creation is concentrated in a single method",
+        "Extend it by adding a new subclass (follows the Open/Closed Principle)",
       ],
     },
     cons: {
@@ -315,8 +315,8 @@ export const patterns: Concept[] = [
         "Растёт иерархия классов",
       ],
       en: [
-        "Ради одного продукта нужен подкласс",
-        "Растёт иерархия классов",
+        "A whole subclass is needed just to create one product",
+        "The class hierarchy grows",
       ],
     },
     tradeoffs: {
@@ -324,7 +324,7 @@ export const patterns: Concept[] = [
         "Гибкость создания через наследование против роста иерархии",
       ],
       en: [
-        "Гибкость создания через наследование против роста иерархии",
+        "Creation flexibility through inheritance versus a growing class hierarchy",
       ],
     },
     whenToUse: {
@@ -333,8 +333,8 @@ export const patterns: Concept[] = [
         "Создание одного продукта нужно отдать подклассам",
       ],
       en: [
-        "Класс не знает заранее, объекты какого типа создавать",
-        "Создание одного продукта нужно отдать подклассам",
+        "A class can't anticipate the type of objects it must create",
+        "You want to hand off the creation of a single product to subclasses",
       ],
     },
     whenNotToUse: {
@@ -342,7 +342,7 @@ export const patterns: Concept[] = [
         "Тип продукта известен и стабилен — достаточно прямого создания",
       ],
       en: [
-        "Тип продукта известен и стабилен — достаточно прямого создания",
+        "The product type is known and stable — direct instantiation is enough",
       ],
     },
     related: [
@@ -360,19 +360,19 @@ export const patterns: Concept[] = [
     grade: "senior",
     tagline: {
       ru: "Объект меняет поведение при смене внутреннего состояния",
-      en: "Объект меняет поведение при смене внутреннего состояния",
+      en: "An object alters its behavior when its internal state changes",
     },
     definition: {
       ru: "Позволяет объекту менять поведение при изменении его внутреннего состояния. Со стороны кажется, будто объект сменил класс.",
-      en: "Позволяет объекту менять поведение при изменении его внутреннего состояния. Со стороны кажется, будто объект сменил класс.",
+      en: "Lets an object alter its behavior when its internal state changes; it appears as though the object has changed its class.",
     },
     problem: {
       ru: "Поведение объекта зависит от его состояния и должно меняться в рантайме, а логика переходов расползается по громоздким условным операторам, завязанным на текущее состояние.",
-      en: "Поведение объекта зависит от его состояния и должно меняться в рантайме, а логика переходов расползается по громоздким условным операторам, завязанным на текущее состояние.",
+      en: "An object's behavior depends on its state and has to change at runtime, but the transition logic sprawls across bulky conditionals that are all keyed off the current state.",
     },
     solution: {
       ru: "Выделяем каждое состояние в отдельный класс с общим интерфейсом. Контекст делегирует запрос текущему объекту-состоянию, а сами состояния инициируют переход, назначая контексту следующее состояние.",
-      en: "Выделяем каждое состояние в отдельный класс с общим интерфейсом. Контекст делегирует запрос текущему объекту-состоянию, а сами состояния инициируют переход, назначая контексту следующее состояние.",
+      en: "Extract each state into its own class behind a common interface. The context delegates the request to the current state object, and the states themselves drive transitions by assigning the next state to the context.",
     },
     codeExample: {
       lang: "typescript",
@@ -404,7 +404,7 @@ export const patterns: Concept[] = [
           "interface TrafficState { next(light: TrafficLight): void; label(): string; }",
           "",
           "class Red implements TrafficState {",
-          "  next(light: TrafficLight) { light.setState(new Green()); } // переход задаёт само состояние",
+          "  next(light: TrafficLight) { light.setState(new Green()); } // the state itself defines the transition",
           "  label() { return 'RED'; }",
           "}",
           "class Green implements TrafficState {",
@@ -419,7 +419,7 @@ export const patterns: Concept[] = [
           "class TrafficLight {",
           "  private state: TrafficState = new Red();",
           "  setState(s: TrafficState) { this.state = s; }",
-          "  change() { this.state.next(this); } // поведение определяется внутренним состоянием",
+          "  change() { this.state.next(this); } // behavior is determined by the internal state",
           "  get current() { return this.state.label(); }",
           "}",
         ].join('\n'),
@@ -432,9 +432,9 @@ export const patterns: Concept[] = [
         "Новое состояние добавляется отдельным классом",
       ],
       en: [
-        "Убирает громоздкие условные операторы",
-        "Переходы и поведение состояний локализованы",
-        "Новое состояние добавляется отдельным классом",
+        "Eliminates bulky conditional statements",
+        "Transitions and per-state behavior are localized",
+        "A new state is added as a separate class",
       ],
     },
     cons: {
@@ -443,8 +443,8 @@ export const patterns: Concept[] = [
         "Оправдан лишь при действительно сложной машине состояний",
       ],
       en: [
-        "Много мелких классов состояний",
-        "Оправдан лишь при действительно сложной машине состояний",
+        "Many small state classes",
+        "Warranted only for a genuinely complex state machine",
       ],
     },
     tradeoffs: {
@@ -452,7 +452,7 @@ export const patterns: Concept[] = [
         "Явная машина состояний против избыточных классов для простых случаев",
       ],
       en: [
-        "Явная машина состояний против избыточных классов для простых случаев",
+        "An explicit state machine versus excess classes for simple cases",
       ],
     },
     whenToUse: {
@@ -461,8 +461,8 @@ export const patterns: Concept[] = [
         "Есть сложная логика переходов между состояниями",
       ],
       en: [
-        "Поведение объекта существенно зависит от его состояния",
-        "Есть сложная логика переходов между состояниями",
+        "An object's behavior depends heavily on its state",
+        "There is complex transition logic between states",
       ],
     },
     whenNotToUse: {
@@ -470,7 +470,7 @@ export const patterns: Concept[] = [
         "Состояний мало и переходы тривиальны",
       ],
       en: [
-        "Состояний мало и переходы тривиальны",
+        "There are few states and the transitions are trivial",
       ],
     },
     related: [
@@ -491,19 +491,19 @@ export const patterns: Concept[] = [
     grade: "senior",
     tagline: {
       ru: "Создание семейств связанных объектов без привязки к конкретным классам",
-      en: "Создание семейств связанных объектов без привязки к конкретным классам",
+      en: "Create families of related objects without coupling to concrete classes",
     },
     definition: {
       ru: "Предоставляет интерфейс для создания семейств связанных или зависимых объектов, не указывая их конкретных классов.",
-      en: "Предоставляет интерфейс для создания семейств связанных или зависимых объектов, не указывая их конкретных классов.",
+      en: "Provides an interface for creating families of related or dependent objects without specifying their concrete classes.",
     },
     problem: {
       ru: "Приложение должно работать с несколькими семействами связанных продуктов (например, элементы интерфейса под разные ОС) и гарантировать, что продукты из одного семейства используются вместе, а не смешиваются.",
-      en: "Приложение должно работать с несколькими семействами связанных продуктов (например, элементы интерфейса под разные ОС) и гарантировать, что продукты из одного семейства используются вместе, а не смешиваются.",
+      en: "An application must work with several families of related products (for example, UI elements for different operating systems) and guarantee that products from the same family are used together and not mixed.",
     },
     solution: {
       ru: "Объявляем интерфейс фабрики с методами создания каждого продукта семейства. Каждая конкретная фабрика создаёт согласованный набор продуктов одного семейства; клиент работает только с абстрактной фабрикой и интерфейсами продуктов.",
-      en: "Объявляем интерфейс фабрики с методами создания каждого продукта семейства. Каждая конкретная фабрика создаёт согласованный набор продуктов одного семейства; клиент работает только с абстрактной фабрикой и интерфейсами продуктов.",
+      en: "Declare a factory interface with a method for creating each product in the family. Each concrete factory produces a consistent set of products from a single family; the client works only with the abstract factory and the product interfaces.",
     },
     codeExample: {
       lang: "typescript",
@@ -536,7 +536,7 @@ export const patterns: Concept[] = [
           "interface Button { paint(): string; }",
           "interface Checkbox { paint(): string; }",
           "",
-          "// фабрика создаёт целое семейство связанных продуктов",
+          "// a factory creates a whole family of related products",
           "interface GUIFactory {",
           "  createButton(): Button;",
           "  createCheckbox(): Checkbox;",
@@ -565,9 +565,9 @@ export const patterns: Concept[] = [
         "Семейство меняется заменой одной фабрики",
       ],
       en: [
-        "Гарантирует совместимость продуктов одного семейства",
-        "Изолирует клиент от конкретных классов",
-        "Семейство меняется заменой одной фабрики",
+        "Guarantees that products from the same family are compatible",
+        "Isolates the client from concrete classes",
+        "Swapping a single factory changes the entire family",
       ],
     },
     cons: {
@@ -576,8 +576,8 @@ export const patterns: Concept[] = [
         "Много классов и высокая начальная сложность",
       ],
       en: [
-        "Добавление нового вида продукта меняет интерфейс всех фабрик",
-        "Много классов и высокая начальная сложность",
+        "Adding a new kind of product changes the interface of every factory",
+        "Many classes and high upfront complexity",
       ],
     },
     tradeoffs: {
@@ -585,7 +585,7 @@ export const patterns: Concept[] = [
         "Согласованность семейств против жёсткости интерфейса фабрики",
       ],
       en: [
-        "Согласованность семейств против жёсткости интерфейса фабрики",
+        "Family consistency versus the rigidity of the factory interface",
       ],
     },
     whenToUse: {
@@ -594,8 +594,8 @@ export const patterns: Concept[] = [
         "Важно не смешивать продукты из разных семейств",
       ],
       en: [
-        "Система должна работать с несколькими семействами связанных продуктов",
-        "Важно не смешивать продукты из разных семейств",
+        "The system must work with several families of related products",
+        "It is important not to mix products from different families",
       ],
     },
     whenNotToUse: {
@@ -603,7 +603,7 @@ export const patterns: Concept[] = [
         "Есть лишь один вид продукта — хватит Factory Method",
       ],
       en: [
-        "Есть лишь один вид продукта — хватит Factory Method",
+        "There is only a single kind of product — Factory Method is enough",
       ],
     },
     related: [

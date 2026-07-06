@@ -12,19 +12,19 @@ export const architecture: Concept[] = [
     grade: "junior",
     tagline: {
       ru: "Система разбита на горизонтальные слои; зависимости направлены только вниз",
-      en: "Система разбита на горизонтальные слои; зависимости направлены только вниз",
+      en: "The system is split into horizontal layers; dependencies point only downward",
     },
     definition: {
       ru: "Архитектурный стиль, при котором система разделена на горизонтальные слои с чёткими ролями (классически по Fowler: presentation, domain, data source), где каждый слой предоставляет сервисы слою выше и пользуется сервисами слоя ниже. Зависимости направлены строго вниз: слой знает о нижележащем, но ничего не знает о вышележащем.",
-      en: "Архитектурный стиль, при котором система разделена на горизонтальные слои с чёткими ролями (классически по Fowler: presentation, domain, data source), где каждый слой предоставляет сервисы слою выше и пользуется сервисами слоя ниже. Зависимости направлены строго вниз: слой знает о нижележащем, но ничего не знает о вышележащем.",
+      en: "An architectural style in which the system is divided into horizontal layers with well-defined roles (classically, per Fowler: presentation, domain, data source), where each layer provides services to the layer above it and consumes services from the layer below it. Dependencies point strictly downward: a layer knows about the one beneath it but knows nothing about the one above it.",
     },
     problem: {
       ru: "Без разделения на слои код UI, бизнес-правила и доступ к данным перемешиваются: SQL-запросы оказываются в обработчиках кнопок, бизнес-логика — в шаблонах. Такой код невозможно тестировать изолированно, менять хранилище или интерфейс без переписывания всего, а новому разработчику трудно понять, где что находится.",
-      en: "Без разделения на слои код UI, бизнес-правила и доступ к данным перемешиваются: SQL-запросы оказываются в обработчиках кнопок, бизнес-логика — в шаблонах. Такой код невозможно тестировать изолированно, менять хранилище или интерфейс без переписывания всего, а новому разработчику трудно понять, где что находится.",
+      en: "Without a separation into layers, UI code, business rules, and data access get tangled together: SQL queries end up in button handlers, and business logic ends up in templates. Such code can't be tested in isolation, you can't swap the storage or the UI without rewriting everything, and a new developer struggles to figure out where anything lives.",
     },
     solution: {
       ru: "Разделяем систему на слои по техническим обязанностям: presentation принимает запросы и отвечает за представление, domain (service) содержит бизнес-логику, data source инкапсулирует работу с хранилищем. Каждый слой обращается только к соседнему нижнему через его публичный интерфейс, поэтому слой можно понять, протестировать или заменить, зная лишь контракт слоя под ним.",
-      en: "Разделяем систему на слои по техническим обязанностям: presentation принимает запросы и отвечает за представление, domain (service) содержит бизнес-логику, data source инкапсулирует работу с хранилищем. Каждый слой обращается только к соседнему нижнему через его публичный интерфейс, поэтому слой можно понять, протестировать или заменить, зная лишь контракт слоя под ним.",
+      en: "Split the system into layers by technical responsibility: presentation accepts requests and handles the view, domain (service) holds the business logic, and data source encapsulates working with storage. Each layer talks only to the layer directly below it through that layer's public interface, so you can understand, test, or replace a layer knowing nothing more than the contract of the layer beneath it.",
     },
     codeExample: {
       lang: "typescript",
@@ -58,23 +58,23 @@ export const architecture: Concept[] = [
           "const controller = new UserController(new UserService(new UserRepository()));",
         ].join('\n'),
         en: [
-          "// Data source layer: только доступ к данным, о верхних слоях не знает",
+          "// Data source layer: data access only; knows nothing about the layers above",
           "class UserRepository {",
           "  private rows = new Map<string, { id: string; email: string }>();",
           "  findById(id: string) { return this.rows.get(id) ?? null; }",
           "}",
           "",
-          "// Domain layer: бизнес-правила; зависит только от слоя ниже",
+          "// Domain layer: business rules; depends only on the layer below",
           "class UserService {",
           "  constructor(private repo: UserRepository) {}",
           "  getEmail(id: string): string {",
           "    const user = this.repo.findById(id);",
-          "    if (!user) throw new Error('User not found'); // бизнес-правило",
+          "    if (!user) throw new Error('User not found'); // business rule",
           "    return user.email;",
           "  }",
           "}",
           "",
-          "// Presentation layer: принимает запрос, делегирует вниз",
+          "// Presentation layer: receives the request, delegates downward",
           "class UserController {",
           "  constructor(private service: UserService) {}",
           "  handleGet(id: string): { status: number; body: string } {",
@@ -82,7 +82,7 @@ export const architecture: Concept[] = [
           "  }",
           "}",
           "",
-          "// зависимости направлены строго вниз: Controller -> Service -> Repository",
+          "// dependencies point strictly downward: Controller -> Service -> Repository",
           "const controller = new UserController(new UserService(new UserRepository()));",
         ].join('\n'),
       },
@@ -95,10 +95,10 @@ export const architecture: Concept[] = [
         "Замена реализации слоя (например, СУБД) не затрагивает слои выше при стабильном контракте",
       ],
       en: [
-        "Простая и всем знакомая структура — низкий порог входа для команды",
-        "Разделение обязанностей: UI, бизнес-логика и доступ к данным меняются независимо",
-        "Слой можно тестировать изолированно, подменяя нижний слой заглушкой",
-        "Замена реализации слоя (например, СУБД) не затрагивает слои выше при стабильном контракте",
+        "A simple, familiar structure — a low barrier to entry for the team",
+        "Separation of concerns: UI, business logic, and data access change independently",
+        "A layer can be tested in isolation by replacing the layer below it with a stub",
+        "Swapping a layer's implementation (e.g., the database) leaves the layers above untouched as long as the contract stays stable",
       ],
     },
     cons: {
@@ -109,10 +109,10 @@ export const architecture: Concept[] = [
         "Слои сами по себе — логическое разделение, а не граница деплоя: независимое масштабирование даёт лишь физическое разнесение по tiers, и то грубое — по техническим слоям, а не по фичам",
       ],
       en: [
-        "Домен зависит от слоя данных: бизнес-логика привязана к деталям хранения (в отличие от Hexagonal/Clean, где зависимость инвертирована)",
-        "Простые операции проходят сквозь все слои транзитом без какой-либо логики — появляются пустые методы-посредники (architecture sinkhole anti-pattern по Richards)",
-        "Слои со временем «протекают»: верхний начинает обращаться через голову соседа или узнавать детали нижних (layer bridging / leaky layers)",
-        "Слои сами по себе — логическое разделение, а не граница деплоя: независимое масштабирование даёт лишь физическое разнесение по tiers, и то грубое — по техническим слоям, а не по фичам",
+        "The domain depends on the data layer: business logic is coupled to storage details (unlike Hexagonal/Clean, where that dependency is inverted)",
+        "Simple operations pass straight through every layer with no logic of their own — you end up with empty pass-through methods (the architecture sinkhole anti-pattern, per Richards)",
+        "Layers tend to \"leak\" over time: an upper layer starts reaching past its neighbor or learning the details of lower layers (layer bridging / leaky layers)",
+        "Layers on their own are a logical separation, not a deployment boundary: independent scaling comes only from physically splitting into tiers, and even that is coarse — along technical layers rather than features",
       ],
     },
     tradeoffs: {
@@ -122,9 +122,9 @@ export const architecture: Concept[] = [
         "Лёгкий старт для небольшой системы против затруднённого выделения модулей позже: слои режут систему технически, а не по бизнес-возможностям",
       ],
       en: [
-        "Понятность и дисциплина зависимостей против лишней косвенности и транзитных вызовов на каждый запрос",
-        "Изоляция изменений внутри слоя против расползания сквозной фичи по всем слоям сразу (изменение фичи трогает каждый слой)",
-        "Лёгкий старт для небольшой системы против затруднённого выделения модулей позже: слои режут систему технически, а не по бизнес-возможностям",
+        "Clarity and dependency discipline versus extra indirection and pass-through calls on every request",
+        "Isolating changes within a layer versus a cross-cutting feature spreading across every layer at once (changing a feature touches every layer)",
+        "An easy start for a small system versus harder module extraction later: layers slice the system technically rather than by business capability",
       ],
     },
     whenToUse: {
@@ -134,9 +134,9 @@ export const architecture: Concept[] = [
         "Ранняя стадия продукта, когда границы домена ещё не ясны и тяжёлые архитектуры не окупаются",
       ],
       en: [
-        "CRUD-приложения и типовые бизнес-системы, где важна предсказуемая, знакомая всем структура",
-        "Команда с разнородным опытом: стиль прост и хорошо документирован",
-        "Ранняя стадия продукта, когда границы домена ещё не ясны и тяжёлые архитектуры не окупаются",
+        "CRUD applications and typical business systems where a predictable, universally familiar structure matters",
+        "A team with mixed experience levels: the style is simple and well documented",
+        "The early stage of a product, when the domain's boundaries aren't clear yet and heavier architectures don't pay off",
       ],
     },
     whenNotToUse: {
@@ -146,9 +146,9 @@ export const architecture: Concept[] = [
         "Большинство операций — простой транзит данных без логики: слои превращаются в пустой boilerplate",
       ],
       en: [
-        "Ядро домена сложное и должно быть полностью изолировано от инфраструктуры — лучше Hexagonal или Clean Architecture",
-        "Нужно независимое масштабирование и деплой частей системы — слои этого не дают, смотрите в сторону microservices",
-        "Большинство операций — простой транзит данных без логики: слои превращаются в пустой boilerplate",
+        "The domain core is complex and must be fully isolated from infrastructure — Hexagonal or Clean Architecture is a better fit",
+        "You need to scale and deploy parts of the system independently — layers don't provide that; look toward microservices",
+        "Most operations are simple data pass-through with no logic: the layers turn into empty boilerplate",
       ],
     },
     related: [
@@ -173,19 +173,19 @@ export const architecture: Concept[] = [
     grade: "junior",
     tagline: {
       ru: "Разделение данных, отображения и обработки ввода в пользовательском интерфейсе",
-      en: "Разделение данных, отображения и обработки ввода в пользовательском интерфейсе",
+      en: "Separating data, presentation, and input handling in the user interface",
     },
     definition: {
       ru: "Архитектурный стиль пользовательского интерфейса, разделяющий приложение на три роли: Model хранит данные и бизнес-логику, View отображает состояние Model, а Controller интерпретирует ввод пользователя и преобразует его в операции над Model. Model ничего не знает о View и Controller.",
-      en: "Архитектурный стиль пользовательского интерфейса, разделяющий приложение на три роли: Model хранит данные и бизнес-логику, View отображает состояние Model, а Controller интерпретирует ввод пользователя и преобразует его в операции над Model. Model ничего не знает о View и Controller.",
+      en: "A user-interface architectural style that splits an application into three roles: the Model holds data and business logic, the View renders the Model's state, and the Controller interprets user input and turns it into operations on the Model. The Model knows nothing about the View or the Controller.",
     },
     problem: {
       ru: "В UI-коде данные, их отрисовка и реакция на действия пользователя сплетаются в одном месте: нельзя изменить внешний вид без риска сломать логику, нельзя протестировать логику без запуска интерфейса, нельзя показать одни и те же данные в нескольких представлениях без дублирования.",
-      en: "В UI-коде данные, их отрисовка и реакция на действия пользователя сплетаются в одном месте: нельзя изменить внешний вид без риска сломать логику, нельзя протестировать логику без запуска интерфейса, нельзя показать одни и те же данные в нескольких представлениях без дублирования.",
+      en: "In UI code, the data, its rendering, and the response to user actions get tangled together in one place: you can't change the look without risking breaking the logic, you can't test the logic without launching the interface, and you can't show the same data in several views without duplication.",
     },
     solution: {
       ru: "Обязанности разводятся по трём ролям. Controller принимает ввод пользователя и вызывает операции Model; Model изменяет состояние и оповещает об этом (классически — через Observer); View читает состояние Model и перерисовывается. Логика оказывается изолирована в Model, а отображение и ввод можно менять независимо.",
-      en: "Обязанности разводятся по трём ролям. Controller принимает ввод пользователя и вызывает операции Model; Model изменяет состояние и оповещает об этом (классически — через Observer); View читает состояние Model и перерисовывается. Логика оказывается изолирована в Model, а отображение и ввод можно менять независимо.",
+      en: "The responsibilities are split across three roles. The Controller takes user input and invokes operations on the Model; the Model changes its state and announces the change (classically, via the Observer pattern); the View reads the Model's state and re-renders. The logic ends up isolated in the Model, while presentation and input can be changed independently.",
     },
     codeExample: {
       lang: "typescript",
@@ -222,7 +222,7 @@ export const architecture: Concept[] = [
           "controller.handleAddInput('Изучить MVC');",
         ].join('\n'),
         en: [
-          "// Model: данные и логика, о View и Controller не знает",
+          "// Model: data and logic; knows nothing about View or Controller",
           "class TaskModel {",
           "  private tasks: string[] = [];",
           "  private listeners: Array<() => void> = [];",
@@ -231,26 +231,26 @@ export const architecture: Concept[] = [
           "  all(): readonly string[] { return this.tasks; }",
           "}",
           "",
-          "// View: сама подписывается на Model и читает её состояние при отрисовке",
+          "// View: subscribes to the Model itself and reads its state when rendering",
           "class TaskView {",
           "  constructor(private model: TaskModel) {",
-          "    model.onChange(() => this.render()); // Observer: View следует за Model",
+          "    model.onChange(() => this.render()); // Observer: the View follows the Model",
           "  }",
           "  render() {",
           "    console.log(this.model.all().map((t, i) => `${i + 1}. ${t}`).join('\\n'));",
           "  }",
           "}",
           "",
-          "// Controller: только переводит ввод пользователя в операции над Model",
+          "// Controller: only translates user input into operations on the Model",
           "class TaskController {",
           "  constructor(private model: TaskModel) {}",
-          "  handleAddInput(title: string) { this.model.add(title); } // ввод -> операция над Model",
+          "  handleAddInput(title: string) { this.model.add(title); } // input -> operation on the Model",
           "}",
           "",
           "const model = new TaskModel();",
           "const view = new TaskView(model);",
           "const controller = new TaskController(model);",
-          "controller.handleAddInput('Изучить MVC');",
+          "controller.handleAddInput('Learn MVC');",
         ].join('\n'),
       },
     },
@@ -261,9 +261,9 @@ export const architecture: Concept[] = [
         "Отображение можно переделывать, не трогая бизнес-логику, и наоборот",
       ],
       en: [
-        "Model тестируется без интерфейса — логика изолирована от отрисовки и ввода",
-        "Одну Model могут показывать несколько View без дублирования логики",
-        "Отображение можно переделывать, не трогая бизнес-логику, и наоборот",
+        "The Model can be tested without a UI — the logic is isolated from rendering and input",
+        "A single Model can be presented by several Views without duplicating logic",
+        "Presentation can be reworked without touching the business logic, and vice versa",
       ],
     },
     cons: {
@@ -273,9 +273,9 @@ export const architecture: Concept[] = [
         "Нужен механизм синхронизации View с Model (подписка, ручное обновление)",
       ],
       en: [
-        "Для простых экранов три компонента и связи между ними — избыточная структура",
-        "Граница между Controller и View на практике размыта — легко получить «толстый контроллер»",
-        "Нужен механизм синхронизации View с Model (подписка, ручное обновление)",
+        "For simple screens, three components and the wiring between them are excessive structure",
+        "The boundary between Controller and View is blurry in practice — it's easy to end up with a \"fat controller\"",
+        "You need a mechanism to keep the View in sync with the Model (subscription, manual refresh)",
       ],
     },
     tradeoffs: {
@@ -284,8 +284,8 @@ export const architecture: Concept[] = [
         "Независимость Model от UI против необходимости отдельного механизма оповещения View об изменениях",
       ],
       en: [
-        "Чистое разделение обязанностей против дополнительной структуры и церемоний на каждый экран",
-        "Независимость Model от UI против необходимости отдельного механизма оповещения View об изменениях",
+        "Clean separation of responsibilities versus the extra structure and ceremony on every screen",
+        "The Model's independence from the UI versus the need for a separate mechanism to notify the View of changes",
       ],
     },
     whenToUse: {
@@ -295,9 +295,9 @@ export const architecture: Concept[] = [
         "Отображение и логика меняются с разной скоростью или разными людьми",
       ],
       en: [
-        "UI с нетривиальной логикой поверх данных, которую нужно тестировать без интерфейса",
-        "Одни и те же данные должны отображаться в нескольких представлениях",
-        "Отображение и логика меняются с разной скоростью или разными людьми",
+        "A UI with nontrivial logic over the data that has to be tested without the interface",
+        "The same data has to be displayed in several views",
+        "Presentation and logic change at different rates or are worked on by different people",
       ],
     },
     whenNotToUse: {
@@ -306,8 +306,8 @@ export const architecture: Concept[] = [
         "Фреймворк уже навязывает другую организацию UI (например, однонаправленный поток данных) — не стоит натягивать MVC поверх",
       ],
       en: [
-        "Простой статичный экран без логики — разделение не окупится",
-        "Фреймворк уже навязывает другую организацию UI (например, однонаправленный поток данных) — не стоит натягивать MVC поверх",
+        "A simple, static screen with no logic — the separation won't pay for itself",
+        "The framework already imposes a different UI organization (for example, a unidirectional data flow) — don't force MVC on top of it",
       ],
     },
     related: [
@@ -331,19 +331,19 @@ export const architecture: Concept[] = [
     grade: "middle",
     tagline: {
       ru: "View декларативно привязывается к ViewModel через data binding",
-      en: "View декларативно привязывается к ViewModel через data binding",
+      en: "The View binds declaratively to the ViewModel through data binding",
     },
     definition: {
       ru: "Архитектурный стиль UI-слоя, разделяющий интерфейс на Model (доменные данные и логика), View (декларативное отображение) и ViewModel (состояние и логика представления). View связывается с ViewModel механизмом data binding и обновляется автоматически; сам ViewModel не имеет ссылки на View. Развитие Presentation Model Мартина Фаулера, оформленное Джоном Госсманом для WPF.",
-      en: "Архитектурный стиль UI-слоя, разделяющий интерфейс на Model (доменные данные и логика), View (декларативное отображение) и ViewModel (состояние и логика представления). View связывается с ViewModel механизмом data binding и обновляется автоматически; сам ViewModel не имеет ссылки на View. Развитие Presentation Model Мартина Фаулера, оформленное Джоном Госсманом для WPF.",
+      en: "A UI-layer architectural style that splits the interface into Model (domain data and logic), View (declarative rendering), and ViewModel (presentation state and logic). The View binds to the ViewModel via data binding and updates automatically; the ViewModel itself holds no reference to the View. It is an evolution of Martin Fowler's Presentation Model, formalized by John Gossman for WPF.",
     },
     problem: {
       ru: "Логика представления — форматирование, валидация, видимость и доступность элементов — смешивается с кодом View. Её невозможно покрыть unit-тестами без запуска UI-фреймворка, View разрастается, а состояние экрана дублируется между виджетами и приходится вручную синхронизировать.",
-      en: "Логика представления — форматирование, валидация, видимость и доступность элементов — смешивается с кодом View. Её невозможно покрыть unit-тестами без запуска UI-фреймворка, View разрастается, а состояние экрана дублируется между виджетами и приходится вручную синхронизировать.",
+      en: "Presentation logic — formatting, validation, element visibility and enablement — gets tangled up with View code. You can't cover it with unit tests without spinning up a UI framework, the View bloats, and screen state ends up duplicated across widgets and has to be synchronized by hand.",
     },
     solution: {
       ru: "Выносим состояние и логику представления в ViewModel — «модель экрана» в терминах свойств и команд, без ссылок на конкретные виджеты. View декларативно привязывается к свойствам ViewModel через data binding: изменение ViewModel автоматически отражается во View (а при двустороннем биндинге — и обратно). ViewModel работает с Model и остаётся обычным классом, тестируемым без UI.",
-      en: "Выносим состояние и логику представления в ViewModel — «модель экрана» в терминах свойств и команд, без ссылок на конкретные виджеты. View декларативно привязывается к свойствам ViewModel через data binding: изменение ViewModel автоматически отражается во View (а при двустороннем биндинге — и обратно). ViewModel работает с Model и остаётся обычным классом, тестируемым без UI.",
+      en: "Move presentation state and logic into the ViewModel — a \"model of the screen\" expressed as properties and commands, with no references to concrete widgets. The View binds declaratively to the ViewModel's properties through data binding: a change in the ViewModel is reflected in the View automatically (and, with two-way binding, the other way around too). The ViewModel talks to the Model and stays a plain class that is testable without a UI.",
     },
     codeExample: {
       lang: "typescript",
@@ -374,26 +374,26 @@ export const architecture: Concept[] = [
           "}",
         ].join('\n'),
         en: [
-          "// Model — доменные данные, ничего не знают о UI",
+          "// Model — domain data, knows nothing about the UI",
           "interface User { firstName: string; lastName: string; }",
           "",
-          "// ViewModel — состояние и логика представления; о View не знает",
+          "// ViewModel — presentation state and logic; knows nothing about the View",
           "class UserViewModel {",
           "  private listeners: Array<() => void> = [];",
           "  constructor(private user: User) {}",
           "  get fullName() { return `${this.user.firstName} ${this.user.lastName}`; }",
           "  rename(firstName: string) {",
           "    this.user = { ...this.user, firstName };",
-          "    this.notify(); // биндинг подхватит изменение",
+          "    this.notify(); // the binding will pick up the change",
           "  }",
-          "  onChange(fn: () => void) { this.listeners.push(fn); } // точка привязки",
+          "  onChange(fn: () => void) { this.listeners.push(fn); } // binding point",
           "  private notify() { this.listeners.forEach((fn) => fn()); }",
           "}",
           "",
-          "// View — привязывается к ViewModel и лишь отображает его состояние",
+          "// View — binds to the ViewModel and merely renders its state",
           "class UserView {",
           "  constructor(private vm: UserViewModel) {",
-          "    vm.onChange(() => this.render()); // data binding: View следит за ViewModel",
+          "    vm.onChange(() => this.render()); // data binding: the View observes the ViewModel",
           "  }",
           "  render() { console.log(`<h1>${this.vm.fullName}</h1>`); }",
           "}",
@@ -407,9 +407,9 @@ export const architecture: Concept[] = [
         "Data binding убирает ручной код синхронизации состояния и виджетов",
       ],
       en: [
-        "Логика представления тестируется без UI: ViewModel — обычный класс без ссылок на виджеты",
-        "View и логика развиваются независимо — разметку можно править, не трогая код представления",
-        "Data binding убирает ручной код синхронизации состояния и виджетов",
+        "Presentation logic is testable without a UI: the ViewModel is a plain class with no references to widgets",
+        "The View and the logic evolve independently — you can edit the markup without touching the presentation code",
+        "Data binding eliminates the manual code that keeps state and widgets in sync",
       ],
     },
     cons: {
@@ -419,9 +419,9 @@ export const architecture: Concept[] = [
         "Для простых экранов ViewModel — лишний слой-посредник",
       ],
       en: [
-        "Требует инфраструктуры data binding — фреймворка или самописного механизма",
-        "Декларативные привязки труднее отлаживать, чем явные вызовы: ошибка биндинга часто «молчит»",
-        "Для простых экранов ViewModel — лишний слой-посредник",
+        "Requires data-binding infrastructure — a framework or a hand-rolled mechanism",
+        "Declarative bindings are harder to debug than explicit calls: a binding error often fails silently",
+        "For simple screens the ViewModel is a superfluous middleman layer",
       ],
     },
     tradeoffs: {
@@ -430,8 +430,8 @@ export const architecture: Concept[] = [
         "Автоматическая синхронизация против прозрачности потока данных: труднее проследить, кто и почему обновил экран",
       ],
       en: [
-        "Тестируемость и развязка View от логики против дополнительного слоя и «магии» биндинга",
-        "Автоматическая синхронизация против прозрачности потока данных: труднее проследить, кто и почему обновил экран",
+        "Testability and decoupling the View from the logic versus an extra layer and the \"magic\" of binding",
+        "Automatic synchronization versus transparency of the data flow: it is harder to trace who updated the screen and why",
       ],
     },
     whenToUse: {
@@ -441,9 +441,9 @@ export const architecture: Concept[] = [
         "Логику представления нужно покрыть unit-тестами без запуска UI",
       ],
       en: [
-        "UI с богатым состоянием: формы, валидация, зависимые и вычисляемые поля",
-        "Платформа даёт data binding «из коробки» (WPF, Vue, Knockout, Android Jetpack)",
-        "Логику представления нужно покрыть unit-тестами без запуска UI",
+        "UIs with rich state: forms, validation, dependent and computed fields",
+        "The platform provides data binding out of the box (WPF, Vue, Knockout, Android Jetpack)",
+        "You need to cover the presentation logic with unit tests without launching the UI",
       ],
     },
     whenNotToUse: {
@@ -452,8 +452,8 @@ export const architecture: Concept[] = [
         "Платформа без биндинга — самописный механизм привязки обойдётся дороже выгоды",
       ],
       en: [
-        "Тривиальные статичные экраны почти без состояния",
-        "Платформа без биндинга — самописный механизм привязки обойдётся дороже выгоды",
+        "Trivial static screens with almost no state",
+        "A platform without binding — a hand-rolled binding mechanism costs more than it is worth",
       ],
     },
     related: [
@@ -476,19 +476,19 @@ export const architecture: Concept[] = [
     grade: "middle",
     tagline: {
       ru: "Вся система — одна кодовая база и одна единица развёртывания",
-      en: "Вся система — одна кодовая база и одна единица развёртывания",
+      en: "The whole system is one codebase and one deployable unit",
     },
     definition: {
       ru: "Архитектурный стиль, при котором вся функциональность приложения собирается и разворачивается как единое целое и выполняется в одном процессе. Модули взаимодействуют прямыми вызовами внутри процесса, а не по сети (Fowler: single deployable unit).",
-      en: "Архитектурный стиль, при котором вся функциональность приложения собирается и разворачивается как единое целое и выполняется в одном процессе. Модули взаимодействуют прямыми вызовами внутри процесса, а не по сети (Fowler: single deployable unit).",
+      en: "An architectural style in which all of an application's functionality is built and deployed as a single unit and runs in one process. Modules interact through direct in-process calls rather than over the network (Fowler: single deployable unit).",
     },
     problem: {
       ru: "На старте продукта границы домена ещё не ясны, а распределённая система сразу приносит цену: сетевые вызовы, частичные отказы, распределённые транзакции, оркестрация деплоя множества сервисов. Платить эту цену до того, как она окупается, — преждевременная сложность (Fowler, «MonolithFirst»).",
-      en: "На старте продукта границы домена ещё не ясны, а распределённая система сразу приносит цену: сетевые вызовы, частичные отказы, распределённые транзакции, оркестрация деплоя множества сервисов. Платить эту цену до того, как она окупается, — преждевременная сложность (Fowler, «MonolithFirst»).",
+      en: "Early in a product's life the domain boundaries aren't clear yet, and a distributed system charges its price up front: network calls, partial failures, distributed transactions, and orchestrating the deployment of many services. Paying that price before it pays off is premature complexity (Fowler, 'MonolithFirst').",
     },
     solution: {
       ru: "Держим всю функциональность в одной кодовой базе и одном деплой-юните. Границы проводим внутри — модулями и интерфейсами: вызовы остаются in-process, данные — в одной базе с ACID-транзакциями, а деплой и отладка сводятся к одному приложению. Дисциплина модульных границ сохраняет возможность позже выделить части в сервисы.",
-      en: "Держим всю функциональность в одной кодовой базе и одном деплой-юните. Границы проводим внутри — модулями и интерфейсами: вызовы остаются in-process, данные — в одной базе с ACID-транзакциями, а деплой и отладка сводятся к одному приложению. Дисциплина модульных границ сохраняет возможность позже выделить части в сервисы.",
+      en: "Keep all functionality in one codebase and one deployable unit. Draw the boundaries internally, with modules and interfaces: calls stay in-process, data lives in a single database with ACID transactions, and deployment and debugging come down to a single application. Discipline around module boundaries preserves the option to later extract parts into services.",
     },
     codeExample: {
       lang: "typescript",
@@ -520,7 +520,7 @@ export const architecture: Concept[] = [
           "const orders = new OrderModule(new InventoryModule(), new BillingModule());",
         ].join('\n'),
         en: [
-          "// Один деплой-юнит: все модули живут в одном процессе и одной кодовой базе",
+          "// Single deployable unit: all modules live in one process and one codebase",
           "interface OrderInput { productId: string; quantity: number; }",
           "",
           "class InventoryModule {",
@@ -532,17 +532,17 @@ export const architecture: Concept[] = [
           "}",
           "",
           "class OrderModule {",
-          "  // зависимости — обычные in-process вызовы: без сети, сериализации и частичных отказов",
+          "  // dependencies are plain in-process calls: no network, serialization, or partial failures",
           "  constructor(private inventory: InventoryModule, private billing: BillingModule) {}",
           "  placeOrder(input: OrderInput): string {",
           "    if (!this.inventory.reserve(input.productId, input.quantity)) {",
-          "      throw new Error('товара нет на складе'); // одна транзакция, один процесс",
+          "      throw new Error('out of stock'); // one transaction, one process",
           "    }",
           "    return this.billing.charge(input.quantity * 100);",
           "  }",
           "}",
           "",
-          "// всё приложение собирается и деплоится как единое целое",
+          "// the whole application is built and deployed as a single unit",
           "const orders = new OrderModule(new InventoryModule(), new BillingModule());",
         ].join('\n'),
       },
@@ -555,10 +555,10 @@ export const architecture: Concept[] = [
         "Сквозной рефакторинг и отладка по всей системе в одной кодовой базе",
       ],
       en: [
-        "Простые сборка, деплой и мониторинг: одно приложение вместо парка сервисов",
-        "Вызовы между модулями in-process — без сетевых задержек, сериализации и частичных отказов",
-        "ACID-транзакции через несколько модулей в одной базе данных",
-        "Сквозной рефакторинг и отладка по всей системе в одной кодовой базе",
+        "Simple to build, deploy, and monitor: one application instead of a fleet of services",
+        "Calls between modules are in-process, with no network latency, serialization, or partial failures",
+        "ACID transactions spanning multiple modules in a single database",
+        "End-to-end refactoring and debugging across the whole system in one codebase",
       ],
     },
     cons: {
@@ -569,10 +569,10 @@ export const architecture: Concept[] = [
         "Без дисциплины границы модулей размываются, и система деградирует в «big ball of mud»",
       ],
       en: [
-        "Масштабировать можно только всё приложение целиком, а не «горячий» модуль отдельно",
-        "Любое изменение требует пересборки и повторного деплоя всей системы",
-        "Единый технологический стек для всех частей",
-        "Без дисциплины границы модулей размываются, и система деградирует в «big ball of mud»",
+        "You can only scale the entire application as a whole, not a single hot module on its own",
+        "Any change requires rebuilding and redeploying the whole system",
+        "A single technology stack for all parts",
+        "Without discipline, module boundaries blur and the system degrades into a 'big ball of mud'",
       ],
     },
     tradeoffs: {
@@ -581,8 +581,8 @@ export const architecture: Concept[] = [
         "Высокая скорость разработки малой командой против роста стоимости координации и времени сборки с ростом команды и кодовой базы",
       ],
       en: [
-        "Простота эксплуатации и сильная консистентность против независимого масштабирования и деплоя частей",
-        "Высокая скорость разработки малой командой против роста стоимости координации и времени сборки с ростом команды и кодовой базы",
+        "Operational simplicity and strong consistency versus independent scaling and deployment of individual parts",
+        "Fast development with a small team versus the rising cost of coordination and build times as the team and codebase grow",
       ],
     },
     whenToUse: {
@@ -592,9 +592,9 @@ export const architecture: Concept[] = [
         "Нужны строгие транзакции через несколько частей системы",
       ],
       en: [
-        "Новый продукт или MVP: границы домена ещё не ясны, и резать их по сети преждевременно (MonolithFirst)",
-        "Небольшая команда, которой один деплой-юнит проще поддерживать, чем распределённую систему",
-        "Нужны строгие транзакции через несколько частей системы",
+        "A new product or MVP: the domain boundaries aren't clear yet, and splitting them across the network is premature (MonolithFirst)",
+        "A small team that finds a single deployable unit easier to maintain than a distributed system",
+        "You need strict transactions spanning multiple parts of the system",
       ],
     },
     whenNotToUse: {
@@ -603,8 +603,8 @@ export const architecture: Concept[] = [
         "Много автономных команд, которым нужно выпускать свои части независимо друг от друга",
       ],
       en: [
-        "Разные части системы требуют независимого масштабирования, деплоя или разных технологических стеков",
-        "Много автономных команд, которым нужно выпускать свои части независимо друг от друга",
+        "Different parts of the system need independent scaling, deployment, or different technology stacks",
+        "Many autonomous teams that need to release their parts independently of one another",
       ],
     },
     related: [
@@ -628,19 +628,19 @@ export const architecture: Concept[] = [
     grade: "senior",
     tagline: {
       ru: "Ядро бизнес-логики общается с внешним миром только через порты, а технологии подключаются адаптерами",
-      en: "Ядро бизнес-логики общается с внешним миром только через порты, а технологии подключаются адаптерами",
+      en: "The business-logic core talks to the outside world only through ports, and technologies plug in via adapters",
     },
     definition: {
       ru: "Архитектурный стиль (Alistair Cockburn), в котором приложение можно в равной степени управлять пользователями, программами, автотестами или скриптами и разрабатывать в изоляции от его конечных устройств и баз данных. Ядро приложения объявляет порты — интерфейсы взаимодействия с внешним миром, а адаптеры транслируют конкретные технологии (UI, HTTP, БД, очереди) в эти порты и обратно. Все зависимости направлены внутрь, к ядру.",
-      en: "Архитектурный стиль (Alistair Cockburn), в котором приложение можно в равной степени управлять пользователями, программами, автотестами или скриптами и разрабатывать в изоляции от его конечных устройств и баз данных. Ядро приложения объявляет порты — интерфейсы взаимодействия с внешним миром, а адаптеры транслируют конкретные технологии (UI, HTTP, БД, очереди) в эти порты и обратно. Все зависимости направлены внутрь, к ядру.",
+      en: "An architectural style (Alistair Cockburn) in which an application can be driven equally by users, programs, automated tests, or scripts, and be developed in isolation from its eventual run-time devices and databases. The application core declares ports — interfaces for interacting with the outside world — and adapters translate specific technologies (UI, HTTP, databases, queues) into those ports and back. All dependencies point inward, toward the core.",
     },
     problem: {
       ru: "Бизнес-логика прорастает деталями инфраструктуры: SQL-запросы, HTTP-фреймворк и SDK внешних сервисов вплетаются в доменный код. В результате логику невозможно протестировать без реальной базы и сети, а замена технологии (другая БД, другой транспорт) требует правок по всему приложению.",
-      en: "Бизнес-логика прорастает деталями инфраструктуры: SQL-запросы, HTTP-фреймворк и SDK внешних сервисов вплетаются в доменный код. В результате логику невозможно протестировать без реальной базы и сети, а замена технологии (другая БД, другой транспорт) требует правок по всему приложению.",
+      en: "Business logic gets shot through with infrastructure details: SQL queries, the HTTP framework, and third-party service SDKs are woven into the domain code. As a result, the logic can't be tested without a real database and network, and swapping a technology (a different database, a different transport) requires changes throughout the application.",
     },
     solution: {
       ru: "Ядро объявляет порты — интерфейсы в терминах домена. Driving-адаптеры (REST-контроллер, CLI, тест) вызывают ядро через входные порты; driven-адаптеры (репозиторий на Postgres, почтовый шлюз) реализуют выходные порты, которые ядру нужны. Конкретные адаптеры подставляются на границе приложения (composition root), поэтому ядро не знает, кто его вызывает и куда пишет данные — технологию можно заменить или замокать, не трогая логику.",
-      en: "Ядро объявляет порты — интерфейсы в терминах домена. Driving-адаптеры (REST-контроллер, CLI, тест) вызывают ядро через входные порты; driven-адаптеры (репозиторий на Postgres, почтовый шлюз) реализуют выходные порты, которые ядру нужны. Конкретные адаптеры подставляются на границе приложения (composition root), поэтому ядро не знает, кто его вызывает и куда пишет данные — технологию можно заменить или замокать, не трогая логику.",
+      en: "The core declares ports — interfaces expressed in domain terms. Driving adapters (a REST controller, a CLI, a test) call the core through inbound ports; driven adapters (a Postgres-backed repository, a mail gateway) implement the outbound ports the core needs. Concrete adapters are wired in at the application boundary (the composition root), so the core doesn't know who calls it or where it writes data — a technology can be swapped or mocked without touching the logic.",
     },
     codeExample: {
       lang: "typescript",
@@ -676,19 +676,19 @@ export const architecture: Concept[] = [
         en: [
           "interface Order { id: string; total: number; }",
           "",
-          "// Порт (принадлежит ядру): что ядру нужно от внешнего мира, в терминах домена",
+          "// Port (owned by the core): what the core needs from the outside world, in domain terms",
           "interface OrderRepository { save(order: Order): Promise<void>; }",
           "",
-          "// Ядро приложения: чистая бизнес-логика, зависит только от порта",
+          "// Application core: pure business logic, depends only on the port",
           "class PlaceOrder {",
           "  constructor(private readonly orders: OrderRepository) {}",
           "  async execute(id: string, total: number): Promise<void> {",
-          "    if (total <= 0) throw new Error('Сумма заказа должна быть положительной');",
+          "    if (total <= 0) throw new Error('Order total must be positive');",
           "    await this.orders.save({ id, total });",
           "  }",
           "}",
           "",
-          "// Адаптеры (снаружи гексагона): реализуют порт под конкретную технологию",
+          "// Adapters (outside the hexagon): implement the port for a specific technology",
           "class PostgresOrderRepository implements OrderRepository {",
           "  async save(order: Order) { /* INSERT INTO orders ... */ }",
           "}",
@@ -697,9 +697,9 @@ export const architecture: Concept[] = [
           "  async save(order: Order) { this.saved.push(order); }",
           "}",
           "",
-          "// Сборка на границе: ядро не знает, какой адаптер подключён",
-          "const placeOrder = new PlaceOrder(new InMemoryOrderRepository()); // в тестах",
-          "const production = new PlaceOrder(new PostgresOrderRepository()); // в проде",
+          "// Wiring at the boundary: the core doesn't know which adapter is plugged in",
+          "const placeOrder = new PlaceOrder(new InMemoryOrderRepository()); // in tests",
+          "const production = new PlaceOrder(new PostgresOrderRepository()); // in production",
         ].join('\n'),
       },
     },
@@ -711,10 +711,10 @@ export const architecture: Concept[] = [
         "Явная граница домена защищает его от протекания инфраструктурных деталей",
       ],
       en: [
-        "Бизнес-логика тестируется в изоляции: адаптеры заменяются in-memory- или тестовыми реализациями",
-        "Технологии (БД, транспорт, UI) заменяются на границе без правок ядра",
-        "Симметрия входов: ядро одинаково вызывается из REST, CLI, очереди или теста",
-        "Явная граница домена защищает его от протекания инфраструктурных деталей",
+        "Business logic is tested in isolation: adapters are replaced with in-memory or test implementations",
+        "Technologies (database, transport, UI) are swapped at the boundary without changing the core",
+        "Symmetry of inputs: the core is invoked the same way from REST, a CLI, a queue, or a test",
+        "An explicit domain boundary protects it from infrastructure details leaking in",
       ],
     },
     cons: {
@@ -724,9 +724,9 @@ export const architecture: Concept[] = [
         "Требует дисциплины команды: границу легко «продырявить», протащив тип ORM или фреймворка в ядро",
       ],
       en: [
-        "Дополнительные интерфейсы, DTO и маппинг на каждой границе — больше кода и косвенности",
-        "Для простых CRUD-приложений слой портов даёт мало выгоды при заметных издержках",
-        "Требует дисциплины команды: границу легко «продырявить», протащив тип ORM или фреймворка в ядро",
+        "Additional interfaces, DTOs, and mapping at every boundary — more code and indirection",
+        "For simple CRUD applications the port layer offers little benefit at a noticeable cost",
+        "Requires team discipline: it's easy to poke a hole in the boundary by leaking an ORM or framework type into the core",
       ],
     },
     tradeoffs: {
@@ -736,9 +736,9 @@ export const architecture: Concept[] = [
         "Чистота ядра против отказа от удобств фреймворка (active record, декораторы ORM) внутри домена",
       ],
       en: [
-        "Изоляция и тестируемость домена против объёма шаблонного кода (порты, адаптеры, маппинг)",
-        "Свобода замены технологий против усложнения навигации: за одним вызовом стоят интерфейс, реализация и сборка",
-        "Чистота ядра против отказа от удобств фреймворка (active record, декораторы ORM) внутри домена",
+        "Domain isolation and testability versus the volume of boilerplate (ports, adapters, mapping)",
+        "Freedom to swap technologies versus harder navigation: behind a single call sit an interface, an implementation, and the wiring",
+        "A clean core versus giving up framework conveniences (active record, ORM decorators) inside the domain",
       ],
     },
     whenToUse: {
@@ -748,9 +748,9 @@ export const architecture: Concept[] = [
         "Долгоживущая система, где домен должен пережить смену фреймворков и технологий",
       ],
       en: [
-        "Сложная доменная логика, которую важно тестировать без БД, сети и UI",
-        "Ожидается замена или множественность инфраструктуры: несколько источников данных, транспортов, интеграций",
-        "Долгоживущая система, где домен должен пережить смену фреймворков и технологий",
+        "Complex domain logic that must be tested without a database, network, or UI",
+        "You anticipate swapping or supporting multiple infrastructures: several data sources, transports, or integrations",
+        "A long-lived system whose domain must outlast changes of frameworks and technologies",
       ],
     },
     whenNotToUse: {
@@ -759,8 +759,8 @@ export const architecture: Concept[] = [
         "Прототипы и короткоживущие сервисы, где скорость важнее изоляции домена",
       ],
       en: [
-        "Тонкий CRUD над базой без бизнес-правил — порты станут пустой прослойкой",
-        "Прототипы и короткоживущие сервисы, где скорость важнее изоляции домена",
+        "Thin CRUD over a database with no business rules — the ports become an empty pass-through layer",
+        "Prototypes and short-lived services where speed matters more than domain isolation",
       ],
     },
     related: [
@@ -782,19 +782,19 @@ export const architecture: Concept[] = [
     grade: "senior",
     tagline: {
       ru: "Бизнес-правила в центре, а фреймворки и БД — заменяемые детали на периферии",
-      en: "Бизнес-правила в центре, а фреймворки и БД — заменяемые детали на периферии",
+      en: "Business rules at the center; frameworks and the database are replaceable details on the periphery",
     },
     definition: {
       ru: "Архитектурный стиль, предложенный Robert C. Martin: код организуется в концентрические слои (Entities, Use Cases, Interface Adapters, Frameworks & Drivers) с единственным жёстким правилом — Dependency Rule: зависимости исходного кода направлены только внутрь, к более высокоуровневым политикам. Внутренние слои ничего не знают о внешних: бизнес-правила не зависят от UI, базы данных и фреймворков.",
-      en: "Архитектурный стиль, предложенный Robert C. Martin: код организуется в концентрические слои (Entities, Use Cases, Interface Adapters, Frameworks & Drivers) с единственным жёстким правилом — Dependency Rule: зависимости исходного кода направлены только внутрь, к более высокоуровневым политикам. Внутренние слои ничего не знают о внешних: бизнес-правила не зависят от UI, базы данных и фреймворков.",
+      en: "An architectural style introduced by Robert C. Martin: code is organized into concentric layers (Entities, Use Cases, Interface Adapters, Frameworks & Drivers), governed by a single hard rule — the Dependency Rule: source-code dependencies point only inward, toward higher-level policies. Inner layers know nothing about outer ones: business rules don't depend on the UI, the database, or frameworks.",
     },
     problem: {
       ru: "Бизнес-логика срастается с фреймворком, ORM и UI: её нельзя протестировать без поднятия инфраструктуры, замена базы данных или веб-фреймворка превращается в переписывание системы, а правила предметной области размазаны по контроллерам и SQL-запросам.",
-      en: "Бизнес-логика срастается с фреймворком, ORM и UI: её нельзя протестировать без поднятия инфраструктуры, замена базы данных или веб-фреймворка превращается в переписывание системы, а правила предметной области размазаны по контроллерам и SQL-запросам.",
+      en: "Business logic becomes fused with the framework, the ORM, and the UI: you can't test it without standing up infrastructure, swapping the database or the web framework turns into rewriting the system, and domain rules are smeared across controllers and SQL queries.",
     },
     solution: {
       ru: "Бизнес-правила выделяются в независимое ядро (Entities и Use Cases). Ядро объявляет порты — интерфейсы к нужной ему инфраструктуре, а внешние слои реализуют эти интерфейсы: направление зависимости инвертируется через DIP. Границы слоёв пересекаются простыми структурами данных, поэтому UI, БД и фреймворки становятся деталями, которые можно откладывать и заменять.",
-      en: "Бизнес-правила выделяются в независимое ядро (Entities и Use Cases). Ядро объявляет порты — интерфейсы к нужной ему инфраструктуре, а внешние слои реализуют эти интерфейсы: направление зависимости инвертируется через DIP. Границы слоёв пересекаются простыми структурами данных, поэтому UI, БД и фреймворки становятся деталями, которые можно откладывать и заменять.",
+      en: "The business rules are extracted into an independent core (Entities and Use Cases). The core declares ports — interfaces to the infrastructure it needs — and the outer layers implement those interfaces: the direction of the dependency is inverted via the DIP. Layer boundaries are crossed with simple data structures, so the UI, the database, and frameworks become details you can defer and replace.",
     },
     codeExample: {
       lang: "typescript",
@@ -825,13 +825,13 @@ export const architecture: Concept[] = [
           "const useCase = new GetOrderTotal(new SqlOrderRepository()); // зависимости направлены внутрь",
         ].join('\n'),
         en: [
-          "// Entities — ядро, не зависит ни от чего внешнего",
+          "// Entities — the core; depends on nothing external",
           "class Order {",
           "  constructor(public readonly id: string, public readonly total: number) {}",
           "}",
           "",
-          "// Use Cases — зависят только от ядра и собственных портов",
-          "interface OrderRepository { findById(id: string): Order | undefined; } // порт объявляет ядро",
+          "// Use Cases — depend only on the core and their own ports",
+          "interface OrderRepository { findById(id: string): Order | undefined; } // the core declares the port",
           "",
           "class GetOrderTotal {",
           "  constructor(private readonly orders: OrderRepository) {}",
@@ -842,12 +842,12 @@ export const architecture: Concept[] = [
           "  }",
           "}",
           "",
-          "// Interface Adapters — gateway реализует порт ядра (DIP); сама БД и её драйвер — во Frameworks & Drivers",
+          "// Interface Adapters — the gateway implements the core's port (DIP); the database itself and its driver live in Frameworks & Drivers",
           "class SqlOrderRepository implements OrderRepository {",
-          "  findById(id: string) { return new Order(id, 100); } // здесь был бы SQL",
+          "  findById(id: string) { return new Order(id, 100); } // SQL would go here",
           "}",
           "",
-          "const useCase = new GetOrderTotal(new SqlOrderRepository()); // зависимости направлены внутрь",
+          "const useCase = new GetOrderTotal(new SqlOrderRepository()); // dependencies point inward",
         ].join('\n'),
       },
     },
@@ -858,9 +858,9 @@ export const architecture: Concept[] = [
         "Правила предметной области локализованы в ядре, а не размазаны по контроллерам",
       ],
       en: [
-        "Бизнес-логика тестируется быстро и изолированно, без БД, веба и фреймворков",
-        "Решения об инфраструктуре (БД, фреймворк, UI) можно откладывать и менять",
-        "Правила предметной области локализованы в ядре, а не размазаны по контроллерам",
+        "Business logic can be tested quickly and in isolation, without a database, web, or frameworks",
+        "Infrastructure decisions (database, framework, UI) can be deferred and changed",
+        "Domain rules are localized in the core rather than smeared across controllers",
       ],
     },
     cons: {
@@ -870,9 +870,9 @@ export const architecture: Concept[] = [
         "Высокий порог входа: команда должна одинаково понимать границы слоёв",
       ],
       en: [
-        "Больше интерфейсов, абстракций и кода-склейки",
-        "Маппинг данных между слоями (DTO против entities) добавляет рутину",
-        "Высокий порог входа: команда должна одинаково понимать границы слоёв",
+        "More interfaces, abstractions, and glue code",
+        "Mapping data between layers (DTOs vs. entities) adds busywork",
+        "A steep learning curve: the team must share the same understanding of the layer boundaries",
       ],
     },
     tradeoffs: {
@@ -881,8 +881,8 @@ export const architecture: Concept[] = [
         "Строгие границы слоёв против скорости изменений в простом CRUD",
       ],
       en: [
-        "Независимость от инфраструктуры против объёма boilerplate и косвенности",
-        "Строгие границы слоёв против скорости изменений в простом CRUD",
+        "Independence from infrastructure vs. the amount of boilerplate and indirection",
+        "Strict layer boundaries vs. speed of change in simple CRUD",
       ],
     },
     whenToUse: {
@@ -892,9 +892,9 @@ export const architecture: Concept[] = [
         "Нужны быстрые изолированные тесты бизнес-правил",
       ],
       en: [
-        "Долгоживущая система со сложной бизнес-логикой предметной области",
-        "Инфраструктурные решения ещё не приняты или заведомо будут меняться",
-        "Нужны быстрые изолированные тесты бизнес-правил",
+        "A long-lived system with complex domain business logic",
+        "Infrastructure decisions haven't been made yet, or are known to be subject to change",
+        "You need fast, isolated tests of the business rules",
       ],
     },
     whenNotToUse: {
@@ -903,8 +903,8 @@ export const architecture: Concept[] = [
         "Короткоживущие скрипты и утилиты без предметной логики",
       ],
       en: [
-        "Простой CRUD или прототип: слои добавят кода больше, чем в нём логики",
-        "Короткоживущие скрипты и утилиты без предметной логики",
+        "Simple CRUD or a prototype: the layers add more code than there is logic in the app",
+        "Short-lived scripts and utilities with no domain logic",
       ],
     },
     related: [
@@ -928,19 +928,19 @@ export const architecture: Concept[] = [
     grade: "senior",
     tagline: {
       ru: "Компоненты общаются событиями через брокер, не зная друг о друге",
-      en: "Компоненты общаются событиями через брокер, не зная друг о друге",
+      en: "Components communicate through events via a broker, without knowing about each other",
     },
     definition: {
       ru: "Архитектурный стиль, в котором компоненты взаимодействуют, производя и потребляя события — уведомления о свершившихся фактах. Издатель (producer) публикует событие в шину или брокер (event bus, message broker), не зная получателей; потребители (consumers) подписываются на интересующие события и реагируют независимо и, как правило, асинхронно.",
-      en: "Архитектурный стиль, в котором компоненты взаимодействуют, производя и потребляя события — уведомления о свершившихся фактах. Издатель (producer) публикует событие в шину или брокер (event bus, message broker), не зная получателей; потребители (consumers) подписываются на интересующие события и реагируют независимо и, как правило, асинхронно.",
+      en: "An architectural style in which components interact by producing and consuming events—notifications that something has already happened. A producer publishes an event to an event bus or message broker without knowing the recipients; consumers subscribe to the events they care about and react independently and, as a rule, asynchronously.",
     },
     problem: {
       ru: "Прямые синхронные вызовы жёстко связывают модули: отправитель обязан знать всех получателей и их API, добавление новой реакции требует правки отправителя, а отказ или медлительность одного получателя блокирует всю цепочку вызовов.",
-      en: "Прямые синхронные вызовы жёстко связывают модули: отправитель обязан знать всех получателей и их API, добавление новой реакции требует правки отправителя, а отказ или медлительность одного получателя блокирует всю цепочку вызовов.",
+      en: "Direct synchronous calls tightly couple modules: the sender must know every recipient and its API, adding a new reaction requires modifying the sender, and the failure or slowness of a single recipient blocks the whole call chain.",
     },
     solution: {
       ru: "Взаимодействие инвертируется: источник фиксирует факт («заказ оформлен») как событие и публикует его в брокер. Потребители подписываются на нужные типы событий и обрабатывают их независимо; нового потребителя добавляют без изменения издателя, а брокер буферизует поток и сглаживает пики нагрузки.",
-      en: "Взаимодействие инвертируется: источник фиксирует факт («заказ оформлен») как событие и публикует его в брокер. Потребители подписываются на нужные типы событий и обрабатывают их независимо; нового потребителя добавляют без изменения издателя, а брокер буферизует поток и сглаживает пики нагрузки.",
+      en: "The interaction is inverted: the source records a fact (\"order placed\") as an event and publishes it to the broker. Consumers subscribe to the event types they care about and process them independently; a new consumer is added without changing the producer, while the broker buffers the stream and smooths out load spikes.",
     },
     codeExample: {
       lang: "typescript",
@@ -987,7 +987,7 @@ export const architecture: Concept[] = [
           "  publish(e: OrderPlaced) { for (const h of this.handlers) h(e); }",
           "}",
           "",
-          "// producer публикует факт и не знает, кто на него отреагирует",
+          "// producer publishes the fact and doesn't know who will react to it",
           "class CheckoutService {",
           "  constructor(private bus: EventBus) {}",
           "  placeOrder(orderId: string, total: number) {",
@@ -995,10 +995,10 @@ export const architecture: Concept[] = [
           "  }",
           "}",
           "",
-          "// consumers — независимые модули, подключаются без правки издателя",
+          "// consumers are independent modules, plugged in without modifying the producer",
           "const bus = new InMemoryBus();",
-          "bus.subscribe((e) => console.log(`Уведомление: заказ ${e.orderId} принят`));",
-          "bus.subscribe((e) => console.log(`Аналитика: выручка +${e.total}`));",
+          "bus.subscribe((e) => console.log(`Notification: order ${e.orderId} accepted`));",
+          "bus.subscribe((e) => console.log(`Analytics: revenue +${e.total}`));",
           "new CheckoutService(bus).placeOrder('A-42', 100);",
         ].join('\n'),
       },
@@ -1011,10 +1011,10 @@ export const architecture: Concept[] = [
         "Потребители масштабируются и деплоятся независимо друг от друга",
       ],
       en: [
-        "Слабая связанность: издатель не знает потребителей и их количества",
-        "Новая реакция на событие добавляется новым потребителем без правки издателя",
-        "Асинхронная обработка: брокер буферизует поток и сглаживает пики нагрузки",
-        "Потребители масштабируются и деплоятся независимо друг от друга",
+        "Loose coupling: the producer doesn't know the consumers or how many there are",
+        "A new reaction to an event is added as a new consumer, without touching the producer",
+        "Asynchronous processing: the broker buffers the stream and smooths out load spikes",
+        "Consumers scale and deploy independently of one another",
       ],
     },
     cons: {
@@ -1025,10 +1025,10 @@ export const architecture: Concept[] = [
         "Брокер становится критической инфраструктурой, которую нужно эксплуатировать",
       ],
       en: [
-        "Поток управления неявный: по коду издателя не видно, что произойдёт после события",
-        "Сквозная отладка и трассировка цепочек событий заметно сложнее прямых вызовов",
-        "Eventual consistency: данные у потребителей согласуются с задержкой",
-        "Брокер становится критической инфраструктурой, которую нужно эксплуатировать",
+        "Control flow is implicit: the producer's code doesn't reveal what will happen after an event",
+        "End-to-end debugging and tracing event chains is markedly harder than with direct calls",
+        "Eventual consistency: data on the consumer side converges with a delay",
+        "The broker becomes critical infrastructure that has to be operated and maintained",
       ],
     },
     tradeoffs: {
@@ -1038,9 +1038,9 @@ export const architecture: Concept[] = [
         "Гибкость доставки против дисциплины обработки: возможны дубли и переупорядочивание, поэтому обработчики должны быть идемпотентными",
       ],
       en: [
-        "Слабая связанность против прозрачности: систему из прямых вызовов читать проще, чем восстанавливать неявные цепочки событий",
-        "Асинхронность и устойчивость к пикам против строгой согласованности: приходится жить с eventual consistency",
-        "Гибкость доставки против дисциплины обработки: возможны дубли и переупорядочивание, поэтому обработчики должны быть идемпотентными",
+        "Loose coupling vs. transparency: a system of direct calls is easier to read than reconstructing implicit event chains",
+        "Asynchrony and resilience to spikes vs. strong consistency: you have to live with eventual consistency",
+        "Delivery flexibility vs. processing discipline: duplicates and reordering are possible, so handlers must be idempotent",
       ],
     },
     whenToUse: {
@@ -1050,9 +1050,9 @@ export const architecture: Concept[] = [
         "Нужна асинхронная обработка и сглаживание пиков нагрузки через буферизацию",
       ],
       en: [
-        "Много независимых модулей или сервисов должны реагировать на одни и те же факты",
-        "Набор реакций на событие заранее неизвестен и будет расти",
-        "Нужна асинхронная обработка и сглаживание пиков нагрузки через буферизацию",
+        "Many independent modules or services need to react to the same facts",
+        "The set of reactions to an event isn't known in advance and will keep growing",
+        "You need asynchronous processing and load-spike smoothing through buffering",
       ],
     },
     whenNotToUse: {
@@ -1061,8 +1061,8 @@ export const architecture: Concept[] = [
         "Операция требует немедленного согласованного результата в рамках одного вызова (строгая консистентность)",
       ],
       en: [
-        "Простой линейный сценарий запрос–ответ: событийная косвенность лишь усложнит его",
-        "Операция требует немедленного согласованного результата в рамках одного вызова (строгая консистентность)",
+        "A simple linear request–response scenario: event indirection would only complicate it",
+        "The operation requires an immediate, consistent result within a single call (strong consistency)",
       ],
     },
     related: [
@@ -1087,19 +1087,19 @@ export const architecture: Concept[] = [
     grade: "lead",
     tagline: {
       ru: "Набор небольших независимо развёртываемых сервисов вокруг бизнес-возможностей",
-      en: "Набор небольших независимо развёртываемых сервисов вокруг бизнес-возможностей",
+      en: "A suite of small, independently deployable services organized around business capabilities",
     },
     definition: {
       ru: "Архитектурный стиль, при котором приложение строится как набор небольших сервисов, каждый из которых работает в собственном процессе, владеет своими данными и общается с остальными через лёгкие сетевые механизмы (обычно HTTP API или сообщения). Сервисы организованы вокруг бизнес-возможностей и развёртываются независимо друг от друга (Fowler, Lewis).",
-      en: "Архитектурный стиль, при котором приложение строится как набор небольших сервисов, каждый из которых работает в собственном процессе, владеет своими данными и общается с остальными через лёгкие сетевые механизмы (обычно HTTP API или сообщения). Сервисы организованы вокруг бизнес-возможностей и развёртываются независимо друг от друга (Fowler, Lewis).",
+      en: "An architectural style in which an application is built as a suite of small services, each running in its own process, owning its own data, and communicating with the others through lightweight network mechanisms (typically HTTP APIs or messaging). Services are organized around business capabilities and are deployed independently of one another (Fowler and Lewis).",
     },
     problem: {
       ru: "В крупном монолите команды блокируют друг друга: любой релиз — это деплой всего приложения целиком, сбой в одном модуле может уронить всю систему, масштабировать приходится всё сразу, даже если нагружена лишь одна часть, а единый технологический стек становится ограничением для всех.",
-      en: "В крупном монолите команды блокируют друг друга: любой релиз — это деплой всего приложения целиком, сбой в одном модуле может уронить всю систему, масштабировать приходится всё сразу, даже если нагружена лишь одна часть, а единый технологический стек становится ограничением для всех.",
+      en: "In a large monolith, teams block one another: every release means deploying the entire application at once, a failure in one module can bring down the whole system, you have to scale everything together even when only one part is under load, and a single technology stack becomes a constraint for everyone.",
     },
     solution: {
       ru: "Систему разрезают по границам бизнес-возможностей (Bounded Context из DDD). Каждый сервис — отдельное приложение со своей базой данных и своим релизным циклом; взаимодействие идёт только через явные сетевые контракты, без общего доступа к чужим данным. Команда владеет сервисом целиком: разрабатывает, деплоит и эксплуатирует его автономно.",
-      en: "Систему разрезают по границам бизнес-возможностей (Bounded Context из DDD). Каждый сервис — отдельное приложение со своей базой данных и своим релизным циклом; взаимодействие идёт только через явные сетевые контракты, без общего доступа к чужим данным. Команда владеет сервисом целиком: разрабатывает, деплоит и эксплуатирует его автономно.",
+      en: "The system is split along business-capability boundaries (the Bounded Context from DDD). Each service is a separate application with its own database and its own release cycle; interaction happens only through explicit network contracts, with no shared access to another service's data. A team owns its service end to end: it develops, deploys, and operates the service autonomously.",
     },
     codeExample: {
       lang: "typescript",
@@ -1129,25 +1129,25 @@ export const architecture: Concept[] = [
           "}",
         ].join('\n'),
         en: [
-          "// Каждый сервис — отдельный процесс со своей БД и своим деплоем.",
-          "// Общение — только через сетевой контракт, общего кода домена нет.",
+          "// Each service is a separate process with its own database and its own deployment.",
+          "// Communication happens only through a network contract; there is no shared domain code.",
           "",
-          "// Контракт billing-service (отдельное приложение, своя БД)",
+          "// Contract for the billing-service (a separate application with its own database)",
           "interface BillingApi {",
           "  charge(orderId: string, amount: number): Promise<{ status: 'paid' | 'declined' }>;",
           "}",
           "",
-          "// orders-service (отдельное приложение, своя БД)",
+          "// orders-service (a separate application with its own database)",
           "class OrdersService {",
-          "  // внедряется HTTP-клиент к billing, а не его классы:",
-          "  // сервисы не импортируют код друг друга",
+          "  // an HTTP client to billing is injected, not its classes:",
+          "  // services do not import each other's code",
           "  constructor(private billing: BillingApi) {}",
           "",
           "  async createOrder(customerId: string, items: string[]) {",
           "    const orderId = `${customerId}-${Date.now()}`;",
-          "    // вызов через сеть: может отказать независимо от нас",
+          "    // a call over the network: it can fail independently of us",
           "    const result = await this.billing.charge(orderId, items.length * 10);",
-          "    if (result.status === 'declined') throw new Error('Оплата отклонена');",
+          "    if (result.status === 'declined') throw new Error('Payment declined');",
           "    return { orderId };",
           "  }",
           "}",
@@ -1162,10 +1162,10 @@ export const architecture: Concept[] = [
         "Свобода технологий: каждый сервис может использовать свой стек и хранилище под свою задачу",
       ],
       en: [
-        "Независимый деплой: команда выпускает свой сервис, не согласовывая релиз всей системы",
-        "Точечное масштабирование: реплицируется только нагруженный сервис, а не всё приложение",
-        "Изоляция сбоев: отказ одного сервиса при правильной проработке не роняет систему целиком",
-        "Свобода технологий: каждый сервис может использовать свой стек и хранилище под свою задачу",
+        "Independent deployment: a team ships its own service without coordinating a release of the entire system",
+        "Targeted scaling: only the service under load is replicated, not the whole application",
+        "Fault isolation: with proper design, the failure of one service does not bring down the entire system",
+        "Technology freedom: each service can use its own stack and data store suited to its task",
       ],
     },
     cons: {
@@ -1176,10 +1176,10 @@ export const architecture: Concept[] = [
         "Высокая цена инфраструктуры: CI/CD на каждый сервис, оркестрация, мониторинг, распределённое логирование",
       ],
       en: [
-        "Распределённая система: сетевые задержки, частичные отказы, ретраи и таймауты становятся повседневностью",
-        "Нет ACID-транзакций между сервисами — приходится жить с eventual consistency и паттернами вроде Saga",
-        "Отладка и трассировка запроса через несколько сервисов существенно сложнее, чем стек-трейс в монолите",
-        "Высокая цена инфраструктуры: CI/CD на каждый сервис, оркестрация, мониторинг, распределённое логирование",
+        "It is a distributed system: network latency, partial failures, retries, and timeouts become everyday concerns",
+        "No ACID transactions across services — you have to live with eventual consistency and patterns such as Saga",
+        "Debugging and tracing a request across several services is substantially harder than a stack trace in a monolith",
+        "High infrastructure cost: CI/CD per service, orchestration, monitoring, and distributed logging",
       ],
     },
     tradeoffs: {
@@ -1189,9 +1189,9 @@ export const architecture: Concept[] = [
         "Децентрализованные данные (у каждого сервиса своя БД) против потери сквозных транзакций и join-запросов",
       ],
       en: [
-        "Автономия команд и независимые релизы против операционной сложности распределённой системы",
-        "Точечное масштабирование против сетевых издержек на каждое межсервисное взаимодействие",
-        "Децентрализованные данные (у каждого сервиса своя БД) против потери сквозных транзакций и join-запросов",
+        "Team autonomy and independent releases versus the operational complexity of a distributed system",
+        "Targeted scaling versus the network overhead of every inter-service interaction",
+        "Decentralized data (each service has its own database) versus the loss of end-to-end transactions and cross-service joins",
       ],
     },
     whenToUse: {
@@ -1201,9 +1201,9 @@ export const architecture: Concept[] = [
         "Нужны независимые релизные циклы: части системы должны выкатываться десятки раз в день без общего деплоя",
       ],
       en: [
-        "Крупная система, которую разрабатывают несколько команд, блокирующих друг друга в монолите",
-        "Разные части системы требуют радикально разного масштабирования или разных технологий",
-        "Нужны независимые релизные циклы: части системы должны выкатываться десятки раз в день без общего деплоя",
+        "A large system developed by several teams that block one another in a monolith",
+        "Different parts of the system need radically different scaling or different technologies",
+        "You need independent release cycles: parts of the system must ship dozens of times a day without a shared deployment",
       ],
     },
     whenNotToUse: {
@@ -1213,9 +1213,9 @@ export const architecture: Concept[] = [
         "Нет зрелой DevOps-практики (автоматизация деплоя, мониторинг): операционная цена стиля не окупится",
       ],
       en: [
-        "Маленькая команда или ранний продукт с нестабильным доменом — Fowler рекомендует «Monolith First»: резать по неустоявшимся границам дороже, чем жить в монолите",
-        "Границы Bounded Context ещё не ясны: неверный разрез превращает микросервисы в распределённый монолит",
-        "Нет зрелой DevOps-практики (автоматизация деплоя, мониторинг): операционная цена стиля не окупится",
+        "A small team or an early-stage product with an unstable domain — Fowler recommends \"Monolith First\": carving along boundaries that have not settled costs more than living with a monolith",
+        "The Bounded Context boundaries are not yet clear: the wrong split turns microservices into a distributed monolith",
+        "There is no mature DevOps practice (deployment automation, monitoring): the operational cost of the style will not pay off",
       ],
     },
     related: [
@@ -1239,7 +1239,7 @@ export const architectureQuestions: Question[] = [
     grade: "junior",
     prompt: {
       ru: "Какое правило зависимостей лежит в основе Layered Architecture?",
-      en: "Какое правило зависимостей лежит в основе Layered Architecture?",
+      en: "What dependency rule lies at the heart of Layered Architecture?",
     },
     options: {
       ru: [
@@ -1249,16 +1249,16 @@ export const architectureQuestions: Question[] = [
         "Каждый слой разворачивается как отдельный сервис и общается с остальными по сети",
       ],
       en: [
-        "Каждый слой зависит только от нижележащего слоя и ничего не знает о слоях выше",
-        "Любой слой может свободно вызывать любой другой слой, лишь бы не было циклов",
-        "Все слои зависят от общего ядра домена, а направление зависимостей инвертировано внутрь",
-        "Каждый слой разворачивается как отдельный сервис и общается с остальными по сети",
+        "Each layer depends only on the layer below it and knows nothing about the layers above",
+        "Any layer may freely call any other layer, as long as there are no cycles",
+        "All layers depend on a shared domain core, and the direction of dependencies is inverted inward",
+        "Each layer is deployed as a separate service and communicates with the others over the network",
       ],
     },
     correctIndex: 0,
     explanation: {
       ru: "Суть слоистого стиля — дисциплина зависимостей: слой предоставляет сервисы слою выше и пользуется слоем ниже, поэтому presentation знает о domain, domain — о data source, но не наоборот. Второй вариант описывает отсутствие слоистости: если все зовут всех, разделение на слои теряет смысл, даже без циклов. Третий вариант — правило зависимостей Hexagonal/Clean Architecture, где зависимости направлены внутрь к домену, а не вниз к данным. Четвёртый путает логические слои с физическим разделением на сервисы: слои — это структура кода, а не единицы деплоя (это территория microservices).",
-      en: "Суть слоистого стиля — дисциплина зависимостей: слой предоставляет сервисы слою выше и пользуется слоем ниже, поэтому presentation знает о domain, domain — о data source, но не наоборот. Второй вариант описывает отсутствие слоистости: если все зовут всех, разделение на слои теряет смысл, даже без циклов. Третий вариант — правило зависимостей Hexagonal/Clean Architecture, где зависимости направлены внутрь к домену, а не вниз к данным. Четвёртый путает логические слои с физическим разделением на сервисы: слои — это структура кода, а не единицы деплоя (это территория microservices).",
+      en: "The essence of the layered style is dependency discipline: a layer provides services to the layer above and consumes the one below, so presentation knows about domain, domain knows about data source, but not the other way around. The second option describes the absence of layering: if everyone calls everyone, the separation into layers loses its meaning, even without cycles. The third option is the dependency rule of Hexagonal/Clean Architecture, where dependencies point inward toward the domain rather than downward toward the data. The fourth confuses logical layers with a physical split into services: layers are a code structure, not units of deployment (that's microservices territory).",
     },
     conceptId: "layered",
   },
@@ -1269,7 +1269,7 @@ export const architectureQuestions: Question[] = [
     grade: "junior",
     prompt: {
       ru: "В чём главный компромисс Layered Architecture по сравнению с более сложными стилями?",
-      en: "В чём главный компромисс Layered Architecture по сравнению с более сложными стилями?",
+      en: "What is the main trade-off of Layered Architecture compared with more sophisticated styles?",
     },
     options: {
       ru: [
@@ -1279,16 +1279,16 @@ export const architectureQuestions: Question[] = [
         "Слоистый стиль всегда быстрее по производительности, чем Hexagonal Architecture",
       ],
       en: [
-        "Слои автоматически дают независимое масштабирование каждой части системы",
-        "Простота и предсказуемость структуры ценой транзитных вызовов и привязки домена к слою данных",
-        "Слоистый стиль устраняет необходимость в тестах, потому что слои изолированы",
-        "Слоистый стиль всегда быстрее по производительности, чем Hexagonal Architecture",
+        "Layers automatically give you independent scaling of each part of the system",
+        "A simple, predictable structure at the cost of pass-through calls and coupling the domain to the data layer",
+        "The layered style removes the need for tests, because the layers are isolated",
+        "The layered style is always faster in performance than Hexagonal Architecture",
       ],
     },
     correctIndex: 1,
     explanation: {
       ru: "Слоистый стиль покупает низкий порог входа и знакомую структуру ценой издержек: простые операции проходят сквозь все слои пустым транзитом, а бизнес-логика зависит от слоя данных — в Hexagonal/Clean эту зависимость специально инвертируют. Первый вариант неверен: слои — логическое разделение внутри одного развёртывания, масштабировать их независимо нельзя. Третий неверен: изоляция слоёв облегчает тестирование через подмену нижнего слоя, но никак его не отменяет. Четвёртый неверен: разница стилей — в направлении зависимостей и стоимости изменений, а не в скорости выполнения; лишние транзитные вызовы скорее добавляют косвенности, чем ускоряют код.",
-      en: "Слоистый стиль покупает низкий порог входа и знакомую структуру ценой издержек: простые операции проходят сквозь все слои пустым транзитом, а бизнес-логика зависит от слоя данных — в Hexagonal/Clean эту зависимость специально инвертируют. Первый вариант неверен: слои — логическое разделение внутри одного развёртывания, масштабировать их независимо нельзя. Третий неверен: изоляция слоёв облегчает тестирование через подмену нижнего слоя, но никак его не отменяет. Четвёртый неверен: разница стилей — в направлении зависимостей и стоимости изменений, а не в скорости выполнения; лишние транзитные вызовы скорее добавляют косвенности, чем ускоряют код.",
+      en: "The layered style buys a low barrier to entry and a familiar structure at a cost: simple operations pass straight through every layer as empty transit, and the business logic depends on the data layer — in Hexagonal/Clean that dependency is deliberately inverted. The first option is wrong: layers are a logical separation within a single deployment, and you can't scale them independently. The third is wrong: isolating the layers makes testing easier by stubbing out the layer below, but it in no way removes the need for it. The fourth is wrong: the difference between the styles is in the direction of dependencies and the cost of change, not in execution speed; extra pass-through calls add indirection rather than speed the code up.",
     },
     conceptId: "layered",
   },
@@ -1299,7 +1299,7 @@ export const architectureQuestions: Question[] = [
     grade: "junior",
     prompt: {
       ru: "Как распределяются обязанности между компонентами в MVC?",
-      en: "Как распределяются обязанности между компонентами в MVC?",
+      en: "How are responsibilities divided among the components in MVC?",
     },
     options: {
       ru: [
@@ -1309,16 +1309,16 @@ export const architectureQuestions: Question[] = [
         "Model, View и Controller — это три слоя системы: база данных, серверное API и фронтенд",
       ],
       en: [
-        "Model хранит данные и бизнес-логику, View отображает состояние Model, Controller обрабатывает ввод пользователя и вызывает операции Model",
-        "Controller содержит бизнес-логику, Model отвечает за отрисовку, а View хранит данные приложения",
-        "View напрямую изменяет данные приложения, а Model лишь кэширует результаты для ускорения отрисовки",
-        "Model, View и Controller — это три слоя системы: база данных, серверное API и фронтенд",
+        "The Model holds data and business logic, the View renders the Model's state, and the Controller handles user input and invokes operations on the Model",
+        "The Controller contains the business logic, the Model is responsible for rendering, and the View holds the application's data",
+        "The View modifies the application's data directly, and the Model merely caches results to speed up rendering",
+        "Model, View, and Controller are the three tiers of the system: the database, the server-side API, and the frontend",
       ],
     },
     correctIndex: 0,
     explanation: {
       ru: "Верен первый вариант: в MVC логика и данные живут в Model, View только отображает её состояние, а Controller переводит действия пользователя в операции над Model — при этом Model не знает ни о View, ни о Controller. Второй вариант перепутывает роли: бизнес-логика в Controller — это анти-паттерн «толстый контроллер», а Model не занимается отрисовкой. Третий неверен: View не должна изменять данные напрямую — изменения идут через Controller в Model, иначе разделение теряет смысл. Четвёртый — распространённое заблуждение: MVC описывает разделение обязанностей внутри уровня пользовательского интерфейса, а не деление системы на базу данных, API и фронтенд (это ближе к layered architecture).",
-      en: "Верен первый вариант: в MVC логика и данные живут в Model, View только отображает её состояние, а Controller переводит действия пользователя в операции над Model — при этом Model не знает ни о View, ни о Controller. Второй вариант перепутывает роли: бизнес-логика в Controller — это анти-паттерн «толстый контроллер», а Model не занимается отрисовкой. Третий неверен: View не должна изменять данные напрямую — изменения идут через Controller в Model, иначе разделение теряет смысл. Четвёртый — распространённое заблуждение: MVC описывает разделение обязанностей внутри уровня пользовательского интерфейса, а не деление системы на базу данных, API и фронтенд (это ближе к layered architecture).",
+      en: "The first option is correct: in MVC the logic and data live in the Model, the View only renders its state, and the Controller translates user actions into operations on the Model — while the Model knows nothing about either the View or the Controller. The second option scrambles the roles: business logic in the Controller is the \"fat controller\" anti-pattern, and the Model doesn't do any rendering. The third is wrong: the View shouldn't modify data directly — changes flow through the Controller into the Model, otherwise the separation loses its point. The fourth is a common misconception: MVC describes a separation of responsibilities within the user-interface layer, not a division of the system into database, API, and frontend (that's closer to layered architecture).",
     },
     conceptId: "mvc",
   },
@@ -1329,7 +1329,7 @@ export const architectureQuestions: Question[] = [
     grade: "junior",
     prompt: {
       ru: "В чём основной компромисс применения MVC и когда он не окупается?",
-      en: "В чём основной компромисс применения MVC и когда он не окупается?",
+      en: "What is the main trade-off of using MVC, and when does it not pay off?",
     },
     options: {
       ru: [
@@ -1339,16 +1339,16 @@ export const architectureQuestions: Question[] = [
         "MVC нельзя применять без базы данных, поэтому он не подходит для локальных приложений",
       ],
       en: [
-        "MVC гарантирует отсутствие ошибок в интерфейсе, поэтому его стоит применять всегда",
-        "Тестируемость и независимость логики от отображения покупаются ценой дополнительной структуры: для простого экрана без логики три компонента и связи между ними — лишние",
-        "MVC заметно замедляет приложение, потому что три класса всегда работают медленнее одного",
-        "MVC нельзя применять без базы данных, поэтому он не подходит для локальных приложений",
+        "MVC guarantees a bug-free interface, so it's worth using every time",
+        "Testability and the independence of logic from presentation are bought at the price of extra structure: for a simple screen with no logic, three components and the wiring between them are superfluous",
+        "MVC noticeably slows the application down, because three classes always run slower than one",
+        "MVC can't be used without a database, so it isn't suitable for local applications",
       ],
     },
     correctIndex: 1,
     explanation: {
       ru: "Верен второй вариант: разделение на Model, View и Controller даёт тестируемую логику и независимое отображение, но каждый экран обрастает тремя компонентами, связями и механизмом синхронизации — для простого статичного экрана эта цена не окупается. Первый вариант ложен: никакой стиль не гарантирует отсутствие ошибок, а «применять всегда» игнорирует сам компромисс. Третий неверен: издержки MVC — структурные (больше кода и связей), а не производительность; накладные расходы делегирования пренебрежимы. Четвёртый не имеет отношения к делу: Model — это данные и логика в памяти приложения, база данных для MVC не обязательна.",
-      en: "Верен второй вариант: разделение на Model, View и Controller даёт тестируемую логику и независимое отображение, но каждый экран обрастает тремя компонентами, связями и механизмом синхронизации — для простого статичного экрана эта цена не окупается. Первый вариант ложен: никакой стиль не гарантирует отсутствие ошибок, а «применять всегда» игнорирует сам компромисс. Третий неверен: издержки MVC — структурные (больше кода и связей), а не производительность; накладные расходы делегирования пренебрежимы. Четвёртый не имеет отношения к делу: Model — это данные и логика в памяти приложения, база данных для MVC не обязательна.",
+      en: "The second option is correct: splitting into Model, View, and Controller gives you testable logic and independent presentation, but every screen accumulates three components, their wiring, and a synchronization mechanism — for a simple static screen that price doesn't pay off. The first option is false: no style guarantees the absence of bugs, and \"use it every time\" ignores the trade-off itself. The third is wrong: MVC's cost is structural (more code and coupling), not performance; the overhead of delegation is negligible. The fourth is beside the point: the Model is data and logic held in the application's memory, and a database isn't required for MVC.",
     },
     conceptId: "mvc",
   },
@@ -1359,7 +1359,7 @@ export const architectureQuestions: Question[] = [
     grade: "middle",
     prompt: {
       ru: "Какое утверждение точнее всего описывает роль ViewModel в MVVM?",
-      en: "Какое утверждение точнее всего описывает роль ViewModel в MVVM?",
+      en: "Which statement most accurately describes the role of the ViewModel in MVVM?",
     },
     options: {
       ru: [
@@ -1369,16 +1369,16 @@ export const architectureQuestions: Question[] = [
         "ViewModel держит ссылку на интерфейс View и явно вызывает его методы обновления при изменении Model",
       ],
       en: [
-        "ViewModel хранит состояние и логику представления, не знает о конкретном View; View привязывается к его свойствам через data binding",
-        "ViewModel — это контроллер, который принимает пользовательский ввод и напрямую манипулирует элементами View",
-        "ViewModel — это слой доступа к данным, инкапсулирующий запросы к базе данных и внешним API",
-        "ViewModel держит ссылку на интерфейс View и явно вызывает его методы обновления при изменении Model",
+        "The ViewModel holds presentation state and logic and knows nothing about a concrete View; the View binds to its properties through data binding",
+        "The ViewModel is a controller that receives user input and directly manipulates the View's elements",
+        "The ViewModel is a data-access layer that encapsulates queries to the database and external APIs",
+        "The ViewModel holds a reference to the View interface and explicitly calls its update methods when the Model changes",
       ],
     },
     correctIndex: 0,
     explanation: {
       ru: "Верно первое: ViewModel — «модель экрана» со свойствами и командами, о конкретном View он не знает, а связь обеспечивает data binding — именно это отличает MVVM. Второй вариант описывает Controller из MVC: в MVVM никто напрямую не манипулирует виджетами. Третий — слой доступа к данным (репозиторий), это зона Model, а не ViewModel. Четвёртый — схема MVP: там Presenter держит ссылку на интерфейс View и явно его обновляет, тогда как в MVVM направление обратное — View сам подписывается на ViewModel.",
-      en: "Верно первое: ViewModel — «модель экрана» со свойствами и командами, о конкретном View он не знает, а связь обеспечивает data binding — именно это отличает MVVM. Второй вариант описывает Controller из MVC: в MVVM никто напрямую не манипулирует виджетами. Третий — слой доступа к данным (репозиторий), это зона Model, а не ViewModel. Четвёртый — схема MVP: там Presenter держит ссылку на интерфейс View и явно его обновляет, тогда как в MVVM направление обратное — View сам подписывается на ViewModel.",
+      en: "The first is correct: the ViewModel is a \"model of the screen\" with properties and commands, it knows nothing about a concrete View, and data binding provides the connection — that is precisely what sets MVVM apart. The second option describes the Controller from MVC: in MVVM nothing manipulates widgets directly. The third is a data-access layer (a repository), which belongs to the Model, not the ViewModel. The fourth is the MVP arrangement: there the Presenter holds a reference to the View interface and updates it explicitly, whereas in MVVM the direction is reversed — the View itself subscribes to the ViewModel.",
     },
     conceptId: "mvvm",
   },
@@ -1389,7 +1389,7 @@ export const architectureQuestions: Question[] = [
     grade: "middle",
     prompt: {
       ru: "В чём основной компромисс применения MVVM?",
-      en: "В чём основной компромисс применения MVVM?",
+      en: "What is the main trade-off of using MVVM?",
     },
     options: {
       ru: [
@@ -1399,16 +1399,16 @@ export const architectureQuestions: Question[] = [
         "MVVM оправдан всегда, включая тривиальные статичные экраны без состояния",
       ],
       en: [
-        "MVVM ускоряет отрисовку интерфейса, потому что data binding обходит перерисовку View",
-        "Тестируемость логики представления и развязка от View достигаются ценой дополнительного слоя и трудноотлаживаемых декларативных привязок",
-        "MVVM избавляет от необходимости в слое Model — все данные живут во ViewModel",
-        "MVVM оправдан всегда, включая тривиальные статичные экраны без состояния",
+        "MVVM speeds up interface rendering because data binding bypasses re-rendering the View",
+        "Testability of the presentation logic and decoupling from the View come at the cost of an extra layer and hard-to-debug declarative bindings",
+        "MVVM removes the need for a Model layer — all data lives in the ViewModel",
+        "MVVM is always justified, including for trivial static screens with no state",
       ],
     },
     correctIndex: 1,
     explanation: {
       ru: "Верно второе: выгода MVVM — ViewModel тестируется без UI, а View развязан от логики, но платой становятся лишний слой, инфраструктура биндинга и «магия» привязок, ошибки которых часто молчаливы и плохо отлаживаются. Первый вариант неверен: MVVM — про организацию кода, а не про скорость рендеринга; биндинг сам по себе ничего не ускоряет. Третий искажает стиль: Model остаётся отдельным слоем доменных данных, ViewModel лишь адаптирует его к экрану. Четвёртый — ложное обещание «серебряной пули»: для простых экранов без состояния ViewModel и биндинг добавляют сложность без выгоды.",
-      en: "Верно второе: выгода MVVM — ViewModel тестируется без UI, а View развязан от логики, но платой становятся лишний слой, инфраструктура биндинга и «магия» привязок, ошибки которых часто молчаливы и плохо отлаживаются. Первый вариант неверен: MVVM — про организацию кода, а не про скорость рендеринга; биндинг сам по себе ничего не ускоряет. Третий искажает стиль: Model остаётся отдельным слоем доменных данных, ViewModel лишь адаптирует его к экрану. Четвёртый — ложное обещание «серебряной пули»: для простых экранов без состояния ViewModel и биндинг добавляют сложность без выгоды.",
+      en: "The second is correct: the payoff of MVVM is that the ViewModel is testable without a UI and the View is decoupled from the logic, but the price is an extra layer, binding infrastructure, and the \"magic\" of bindings, whose errors are often silent and hard to debug. The first option is wrong: MVVM is about code organization, not rendering speed; binding by itself speeds up nothing. The third distorts the style: the Model remains a separate layer of domain data, and the ViewModel merely adapts it to the screen. The fourth is a false \"silver bullet\" promise: for simple, stateless screens a ViewModel and binding add complexity with no payoff.",
     },
     conceptId: "mvvm",
   },
@@ -1419,7 +1419,7 @@ export const architectureQuestions: Question[] = [
     grade: "middle",
     prompt: {
       ru: "Что точнее всего описывает монолитную архитектуру?",
-      en: "Что точнее всего описывает монолитную архитектуру?",
+      en: "Which best describes a monolithic architecture?",
     },
     options: {
       ru: [
@@ -1429,16 +1429,16 @@ export const architectureQuestions: Question[] = [
         "Стиль, при котором любое изменение требует переписать систему с нуля",
       ],
       en: [
-        "Приложение, в котором принципиально отсутствуют модули и разделение на слои",
-        "Вся функциональность собирается и разворачивается как единое целое и выполняется в одном процессе",
-        "Набор независимых сервисов, взаимодействующих между собой по сети",
-        "Стиль, при котором любое изменение требует переписать систему с нуля",
+        "An application that fundamentally has no modules or separation into layers",
+        "All functionality is built and deployed as a single unit and runs in one process",
+        "A set of independent services that communicate with each other over the network",
+        "A style in which any change requires rewriting the system from scratch",
       ],
     },
     correctIndex: 1,
     explanation: {
       ru: "Монолит определяется единицей развёртывания: одна кодовая база, один деплой-юнит, взаимодействие модулей — прямыми вызовами внутри процесса. Первый вариант неверен: монолит вполне может быть хорошо структурирован внутри (modular monolith, слои) — монолитность про деплой, а не про отсутствие модульности. Третий вариант описывает microservices — противоположный стиль. Четвёртый — карикатура: изменения в монолите требуют пересборки и редеплоя всего приложения, но не переписывания системы.",
-      en: "Монолит определяется единицей развёртывания: одна кодовая база, один деплой-юнит, взаимодействие модулей — прямыми вызовами внутри процесса. Первый вариант неверен: монолит вполне может быть хорошо структурирован внутри (modular monolith, слои) — монолитность про деплой, а не про отсутствие модульности. Третий вариант описывает microservices — противоположный стиль. Четвёртый — карикатура: изменения в монолите требуют пересборки и редеплоя всего приложения, но не переписывания системы.",
+      en: "A monolith is defined by its unit of deployment: one codebase, one deployable unit, with modules interacting through direct in-process calls. The first option is wrong: a monolith can be well structured internally (a modular monolith, with layers) — being monolithic is about deployment, not about the absence of modularity. The third option describes microservices, the opposite style. The fourth is a caricature: a change in a monolith requires rebuilding and redeploying the whole application, but not rewriting the system.",
     },
     conceptId: "monolith",
   },
@@ -1449,7 +1449,7 @@ export const architectureQuestions: Question[] = [
     grade: "middle",
     prompt: {
       ru: "Какой компромисс принимает команда, выбирая монолит вместо микросервисов на старте продукта?",
-      en: "Какой компромисс принимает команда, выбирая монолит вместо микросервисов на старте продукта?",
+      en: "What trade-off does a team accept by choosing a monolith over microservices at the start of a product?",
     },
     options: {
       ru: [
@@ -1459,16 +1459,16 @@ export const architectureQuestions: Question[] = [
         "Монолит не позволяет тестировать модули по отдельности",
       ],
       en: [
-        "Монолит всегда работает медленнее микросервисов из-за размера кодовой базы",
-        "Монолит в принципе исключает горизонтальное масштабирование",
-        "Простота деплоя, in-process вызовы и ACID-транзакции в обмен на невозможность независимо масштабировать и выпускать отдельные части",
-        "Монолит не позволяет тестировать модули по отдельности",
+        "A monolith always runs slower than microservices because of the size of its codebase",
+        "A monolith fundamentally rules out horizontal scaling",
+        "Deployment simplicity, in-process calls, and ACID transactions in exchange for the inability to scale and release individual parts independently",
+        "A monolith doesn't allow modules to be tested in isolation",
       ],
     },
     correctIndex: 2,
     explanation: {
       ru: "Монолит даёт один деплой-юнит, дешёвые вызовы внутри процесса и транзакции через несколько модулей, но платой становится связанный жизненный цикл: масштабировать и деплоить можно только всё целиком, а с ростом команды растёт стоимость координации (Fowler, «MonolithFirst»). Первый вариант неверен: in-process вызовы обычно быстрее сетевых, размер кодовой базы на скорость выполнения напрямую не влияет. Второй неверен: монолит можно масштабировать горизонтально копиями за балансировщиком — нельзя лишь масштабировать отдельный «горячий» модуль. Четвёртый неверен: модульные тесты доступны при любой архитектуре — это вопрос внутренних границ, а не способа развёртывания.",
-      en: "Монолит даёт один деплой-юнит, дешёвые вызовы внутри процесса и транзакции через несколько модулей, но платой становится связанный жизненный цикл: масштабировать и деплоить можно только всё целиком, а с ростом команды растёт стоимость координации (Fowler, «MonolithFirst»). Первый вариант неверен: in-process вызовы обычно быстрее сетевых, размер кодовой базы на скорость выполнения напрямую не влияет. Второй неверен: монолит можно масштабировать горизонтально копиями за балансировщиком — нельзя лишь масштабировать отдельный «горячий» модуль. Четвёртый неверен: модульные тесты доступны при любой архитектуре — это вопрос внутренних границ, а не способа развёртывания.",
+      en: "A monolith gives you one deployable unit, cheap in-process calls, and transactions spanning multiple modules, but the price is a coupled lifecycle: you can only scale and deploy everything as a whole, and coordination costs grow as the team grows (Fowler, 'MonolithFirst'). The first option is wrong: in-process calls are usually faster than network calls, and codebase size doesn't directly affect execution speed. The second is wrong: a monolith can be scaled horizontally with copies behind a load balancer — you just can't scale a single hot module on its own. The fourth is wrong: unit tests are available in any architecture — that's a matter of internal boundaries, not of how the system is deployed.",
     },
     conceptId: "monolith",
   },
@@ -1479,7 +1479,7 @@ export const architectureQuestions: Question[] = [
     grade: "senior",
     prompt: {
       ru: "В чём ключевая идея Hexagonal Architecture (Ports & Adapters)?",
-      en: "В чём ключевая идея Hexagonal Architecture (Ports & Adapters)?",
+      en: "What is the key idea behind Hexagonal Architecture (Ports & Adapters)?",
     },
     options: {
       ru: [
@@ -1489,16 +1489,16 @@ export const architectureQuestions: Question[] = [
         "Приложение разбивается на независимо развёртываемые сервисы, взаимодействующие по сети",
       ],
       en: [
-        "Приложение делится ровно на шесть слоёв — по числу граней шестиугольника",
-        "Ядро приложения объявляет порты (интерфейсы) для общения с внешним миром, а адаптеры реализуют их снаружи; все зависимости направлены внутрь, к ядру",
-        "Каждый внешний сервис (БД, UI, очередь) определяет интерфейс, который ядро обязано реализовать",
-        "Приложение разбивается на независимо развёртываемые сервисы, взаимодействующие по сети",
+        "The application is divided into exactly six layers — one per side of the hexagon",
+        "The application core declares ports (interfaces) for communicating with the outside world, and adapters implement them from outside; all dependencies point inward, toward the core",
+        "Each external service (database, UI, queue) defines an interface that the core is required to implement",
+        "The application is split into independently deployable services that communicate over the network",
       ],
     },
     correctIndex: 1,
     explanation: {
       ru: "Верно второе: суть стиля — ядро владеет портами (интерфейсами в терминах домена), адаптеры транслируют конкретные технологии в эти порты, и зависимости всегда направлены внутрь; поэтому ядро одинаково управляется UI, тестами или скриптами и не знает деталей инфраструктуры. «Ровно шесть слоёв» — миф: шестиугольник у Cockburn — лишь визуальная метафора, число граней ничего не значит. Третий вариант инвертирует стиль наоборот: если интерфейсы диктует инфраструктура, ядро зависит от неё, а Hexagonal требует обратного направления зависимостей (в духе DIP). Четвёртый описывает Microservices — стиль развёртывания и распределения, а не организацию зависимостей внутри одного приложения.",
-      en: "Верно второе: суть стиля — ядро владеет портами (интерфейсами в терминах домена), адаптеры транслируют конкретные технологии в эти порты, и зависимости всегда направлены внутрь; поэтому ядро одинаково управляется UI, тестами или скриптами и не знает деталей инфраструктуры. «Ровно шесть слоёв» — миф: шестиугольник у Cockburn — лишь визуальная метафора, число граней ничего не значит. Третий вариант инвертирует стиль наоборот: если интерфейсы диктует инфраструктура, ядро зависит от неё, а Hexagonal требует обратного направления зависимостей (в духе DIP). Четвёртый описывает Microservices — стиль развёртывания и распределения, а не организацию зависимостей внутри одного приложения.",
+      en: "The second is correct: the essence of the style is that the core owns the ports (interfaces expressed in domain terms), adapters translate concrete technologies into those ports, and dependencies always point inward; that's why the core is driven identically by a UI, tests, or scripts and knows nothing about infrastructure details. \"Exactly six layers\" is a myth: Cockburn's hexagon is merely a visual metaphor — the number of sides means nothing. The third option inverts the style: if infrastructure dictates the interfaces, the core depends on it, whereas Hexagonal requires the opposite direction of dependencies (in the spirit of the DIP). The fourth describes Microservices — a style of deployment and distribution, not the organization of dependencies within a single application.",
     },
     conceptId: "hexagonal",
   },
@@ -1509,7 +1509,7 @@ export const architectureQuestions: Question[] = [
     grade: "senior",
     prompt: {
       ru: "Какой компромисс несёт применение Hexagonal Architecture и когда она скорее вредит?",
-      en: "Какой компромисс несёт применение Hexagonal Architecture и когда она скорее вредит?",
+      en: "What trade-off does adopting Hexagonal Architecture entail, and when is it more likely to hurt?",
     },
     options: {
       ru: [
@@ -1519,16 +1519,16 @@ export const architectureQuestions: Question[] = [
         "Hexagonal Architecture применима только в микросервисах, а в монолите не даёт эффекта",
       ],
       en: [
-        "Изоляция и тестируемость домена покупаются ценой дополнительных портов, адаптеров и маппинга; в тонком CRUD без бизнес-правил эта прослойка — лишняя косвенность",
-        "Hexagonal Architecture ускоряет работу приложения, поэтому вредна только в системах, где производительность не важна",
-        "Стиль избавляет от необходимости писать интеграционные тесты для адаптеров, так как ядро уже протестировано юнит-тестами",
-        "Hexagonal Architecture применима только в микросервисах, а в монолите не даёт эффекта",
+        "Domain isolation and testability are bought at the price of extra ports, adapters, and mapping; in thin CRUD with no business rules that layer is just needless indirection",
+        "Hexagonal Architecture speeds up the application, so it only hurts in systems where performance doesn't matter",
+        "The style removes the need to write integration tests for adapters, since the core is already covered by unit tests",
+        "Hexagonal Architecture is applicable only in microservices and yields no benefit in a monolith",
       ],
     },
     correctIndex: 0,
     explanation: {
       ru: "Верен первый вариант: главная выгода стиля — домен тестируется без инфраструктуры и переживает смену технологий, но платой становятся интерфейсы, DTO и маппинг на каждой границе; когда доменной логики почти нет (тонкий CRUD), порты превращаются в пустую прослойку, и издержки перевешивают выгоду. Второй вариант неверен: стиль про организацию зависимостей, а не про производительность — лишняя косвенность скорее добавляет накладные расходы, чем убирает их. Третий неверен: юнит-тесты ядра с in-memory-адаптерами не проверяют реальные SQL, HTTP и сериализацию — интеграционные тесты адаптеров по-прежнему нужны. Четвёртый неверен: Ports & Adapters — стиль организации одного приложения и отлично работает в монолите; к способу развёртывания он ортогонален.",
-      en: "Верен первый вариант: главная выгода стиля — домен тестируется без инфраструктуры и переживает смену технологий, но платой становятся интерфейсы, DTO и маппинг на каждой границе; когда доменной логики почти нет (тонкий CRUD), порты превращаются в пустую прослойку, и издержки перевешивают выгоду. Второй вариант неверен: стиль про организацию зависимостей, а не про производительность — лишняя косвенность скорее добавляет накладные расходы, чем убирает их. Третий неверен: юнит-тесты ядра с in-memory-адаптерами не проверяют реальные SQL, HTTP и сериализацию — интеграционные тесты адаптеров по-прежнему нужны. Четвёртый неверен: Ports & Adapters — стиль организации одного приложения и отлично работает в монолите; к способу развёртывания он ортогонален.",
+      en: "The first option is correct: the style's main benefit is that the domain is tested without infrastructure and survives changes of technology, but the price is interfaces, DTOs, and mapping at every boundary; when there's almost no domain logic (thin CRUD), the ports turn into an empty layer and the cost outweighs the benefit. The second option is wrong: the style is about organizing dependencies, not performance — the extra indirection tends to add overhead rather than remove it. The third is wrong: unit tests of the core with in-memory adapters don't exercise real SQL, HTTP, and serialization — integration tests for the adapters are still needed. The fourth is wrong: Ports & Adapters is a style for organizing a single application and works perfectly well in a monolith; it is orthogonal to how you deploy.",
     },
     conceptId: "hexagonal",
   },
@@ -1539,7 +1539,7 @@ export const architectureQuestions: Question[] = [
     grade: "senior",
     prompt: {
       ru: "Какое утверждение точнее всего выражает суть Clean Architecture?",
-      en: "Какое утверждение точнее всего выражает суть Clean Architecture?",
+      en: "Which statement most accurately captures the essence of Clean Architecture?",
     },
     options: {
       ru: [
@@ -1549,16 +1549,16 @@ export const architectureQuestions: Question[] = [
         "Приложение делится на независимо развёртываемые сервисы, каждый со своей базой данных и каналом обмена сообщениями",
       ],
       en: [
-        "Каждый слой обращается только к слою непосредственно под ним, а зависимости идут сверху вниз — от UI к базе данных в основании",
-        "Зависимости исходного кода направлены только внутрь: внешние слои знают о внутренних, а бизнес-правила ничего не знают о UI, БД и фреймворках",
-        "Бизнес-логика размещается в контроллерах фреймворка, чтобы фреймворк централизованно управлял жизненным циклом приложения",
-        "Приложение делится на независимо развёртываемые сервисы, каждый со своей базой данных и каналом обмена сообщениями",
+        "Each layer calls only the layer directly beneath it, and dependencies run top-down — from the UI down to the database at the base",
+        "Source-code dependencies point only inward: outer layers know about inner ones, while business rules know nothing about the UI, the database, or frameworks",
+        "Business logic is placed in the framework's controllers so that the framework centrally manages the application's lifecycle",
+        "The application is split into independently deployable services, each with its own database and messaging channel",
       ],
     },
     correctIndex: 1,
     explanation: {
       ru: "Суть Clean Architecture — Dependency Rule: зависимости исходного кода направлены только внутрь, к более высокоуровневым политикам, поэтому Entities и Use Cases не знают о UI, БД и фреймворках. Первый вариант описывает классическую Layered Architecture, где база данных лежит в основании и всё в итоге зависит от неё — Clean Architecture как раз инвертирует это, делая БД периферийной деталью. Третий вариант — нарушение стиля: бизнес-правила в контроллерах привязывают ядро к фреймворку. Четвёртый описывает Microservices — это про независимое развёртывание сервисов, а не про организацию зависимостей внутри одного приложения.",
-      en: "Суть Clean Architecture — Dependency Rule: зависимости исходного кода направлены только внутрь, к более высокоуровневым политикам, поэтому Entities и Use Cases не знают о UI, БД и фреймворках. Первый вариант описывает классическую Layered Architecture, где база данных лежит в основании и всё в итоге зависит от неё — Clean Architecture как раз инвертирует это, делая БД периферийной деталью. Третий вариант — нарушение стиля: бизнес-правила в контроллерах привязывают ядро к фреймворку. Четвёртый описывает Microservices — это про независимое развёртывание сервисов, а не про организацию зависимостей внутри одного приложения.",
+      en: "The essence of Clean Architecture is the Dependency Rule: source-code dependencies point only inward, toward higher-level policies, so Entities and Use Cases know nothing about the UI, the database, or frameworks. The first option describes classic Layered Architecture, where the database sits at the base and everything ultimately depends on it — Clean Architecture inverts precisely this, making the database a peripheral detail. The third option violates the style: putting business rules in controllers binds the core to the framework. The fourth describes Microservices — that's about deploying services independently, not about organizing dependencies within a single application.",
     },
     conceptId: "clean-architecture",
   },
@@ -1569,7 +1569,7 @@ export const architectureQuestions: Question[] = [
     grade: "senior",
     prompt: {
       ru: "Какой компромисс несёт применение Clean Architecture и где проходит граница её применимости?",
-      en: "Какой компромисс несёт применение Clean Architecture и где проходит граница её применимости?",
+      en: "What trade-off does adopting Clean Architecture carry, and where are the limits of its applicability?",
     },
     options: {
       ru: [
@@ -1579,16 +1579,16 @@ export const architectureQuestions: Question[] = [
         "Стиль жёстко привязывает ядро к выбранному фреймворку в обмен на быстрый старт проекта",
       ],
       en: [
-        "Главная цена — производительность: дополнительные слои делают вызовы настолько медленнее, что стиль непригоден для нагруженных систем",
-        "Стиль окупается в любом проекте, включая простые CRUD-приложения и одноразовые прототипы, поэтому границ применимости у него нет",
-        "Независимость бизнес-логики от фреймворков и БД и её тестируемость достигаются ценой дополнительных абстракций, маппинга между слоями и большего объёма кода — в простом CRUD эта цена может перевесить выгоду",
-        "Стиль жёстко привязывает ядро к выбранному фреймворку в обмен на быстрый старт проекта",
+        "The main cost is performance: the extra layers make calls so much slower that the style is unfit for high-load systems",
+        "The style pays off in any project, including simple CRUD applications and throwaway prototypes, so it has no limits of applicability",
+        "Independence of the business logic from frameworks and the database, along with its testability, is achieved at the cost of extra abstractions, mapping between layers, and more code — in simple CRUD that cost can outweigh the benefit",
+        "The style tightly binds the core to the chosen framework in exchange for a fast project start",
       ],
     },
     correctIndex: 2,
     explanation: {
       ru: "Реальный компромисс Clean Architecture — сложность: порты, DTO и маппинг между слоями дают независимость и тестируемость ядра, но добавляют косвенность и boilerplate, поэтому в простом CRUD или прототипе, где предметной логики почти нет, издержки перевешивают выгоду. Первый вариант неверен: накладные расходы на лишний вызов через интерфейс пренебрежимы, цена стиля — когнитивная и организационная, а не в производительности. Второй неверен: универсально окупающихся стилей не бывает, границы применимости есть у любого решения. Четвёртый переворачивает суть: стиль как раз освобождает ядро от фреймворка, а старт проекта скорее замедляет из-за начальных абстракций.",
-      en: "Реальный компромисс Clean Architecture — сложность: порты, DTO и маппинг между слоями дают независимость и тестируемость ядра, но добавляют косвенность и boilerplate, поэтому в простом CRUD или прототипе, где предметной логики почти нет, издержки перевешивают выгоду. Первый вариант неверен: накладные расходы на лишний вызов через интерфейс пренебрежимы, цена стиля — когнитивная и организационная, а не в производительности. Второй неверен: универсально окупающихся стилей не бывает, границы применимости есть у любого решения. Четвёртый переворачивает суть: стиль как раз освобождает ядро от фреймворка, а старт проекта скорее замедляет из-за начальных абстракций.",
+      en: "Clean Architecture's real trade-off is complexity: ports, DTOs, and mapping between layers give the core independence and testability, but they add indirection and boilerplate, so in simple CRUD or a prototype, where there's almost no domain logic, the costs outweigh the benefit. The first option is wrong: the overhead of an extra call through an interface is negligible — the style's cost is cognitive and organizational, not a matter of performance. The second is wrong: no style pays off universally; every decision has limits of applicability. The fourth inverts the point: the style actually frees the core from the framework, and if anything it slows the project's start because of the upfront abstractions.",
     },
     conceptId: "clean-architecture",
   },
@@ -1599,7 +1599,7 @@ export const architectureQuestions: Question[] = [
     grade: "senior",
     prompt: {
       ru: "Что точнее всего описывает суть Event-driven Architecture?",
-      en: "Что точнее всего описывает суть Event-driven Architecture?",
+      en: "Which best captures the essence of Event-driven Architecture?",
     },
     options: {
       ru: [
@@ -1609,16 +1609,16 @@ export const architectureQuestions: Question[] = [
         "Система делится на слои, и каждый слой обращается только к нижележащему",
       ],
       en: [
-        "Центральный оркестратор вызывает сервисы по заранее заданному сценарию и ждёт ответа от каждого",
-        "Компоненты вызывают друг друга напрямую синхронными запросами, а брокер лишь балансирует нагрузку между экземплярами",
-        "Компоненты взаимодействуют, публикуя и потребляя события — уведомления о свершившихся фактах; издатель не знает, кто и как на них отреагирует",
-        "Система делится на слои, и каждый слой обращается только к нижележащему",
+        "A central orchestrator invokes services according to a predefined script and waits for a response from each one",
+        "Components call each other directly via synchronous requests, and the broker merely balances load across instances",
+        "Components interact by publishing and consuming events—notifications that something has already happened; the producer doesn't know who will react to them or how",
+        "The system is divided into layers, and each layer calls only the layer directly beneath it",
       ],
     },
     correctIndex: 2,
     explanation: {
       ru: "Суть EDA — инверсия взаимодействия: издатель фиксирует факт событием и публикует его в брокер, а потребители подписываются и реагируют независимо; издатель получателей не знает. Первый вариант описывает оркестрацию с центральным координатором — противоположность хореографии через события, где координатора нет. Второй — обычное синхронное взаимодействие запрос–ответ: наличие балансировщика не делает архитектуру событийной, связь остаётся прямой. Четвёртый — Layered Architecture: деление на слои с направленными зависимостями никак не связано с событиями.",
-      en: "Суть EDA — инверсия взаимодействия: издатель фиксирует факт событием и публикует его в брокер, а потребители подписываются и реагируют независимо; издатель получателей не знает. Первый вариант описывает оркестрацию с центральным координатором — противоположность хореографии через события, где координатора нет. Второй — обычное синхронное взаимодействие запрос–ответ: наличие балансировщика не делает архитектуру событийной, связь остаётся прямой. Четвёртый — Layered Architecture: деление на слои с направленными зависимостями никак не связано с событиями.",
+      en: "The essence of EDA is inverting the interaction: the producer records a fact as an event and publishes it to the broker, while consumers subscribe and react independently; the producer doesn't know the recipients. The first option describes orchestration with a central coordinator—the opposite of choreography through events, where there is no coordinator. The second is ordinary synchronous request–response interaction: having a load balancer doesn't make the architecture event-driven, the coupling stays direct. The fourth is Layered Architecture: splitting the system into layers with directed dependencies has nothing to do with events.",
     },
     conceptId: "event-driven",
   },
@@ -1629,7 +1629,7 @@ export const architectureQuestions: Question[] = [
     grade: "senior",
     prompt: {
       ru: "Какой главный компромисс принимает команда, переходя на Event-driven Architecture?",
-      en: "Какой главный компромисс принимает команда, переходя на Event-driven Architecture?",
+      en: "What is the main trade-off a team accepts when moving to Event-driven Architecture?",
     },
     options: {
       ru: [
@@ -1639,16 +1639,16 @@ export const architectureQuestions: Question[] = [
         "События делают порядок обработки строго детерминированным, что упрощает рассуждение о поведении системы",
       ],
       en: [
-        "EDA всегда снижает задержку обработки каждого запроса, потому что события обрабатываются параллельно",
-        "Слабая связанность и независимое масштабирование достигаются ценой eventual consistency, неявного потока управления и сложной сквозной отладки",
-        "Брокер устраняет единую точку отказа, поэтому надёжность системы растёт без дополнительных эксплуатационных затрат",
-        "События делают порядок обработки строго детерминированным, что упрощает рассуждение о поведении системы",
+        "EDA always reduces the processing latency of every request, because events are handled in parallel",
+        "Loose coupling and independent scaling are achieved at the cost of eventual consistency, implicit control flow, and difficult end-to-end debugging",
+        "The broker eliminates the single point of failure, so system reliability improves with no additional operational cost",
+        "Events make the processing order strictly deterministic, which simplifies reasoning about the system's behavior",
       ],
     },
     correctIndex: 1,
     explanation: {
       ru: "Верен второй вариант: развязка издателей и потребителей и независимое масштабирование покупаются ценой асинхронности — данные согласуются с задержкой (eventual consistency), цепочку «что случится после события» не видно из кода издателя, а трассировка сквозного сценария требует специальных инструментов (correlation id, распределённый трейсинг). Первый вариант неверен: асинхронный путь через брокер обычно добавляет задержку отдельной операции — выигрыш в пропускной способности и устойчивости, а не в латентности каждого запроса. Третий неверен вдвойне: брокер сам становится критической точкой инфраструктуры и требует затрат на эксплуатацию. Четвёртый утверждает обратное реальности: доставка событий допускает дубли и переупорядочивание, поэтому детерминизм падает, а обработчикам нужна идемпотентность.",
-      en: "Верен второй вариант: развязка издателей и потребителей и независимое масштабирование покупаются ценой асинхронности — данные согласуются с задержкой (eventual consistency), цепочку «что случится после события» не видно из кода издателя, а трассировка сквозного сценария требует специальных инструментов (correlation id, распределённый трейсинг). Первый вариант неверен: асинхронный путь через брокер обычно добавляет задержку отдельной операции — выигрыш в пропускной способности и устойчивости, а не в латентности каждого запроса. Третий неверен вдвойне: брокер сам становится критической точкой инфраструктуры и требует затрат на эксплуатацию. Четвёртый утверждает обратное реальности: доставка событий допускает дубли и переупорядочивание, поэтому детерминизм падает, а обработчикам нужна идемпотентность.",
+      en: "The second option is correct: decoupling producers from consumers and scaling them independently is paid for with asynchrony—data converges with a delay (eventual consistency), the chain of \"what happens after an event\" isn't visible from the producer's code, and tracing an end-to-end scenario requires dedicated tooling (correlation IDs, distributed tracing). The first option is wrong: an asynchronous path through a broker usually adds latency to an individual operation—the gain is in throughput and resilience, not in per-request latency. The third is wrong twice over: the broker itself becomes a critical piece of infrastructure and demands operational effort. The fourth claims the opposite of reality: event delivery allows duplicates and reordering, so determinism drops and handlers need to be idempotent.",
     },
     conceptId: "event-driven",
   },
@@ -1659,7 +1659,7 @@ export const architectureQuestions: Question[] = [
     grade: "lead",
     prompt: {
       ru: "Что точнее всего описывает архитектурный стиль Microservices?",
-      en: "Что точнее всего описывает архитектурный стиль Microservices?",
+      en: "Which statement most accurately describes the Microservices architectural style?",
     },
     options: {
       ru: [
@@ -1669,16 +1669,16 @@ export const architectureQuestions: Question[] = [
         "Стиль, при котором каждый класс системы выносится в отдельный сервис для максимальной гранулярности",
       ],
       en: [
-        "Приложение — набор небольших независимо развёртываемых сервисов, каждый построен вокруг своей бизнес-возможности, владеет своими данными и общается с остальными по сети",
-        "Разбиение приложения на модули внутри одного процесса с общей базой данных и единым деплоем",
-        "Любая архитектура, в которой клиент и сервер общаются через REST API",
-        "Стиль, при котором каждый класс системы выносится в отдельный сервис для максимальной гранулярности",
+        "An application is a suite of small, independently deployable services, each built around its own business capability, owning its own data and communicating with the others over the network",
+        "Splitting an application into modules within a single process, sharing one database and a single deployment",
+        "Any architecture in which the client and server communicate through a REST API",
+        "A style in which every class in the system is extracted into a separate service for maximum granularity",
       ],
     },
     correctIndex: 0,
     explanation: {
       ru: "Ключевые признаки стиля по Fowler и Lewis: сервисы строятся вокруг бизнес-возможностей, работают в отдельных процессах, независимо развёртываются и владеют своими данными — это первый вариант. Второй описывает модульный монолит: модульность есть, но единый процесс, общая БД и общий деплой лишают главного преимущества — независимых релизов. Третий вариант путает стиль с транспортом: наличие REST API не делает систему микросервисной — монолит тоже может отдавать REST. Четвёртый — антипаттерн «наносервисов»: границей сервиса служит бизнес-возможность (Bounded Context), а не класс; дробление до классов даёт чудовищную сетевую связанность без выгоды.",
-      en: "Ключевые признаки стиля по Fowler и Lewis: сервисы строятся вокруг бизнес-возможностей, работают в отдельных процессах, независимо развёртываются и владеют своими данными — это первый вариант. Второй описывает модульный монолит: модульность есть, но единый процесс, общая БД и общий деплой лишают главного преимущества — независимых релизов. Третий вариант путает стиль с транспортом: наличие REST API не делает систему микросервисной — монолит тоже может отдавать REST. Четвёртый — антипаттерн «наносервисов»: границей сервиса служит бизнес-возможность (Bounded Context), а не класс; дробление до классов даёт чудовищную сетевую связанность без выгоды.",
+      en: "The defining traits of the style, per Fowler and Lewis: services are built around business capabilities, run in separate processes, deploy independently, and own their own data — that is the first option. The second describes a modular monolith: the modularity is there, but a single process, a shared database, and a shared deployment strip away the main advantage — independent releases. The third confuses the style with the transport: having a REST API does not make a system microservice-based — a monolith can expose REST too. The fourth is the \"nanoservices\" anti-pattern: a service boundary is a business capability (a Bounded Context), not a class; breaking things down to individual classes yields monstrous network coupling with no benefit.",
     },
     conceptId: "microservices",
   },
@@ -1689,7 +1689,7 @@ export const architectureQuestions: Question[] = [
     grade: "lead",
     prompt: {
       ru: "В чём главный компромисс перехода от монолита к microservices?",
-      en: "В чём главный компромисс перехода от монолита к microservices?",
+      en: "What is the main trade-off in moving from a monolith to microservices?",
     },
     options: {
       ru: [
@@ -1699,16 +1699,16 @@ export const architectureQuestions: Question[] = [
         "Единственная цена — рост счетов за хостинг; сложность разработки и отладки не меняется",
       ],
       en: [
-        "Микросервисы всегда работают быстрее монолита, потому что каждый сервис меньше и проще",
-        "Независимые деплой и масштабирование покупаются ценой распределённой сложности: частичные отказы сети, eventual consistency вместо ACID-транзакций, дорогая эксплуатация",
-        "Микросервисы избавляют команды от необходимости согласовывать контракты между собой",
-        "Единственная цена — рост счетов за хостинг; сложность разработки и отладки не меняется",
+        "Microservices always run faster than a monolith because each service is smaller and simpler",
+        "Independent deployment and scaling are bought at the price of distributed complexity: partial network failures, eventual consistency instead of ACID transactions, and expensive operations",
+        "Microservices free teams from having to coordinate contracts with one another",
+        "The only cost is a higher hosting bill; the complexity of development and debugging does not change",
       ],
     },
     correctIndex: 1,
     explanation: {
       ru: "Верен второй вариант: автономия команд, независимые релизы и точечное масштабирование оплачиваются свойствами распределённой системы — сетевыми задержками и частичными отказами, потерей сквозных транзакций (Saga и eventual consistency вместо ACID) и высокой операционной ценой (CI/CD на сервис, трассировка, мониторинг). Первый вариант неверен: внутрипроцессный вызов монолита на порядки дешевле сетевого, поэтому микросервисы чаще медленнее на отдельном запросе — выигрыш в масштабировании, а не в скорости вызова. Третий вариант — наоборот: явные сетевые контракты и их версионирование требуют больше согласования, а не меньше. Четвёртый занижает цену: главные издержки не в хостинге, а именно в сложности разработки, отладки и эксплуатации распределённой системы.",
-      en: "Верен второй вариант: автономия команд, независимые релизы и точечное масштабирование оплачиваются свойствами распределённой системы — сетевыми задержками и частичными отказами, потерей сквозных транзакций (Saga и eventual consistency вместо ACID) и высокой операционной ценой (CI/CD на сервис, трассировка, мониторинг). Первый вариант неверен: внутрипроцессный вызов монолита на порядки дешевле сетевого, поэтому микросервисы чаще медленнее на отдельном запросе — выигрыш в масштабировании, а не в скорости вызова. Третий вариант — наоборот: явные сетевые контракты и их версионирование требуют больше согласования, а не меньше. Четвёртый занижает цену: главные издержки не в хостинге, а именно в сложности разработки, отладки и эксплуатации распределённой системы.",
+      en: "The second option is correct: team autonomy, independent releases, and targeted scaling are paid for with the properties of a distributed system — network latency and partial failures, the loss of end-to-end transactions (Saga and eventual consistency instead of ACID), and a high operational cost (CI/CD per service, tracing, monitoring). The first option is wrong: an in-process call in a monolith is orders of magnitude cheaper than a network call, so microservices are often slower on an individual request — the gain is in scaling, not in call speed. The third is the opposite of the truth: explicit network contracts and their versioning require more coordination, not less. The fourth understates the cost: the main expense is not hosting but precisely the complexity of developing, debugging, and operating a distributed system.",
     },
     conceptId: "microservices",
   },
