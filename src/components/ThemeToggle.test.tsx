@@ -5,7 +5,7 @@ import { ThemeToggle } from './ThemeToggle';
 import { useStore } from '@/store/useStore';
 
 describe('ThemeToggle', () => {
-  beforeEach(() => useStore.getState().setSettings({ theme: 'dark' }));
+  beforeEach(() => useStore.getState().setSettings({ theme: 'dark', lang: 'ru' }));
 
   it('exposes an accessible label and pressed state', () => {
     render(<ThemeToggle />);
