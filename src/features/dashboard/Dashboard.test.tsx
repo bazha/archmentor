@@ -4,7 +4,10 @@ import { MemoryRouter } from 'react-router-dom';
 import { Dashboard } from './Dashboard';
 import { useStore } from '@/store/useStore';
 
-beforeEach(() => useStore.getState().resetProgress());
+beforeEach(() => {
+  useStore.getState().resetProgress();
+  useStore.getState().setSettings({ lang: 'ru' });
+});
 
 describe('Dashboard', () => {
   it('renders a progress bar per grade', () => {

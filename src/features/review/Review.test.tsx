@@ -4,7 +4,10 @@ import userEvent from '@testing-library/user-event';
 import { Review } from './Review';
 import { useStore } from '@/store/useStore';
 
-beforeEach(() => useStore.getState().resetProgress());
+beforeEach(() => {
+  useStore.getState().resetProgress();
+  useStore.getState().setSettings({ lang: 'ru' });
+});
 
 describe('Review', () => {
   it('shows a due card, then grading buttons after flipping', async () => {

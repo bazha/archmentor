@@ -4,9 +4,14 @@ export const GradeSchema = z.enum(['junior', 'middle', 'senior', 'lead']);
 export const CategorySchema = z.enum(['solid', 'creational', 'structural', 'behavioral', 'architecture', 'tradeoff']);
 export const QuestionTypeSchema = z.enum(['identify-pattern', 'concept', 'tradeoff', 'code-smell']);
 
+export const LocalizedSchema = z.object({ ru: z.string().min(1), en: z.string().min(1) });
+export const LocalizedListSchema = z.object({ ru: z.array(z.string().min(1)).min(1), en: z.array(z.string().min(1)).min(1) });
+export type Localized = z.infer<typeof LocalizedSchema>;
+export type LocalizedList = z.infer<typeof LocalizedListSchema>;
+
 export const CodeSampleSchema = z.object({
   lang: z.literal('typescript'),
-  code: z.string().min(1),
+  code: LocalizedSchema,
   highlightLines: z.array(z.number().int().nonnegative()).optional(),
 });
 
@@ -16,16 +21,16 @@ export const ConceptSchema = z.object({
   aka: z.array(z.string()).optional(),
   category: CategorySchema,
   grade: GradeSchema,
-  tagline: z.string().min(1),
-  definition: z.string().min(1),
-  problem: z.string().min(1),
-  solution: z.string().min(1),
+  tagline: LocalizedSchema,
+  definition: LocalizedSchema,
+  problem: LocalizedSchema,
+  solution: LocalizedSchema,
   codeExample: CodeSampleSchema,
-  pros: z.array(z.string()).min(1),
-  cons: z.array(z.string()).min(1),
-  tradeoffs: z.array(z.string()).min(1),
-  whenToUse: z.array(z.string()).min(1),
-  whenNotToUse: z.array(z.string()).optional(),
+  pros: LocalizedListSchema,
+  cons: LocalizedListSchema,
+  tradeoffs: LocalizedListSchema,
+  whenToUse: LocalizedListSchema,
+  whenNotToUse: LocalizedListSchema.optional(),
   related: z.array(z.string()),
   tags: z.array(z.string()).optional(),
 });
@@ -35,11 +40,11 @@ export const QuestionSchema = z.object({
   type: QuestionTypeSchema,
   category: CategorySchema,
   grade: GradeSchema,
-  prompt: z.string().min(1),
+  prompt: LocalizedSchema,
   code: CodeSampleSchema.optional(),
-  options: z.array(z.string().min(1)).min(2),
+  options: LocalizedListSchema,
   correctIndex: z.number().int().nonnegative(),
-  explanation: z.string().min(1),
+  explanation: LocalizedSchema,
   conceptId: z.string().optional(),
 });
 
@@ -68,8 +73,11 @@ export function validateContent(concepts: Concept[], questions: Question[]): voi
   }
 
   for (const q of questions) {
-    if (q.correctIndex >= q.options.length) {
-      throw new Error(`question "${q.id}" correctIndex ${q.correctIndex} is out of range (${q.options.length} options)`);
+    if (q.options.ru.length !== q.options.en.length) {
+      throw new Error(`question "${q.id}" options ru/en length mismatch`);
+    }
+    if (q.correctIndex >= q.options.ru.length) {
+      throw new Error(`question "${q.id}" correctIndex ${q.correctIndex} out of range (${q.options.ru.length} options)`);
     }
     if (q.conceptId && !ids.has(q.conceptId)) {
       throw new Error(`question "${q.id}" conceptId "${q.conceptId}" is not a known concept`);

@@ -38,7 +38,19 @@ describe('content catalog', () => {
   it('identify-pattern distractors are real sibling concepts by name', () => {
     const names = new Set(concepts.map((c) => c.name));
     for (const q of questions.filter((q) => q.type === 'identify-pattern')) {
-      for (const opt of q.options) expect(names.has(opt)).toBe(true);
+      for (const opt of q.options.ru) expect(names.has(opt)).toBe(true);
+      for (const opt of q.options.en) expect(names.has(opt)).toBe(true);
+    }
+  });
+
+  it('all content is localized with en seeded from ru (phase A placeholder)', () => {
+    for (const c of concepts) {
+      expect(c.definition.ru).toBe(c.definition.en);
+      expect(c.codeExample.code.ru).toBe(c.codeExample.code.en);
+    }
+    for (const q of questions) {
+      expect(q.options.ru.length).toBe(q.options.en.length);
+      expect(q.prompt.ru).toBe(q.prompt.en);
     }
   });
 });

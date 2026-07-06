@@ -1,10 +1,15 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { useStore, selectDueConceptIds, selectGradeProgress, selectReviewQueue, isMastered } from './useStore';
 import type { Concept } from '@/content/schema';
+import { detectLang } from '@/i18n/lang';
+
+const loc = (s: string) => ({ ru: s, en: s });
+const locList = (a: string[]) => ({ ru: a, en: a });
 
 const c = (id: string, grade: Concept['grade']): Concept => ({
-  id, name: id, category: 'solid', grade, tagline: 't', definition: 'd', problem: 'p', solution: 's',
-  codeExample: { lang: 'typescript', code: 'x' }, pros: ['a'], cons: ['a'], tradeoffs: ['a'], whenToUse: ['a'], related: [],
+  id, name: id, category: 'solid', grade, tagline: loc('t'), definition: loc('d'), problem: loc('p'), solution: loc('s'),
+  codeExample: { lang: 'typescript', code: loc('x') },
+  pros: locList(['a']), cons: locList(['a']), tradeoffs: locList(['a']), whenToUse: locList(['a']), related: [],
 });
 
 beforeEach(() => {
@@ -66,5 +71,36 @@ describe('store', () => {
     const q = selectReviewQueue(useStore.getState(), list, '2026-07-04');
     expect(q).not.toContain('srp');
     expect(q.sort()).toEqual(['ocp', 'strategy']);
+  });
+});
+
+describe('settings.lang', () => {
+  it('defaults to the detected language and updates via setSettings', () => {
+    expect(useStore.getState().settings.lang).toBe(detectLang());
+    useStore.getState().setSettings({ lang: 'en' });
+    expect(useStore.getState().settings.lang).toBe('en');
+    useStore.getState().setSettings({ lang: 'ru' });
+    expect(useStore.getState().settings.lang).toBe('ru');
+  });
+});
+
+describe('persisted settings merge (rehydration)', () => {
+  afterEach(() => {
+    localStorage.removeItem('archmentor');
+  });
+
+  it('backfills missing settings keys (e.g. lang) from defaults on rehydrate', async () => {
+    localStorage.setItem('archmentor', JSON.stringify({
+      state: {
+        srs: {}, quizResults: [], conceptProgress: {},
+        streak: { current: 0, longest: 0, lastActiveDate: null },
+        settings: { theme: 'light', gradeFilter: 'all', categoryFilter: 'all' },
+      },
+      version: 1,
+    }));
+    await useStore.persist.rehydrate();
+    expect(useStore.getState().settings.theme).toBe('light'); // persisted value kept
+    expect(useStore.getState().settings.lang).toBeDefined(); // missing key backfilled
+    expect(useStore.getState().settings.lang).toBe(detectLang());
   });
 });

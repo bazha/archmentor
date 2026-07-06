@@ -5,7 +5,10 @@ import { MemoryRouter } from 'react-router-dom';
 import { Learn } from './Learn';
 import { useStore } from '@/store/useStore';
 
-beforeEach(() => useStore.getState().resetProgress());
+beforeEach(() => {
+  useStore.getState().resetProgress();
+  useStore.getState().setSettings({ lang: 'ru' });
+});
 
 describe('Learn', () => {
   it('flips a card to reveal the definition', async () => {

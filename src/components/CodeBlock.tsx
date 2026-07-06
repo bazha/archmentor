@@ -1,11 +1,17 @@
 import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter';
 import typescript from 'react-syntax-highlighter/dist/esm/languages/prism/typescript';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import type { CodeSample } from '@/content/schema';
 
 SyntaxHighlighter.registerLanguage('typescript', typescript);
 
-export function CodeBlock({ sample }: { sample: CodeSample }) {
+/** A code sample already resolved to a plain string for the current language. */
+export interface ResolvedCodeSample {
+  lang: 'typescript';
+  code: string;
+  highlightLines?: number[];
+}
+
+export function CodeBlock({ sample }: { sample: ResolvedCodeSample }) {
   return (
     <div className="overflow-x-auto rounded-lg border border-surface-muted text-sm">
       <SyntaxHighlighter
