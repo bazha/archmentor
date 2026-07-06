@@ -81,6 +81,14 @@ const ru = {
   'flip.term': 'Термин',
   'flip.hint': 'Нажмите, чтобы увидеть ответ',
   'error.title': 'Что-то пошло не так',
+  'nav.course': 'Курс',
+  'course.title': 'Курс',
+  'course.continue': 'Продолжить →',
+  'course.progress': 'Освоено {mastered}/{total}',
+  'course.mastered': 'Освоено',
+  'course.inProgress': 'В процессе',
+  'course.notStarted': 'Не начато',
+  'course.done': 'Курс пройден! 🎓',
 } as const;
 
 export type MessageKey = keyof typeof ru;
@@ -166,6 +174,14 @@ const en: Record<MessageKey, string> = {
   'flip.term': 'Term',
   'flip.hint': 'Tap to reveal the answer',
   'error.title': 'Something went wrong',
+  'nav.course': 'Course',
+  'course.title': 'Course',
+  'course.continue': 'Continue →',
+  'course.progress': '{mastered}/{total} mastered',
+  'course.mastered': 'Mastered',
+  'course.inProgress': 'In progress',
+  'course.notStarted': 'Not started',
+  'course.done': 'Course complete! 🎓',
 };
 
 export const messages: Record<Lang, Record<MessageKey, string>> = { ru, en };
