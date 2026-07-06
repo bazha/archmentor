@@ -6,6 +6,7 @@ import { behavioral, behavioralQuestions } from './concepts/behavioral';
 import { architecture, architectureQuestions } from './concepts/architecture';
 import { tradeoffs, tradeoffsQuestions } from './concepts/tradeoffs';
 import { questions as seedQuestions } from './questions';
+import { fillBlankQuestions } from './fillBlank';
 import { validateContent, type Concept, type Question } from './schema';
 
 export const concepts: Concept[] = [
@@ -25,6 +26,7 @@ export const questions: Question[] = [
   ...behavioralQuestions,
   ...architectureQuestions,
   ...tradeoffsQuestions,
+  ...fillBlankQuestions,
 ];
 
 // Fail fast in dev if content is inconsistent.

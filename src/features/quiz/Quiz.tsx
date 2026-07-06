@@ -25,6 +25,7 @@ export function Quiz() {
     { value: 'identify-pattern', label: t('quiz.modeIdentify') },
     { value: 'concept', label: t('quiz.modeConcept') },
     { value: 'tradeoff', label: t('quiz.modeTradeoff') },
+    { value: 'fill-blank', label: t('quiz.modeFillBlank') },
   ];
 
   const filter: QuizFilter = mode === 'all' ? {} : { type: mode };

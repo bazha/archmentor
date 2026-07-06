@@ -34,3 +34,13 @@ describe('Quiz empty filter', () => {
     vi.doUnmock('@/content/index');
   });
 });
+
+describe('Quiz fill-blank mode', () => {
+  beforeEach(() => useStore.getState().setSettings({ lang: 'ru' }));
+  it('offers a fill-blank mode and shows a blanked prompt', async () => {
+    render(<MemoryRouter><Quiz /></MemoryRouter>);
+    await userEvent.click(screen.getByRole('button', { name: 'Заполни пропуск' }));
+    // a fill-blank prompt contains the blank marker
+    expect(screen.getByText(/___/)).toBeInTheDocument();
+  });
+});
