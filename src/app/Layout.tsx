@@ -9,6 +9,7 @@ import type { MessageKey } from '@/i18n/messages';
 
 const NAV: { to: string; key: MessageKey; end?: boolean }[] = [
   { to: '/', key: 'nav.dashboard', end: true },
+  { to: '/course', key: 'nav.course' },
   { to: '/learn', key: 'nav.learn' },
   { to: '/review', key: 'nav.review' },
   { to: '/quiz', key: 'nav.quiz' },

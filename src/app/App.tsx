@@ -9,6 +9,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <Dashboard /> },
       { path: 'learn/:conceptId?', lazy: () => import('@/features/learn/Learn').then((m) => ({ Component: m.Learn })) },
+      { path: 'course', lazy: () => import('@/features/course/Course').then((m) => ({ Component: m.Course })) },
       { path: 'review', lazy: () => import('@/features/review/Review').then((m) => ({ Component: m.Review })) },
       { path: 'quiz', lazy: () => import('@/features/quiz/Quiz').then((m) => ({ Component: m.Quiz })) },
       { path: 'library', lazy: () => import('@/features/library/Library').then((m) => ({ Component: m.Library })) },
