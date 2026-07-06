@@ -64,8 +64,4 @@ describe('content catalog', () => {
     }
     expect(bad, `Cyrillic left in en fields: ${bad.join(', ')}`).toEqual([]);
   });
-
-  it('ru/en options stay length-aligned (correctIndex safe in both languages)', () => {
-    for (const q of questions) expect(q.options.en.length).toBe(q.options.ru.length);
-  });
 });

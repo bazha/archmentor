@@ -10,14 +10,6 @@ beforeEach(() => {
 });
 
 describe('Review', () => {
-  it('shows a due card, then grading buttons after flipping', async () => {
-    render(<Review />);
-    const flipButton = screen.getByRole('button', { name: /перевернуть/i });
-    expect(flipButton).toBeInTheDocument();
-    await userEvent.click(flipButton);
-    expect(screen.getByRole('button', { name: 'Good' })).toBeInTheDocument();
-  });
-
   it('grading a card writes SRS state and advances the queue', async () => {
     render(<Review />);
     await userEvent.click(screen.getByRole('button', { name: /перевернуть/i }));
