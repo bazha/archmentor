@@ -8,7 +8,7 @@ export const questions: Question[] = [
     grade: "middle",
     prompt: {
       ru: "Какой паттерн проектирования использован в этом коде?",
-      en: "Какой паттерн проектирования использован в этом коде?",
+      en: "Which design pattern is used in this code?",
     },
     code: {
       lang: "typescript",
@@ -31,7 +31,7 @@ export const questions: Question[] = [
           "",
           "class Archiver {",
           "  constructor(private algo: Compressor) {}",
-          "  use(algo: Compressor) { this.algo = algo; } // алгоритм задаётся извне",
+          "  use(algo: Compressor) { this.algo = algo; } // the algorithm is set from outside",
           "  run(data: string) { return this.algo.compress(data); }",
           "}",
         ].join('\n'),
@@ -54,7 +54,7 @@ export const questions: Question[] = [
     correctIndex: 1,
     explanation: {
       ru: "Алгоритм сжатия внедряется извне и заменяется методом use(), а Archiver лишь делегирует ему работу — это Strategy. Не State: переключение не вызвано внутренними переходами объекта, состояние Archiver не управляет выбором. Не Observer: нет подписчиков и рассылки уведомлений «один ко многим». Не Factory Method: объект не создаётся подклассом, а передаётся готовым извне.",
-      en: "Алгоритм сжатия внедряется извне и заменяется методом use(), а Archiver лишь делегирует ему работу — это Strategy. Не State: переключение не вызвано внутренними переходами объекта, состояние Archiver не управляет выбором. Не Observer: нет подписчиков и рассылки уведомлений «один ко многим». Не Factory Method: объект не создаётся подклассом, а передаётся готовым извне.",
+      en: "The compression algorithm is injected from the outside and replaced via the use() method, while the Archiver merely delegates the work to it — this is Strategy. Not State: the switch isn't driven by the object's internal transitions, and the Archiver's state doesn't govern the choice. Not Observer: there are no subscribers and no one-to-many notification broadcast. Not Factory Method: the object isn't created by a subclass but handed in ready-made from the outside.",
     },
     conceptId: "strategy",
   },
@@ -65,7 +65,7 @@ export const questions: Question[] = [
     grade: "senior",
     prompt: {
       ru: "Какой паттерн проектирования использован в этом коде?",
-      en: "Какой паттерн проектирования использован в этом коде?",
+      en: "Which design pattern is used in this code?",
     },
     code: {
       lang: "typescript",
@@ -91,19 +91,19 @@ export const questions: Question[] = [
         en: [
           "interface DocState { publish(doc: Article): void; }",
           "class Draft implements DocState {",
-          "  publish(doc: Article) { doc.setState(new Moderation()); } // переход задаёт само состояние",
+          "  publish(doc: Article) { doc.setState(new Moderation()); } // the state itself defines the transition",
           "}",
           "class Moderation implements DocState {",
           "  publish(doc: Article) { doc.setState(new Published()); }",
           "}",
           "class Published implements DocState {",
-          "  publish(_doc: Article) { /* уже опубликовано — переходов нет */ }",
+          "  publish(_doc: Article) { /* already published — no transitions */ }",
           "}",
           "",
           "class Article {",
           "  private state: DocState = new Draft();",
           "  setState(s: DocState) { this.state = s; }",
-          "  publish() { this.state.publish(this); } // поведение зависит от состояния",
+          "  publish() { this.state.publish(this); } // behavior depends on the state",
           "}",
         ].join('\n'),
       },
@@ -125,7 +125,7 @@ export const questions: Question[] = [
     correctIndex: 1,
     explanation: {
       ru: "Переходы Draft → Moderation → Published инициируют сами объекты-состояния, назначая контексту следующее состояние, а метод publish() ведёт себя по-разному в зависимости от текущего состояния — это State. Не Strategy: алгоритм не выбирается клиентом извне, переключение происходит внутри по логике самих состояний. Не Observer: нет подписчиков и уведомлений. Не Abstract Factory: ничего не порождается семействами — меняется поведение, а не создаются объекты.",
-      en: "Переходы Draft → Moderation → Published инициируют сами объекты-состояния, назначая контексту следующее состояние, а метод publish() ведёт себя по-разному в зависимости от текущего состояния — это State. Не Strategy: алгоритм не выбирается клиентом извне, переключение происходит внутри по логике самих состояний. Не Observer: нет подписчиков и уведомлений. Не Abstract Factory: ничего не порождается семействами — меняется поведение, а не создаются объекты.",
+      en: "The Draft → Moderation → Published transitions are initiated by the state objects themselves, each assigning the next state to the context, and publish() behaves differently depending on the current state — this is State. Not Strategy: the algorithm isn't selected externally by the client; the switch happens internally through the states' own logic. Not Observer: there are no subscribers or notifications. Not Abstract Factory: nothing is produced in families — behavior changes rather than objects being created.",
     },
     conceptId: "state",
   },
@@ -136,7 +136,7 @@ export const questions: Question[] = [
     grade: "middle",
     prompt: {
       ru: "Какой паттерн проектирования использован в этом коде?",
-      en: "Какой паттерн проектирования использован в этом коде?",
+      en: "Which design pattern is used in this code?",
     },
     code: {
       lang: "typescript",
@@ -163,12 +163,12 @@ export const questions: Question[] = [
           "  private subscribers: Subscriber[] = [];",
           "  subscribe(s: Subscriber) { this.subscribers.push(s); }",
           "  publish(headline: string) {",
-          "    for (const s of this.subscribers) s.notify(headline); // рассылка всем",
+          "    for (const s of this.subscribers) s.notify(headline); // broadcast to all",
           "  }",
           "}",
           "",
           "class EmailReader implements Subscriber {",
-          "  notify(headline: string) { console.log(`Письмо: ${headline}`); }",
+          "  notify(headline: string) { console.log(`Email: ${headline}`); }",
           "}",
         ].join('\n'),
       },
@@ -190,7 +190,7 @@ export const questions: Question[] = [
     correctIndex: 0,
     explanation: {
       ru: "NewsAgency хранит список подписчиков и при публикации уведомляет каждого — это зависимость «один ко многим» с автоматическим оповещением, то есть Observer. Не Strategy: не выбирается взаимозаменяемый алгоритм, а рассылаются уведомления множеству получателей. Не State: поведение агентства не переключается при смене внутреннего состояния, переходов нет. Не Factory Method: подписчики не создаются агентством, а регистрируются готовыми через subscribe().",
-      en: "NewsAgency хранит список подписчиков и при публикации уведомляет каждого — это зависимость «один ко многим» с автоматическим оповещением, то есть Observer. Не Strategy: не выбирается взаимозаменяемый алгоритм, а рассылаются уведомления множеству получателей. Не State: поведение агентства не переключается при смене внутреннего состояния, переходов нет. Не Factory Method: подписчики не создаются агентством, а регистрируются готовыми через subscribe().",
+      en: "NewsAgency keeps a list of subscribers and notifies each of them on publication — a one-to-many dependency with automatic notification, i.e. Observer. Not Strategy: no interchangeable algorithm is being selected; instead, notifications are broadcast to many recipients. Not State: the agency's behavior does not switch as its internal state changes, and there are no transitions. Not Factory Method: subscribers are not created by the agency but registered ready-made via subscribe().",
     },
     conceptId: "observer",
   },
@@ -201,7 +201,7 @@ export const questions: Question[] = [
     grade: "middle",
     prompt: {
       ru: "Какой паттерн проектирования использован в этом коде?",
-      en: "Какой паттерн проектирования использован в этом коде?",
+      en: "Which design pattern is used in this code?",
     },
     code: {
       lang: "typescript",
@@ -223,11 +223,11 @@ export const questions: Question[] = [
         ].join('\n'),
         en: [
           "interface Transport { deliver(): string; }",
-          "class Truck implements Transport { deliver() { return 'по дороге'; } }",
-          "class Ship implements Transport { deliver() { return 'по морю'; } }",
+          "class Truck implements Transport { deliver() { return 'by road'; } }",
+          "class Ship implements Transport { deliver() { return 'by sea'; } }",
           "",
           "abstract class Logistics {",
-          "  protected abstract createTransport(): Transport; // тип решает подкласс",
+          "  protected abstract createTransport(): Transport; // the subclass decides the type",
           "  planDelivery(): string {",
           "    const transport = this.createTransport();",
           "    return transport.deliver();",
@@ -255,7 +255,7 @@ export const questions: Question[] = [
     correctIndex: 1,
     explanation: {
       ru: "Базовый класс Logistics объявляет один фабричный метод createTransport(), а конкретный тип продукта выбирает подкласс через переопределение (наследование), создавая ровно один продукт — это Factory Method. Не Abstract Factory: здесь нет фабрики, порождающей семейство из нескольких связанных продуктов. Не Strategy: подкласс определяет, что создать, а не подставляет готовый алгоритм извне — речь о порождении объекта, а не о выборе поведения. Не Observer: нет подписчиков и уведомлений.",
-      en: "Базовый класс Logistics объявляет один фабричный метод createTransport(), а конкретный тип продукта выбирает подкласс через переопределение (наследование), создавая ровно один продукт — это Factory Method. Не Abstract Factory: здесь нет фабрики, порождающей семейство из нескольких связанных продуктов. Не Strategy: подкласс определяет, что создать, а не подставляет готовый алгоритм извне — речь о порождении объекта, а не о выборе поведения. Не Observer: нет подписчиков и уведомлений.",
+      en: "The base class Logistics declares a single factory method createTransport(), and the subclass chooses the concrete product type by overriding it (inheritance), creating exactly one product — this is Factory Method. Not Abstract Factory: there's no factory here that produces a family of several related products. Not Strategy: the subclass determines what to create rather than having a ready-made algorithm injected from outside — this is about instantiating an object, not selecting behavior. Not Observer: there are no subscribers or notifications.",
     },
     conceptId: "factory-method",
   },
@@ -266,7 +266,7 @@ export const questions: Question[] = [
     grade: "senior",
     prompt: {
       ru: "Какой паттерн проектирования использован в этом коде?",
-      en: "Какой паттерн проектирования использован в этом коде?",
+      en: "Which design pattern is used in this code?",
     },
     code: {
       lang: "typescript",
@@ -299,14 +299,14 @@ export const questions: Question[] = [
           "interface Sofa { lie(): string; }",
           "",
           "interface FurnitureFactory {",
-          "  createChair(): Chair; // семейство связанных продуктов",
+          "  createChair(): Chair; // family of related products",
           "  createSofa(): Sofa;",
           "}",
           "",
-          "class ModernChair implements Chair { sit() { return 'модерн-стул'; } }",
-          "class ModernSofa implements Sofa { lie() { return 'модерн-диван'; } }",
-          "class VictorianChair implements Chair { sit() { return 'викторианский стул'; } }",
-          "class VictorianSofa implements Sofa { lie() { return 'викторианский диван'; } }",
+          "class ModernChair implements Chair { sit() { return 'modern chair'; } }",
+          "class ModernSofa implements Sofa { lie() { return 'modern sofa'; } }",
+          "class VictorianChair implements Chair { sit() { return 'Victorian chair'; } }",
+          "class VictorianSofa implements Sofa { lie() { return 'Victorian sofa'; } }",
           "",
           "class ModernFactory implements FurnitureFactory {",
           "  createChair() { return new ModernChair(); }",
@@ -336,7 +336,7 @@ export const questions: Question[] = [
     correctIndex: 1,
     explanation: {
       ru: "Интерфейс FurnitureFactory создаёт целое семейство связанных продуктов (Chair и Sofa), а каждая конкретная фабрика гарантирует их согласованность (всё «модерн» либо всё «викторианское») — это Abstract Factory. Не Factory Method: там один фабричный метод на один продукт с выбором через наследование, здесь же несколько методов создания и композиция фабрик. Не Strategy: фабрики порождают объекты, а не подменяют взаимозаменяемый алгоритм поведения. Не Observer: нет подписки и уведомлений.",
-      en: "Интерфейс FurnitureFactory создаёт целое семейство связанных продуктов (Chair и Sofa), а каждая конкретная фабрика гарантирует их согласованность (всё «модерн» либо всё «викторианское») — это Abstract Factory. Не Factory Method: там один фабричный метод на один продукт с выбором через наследование, здесь же несколько методов создания и композиция фабрик. Не Strategy: фабрики порождают объекты, а не подменяют взаимозаменяемый алгоритм поведения. Не Observer: нет подписки и уведомлений.",
+      en: "The FurnitureFactory interface creates a whole family of related products (Chair and Sofa), and each concrete factory guarantees their consistency (all 'modern' or all 'Victorian') — this is Abstract Factory. Not Factory Method: there you have a single factory method for a single product with the choice made through inheritance, whereas here there are several creation methods and composition of factories. Not Strategy: the factories create objects rather than swap an interchangeable behavioral algorithm. Not Observer: there is no subscription or notification.",
     },
     conceptId: "abstract-factory",
   },
@@ -347,7 +347,7 @@ export const questions: Question[] = [
     grade: "junior",
     prompt: {
       ru: "Как точнее всего сформулировать Single Responsibility Principle?",
-      en: "Как точнее всего сформулировать Single Responsibility Principle?",
+      en: "Which statement most precisely captures the Single Responsibility Principle?",
     },
     options: {
       ru: [
@@ -357,16 +357,16 @@ export const questions: Question[] = [
         "Подтип должен подставляться вместо своего базового типа",
       ],
       en: [
-        "У класса должна быть одна и только одна причина для изменения",
-        "Класс должен быть открыт для расширения и закрыт для изменения",
-        "Клиент не должен зависеть от методов, которые он не использует",
-        "Подтип должен подставляться вместо своего базового типа",
+        "A class should have one, and only one, reason to change",
+        "A class should be open for extension but closed for modification",
+        "A client should not depend on methods it does not use",
+        "A subtype should be substitutable for its base type",
       ],
     },
     correctIndex: 0,
     explanation: {
       ru: "SRP: у модуля одна причина для изменения — он отвечает перед одним актором. Второй вариант описывает OCP, третий — ISP, четвёртый — LSP.",
-      en: "SRP: у модуля одна причина для изменения — он отвечает перед одним актором. Второй вариант описывает OCP, третий — ISP, четвёртый — LSP.",
+      en: "SRP: a module has one reason to change — it is responsible to a single actor. The second option describes OCP, the third ISP, and the fourth LSP.",
     },
     conceptId: "srp",
   },
@@ -377,7 +377,7 @@ export const questions: Question[] = [
     grade: "junior",
     prompt: {
       ru: "Что утверждает Open/Closed Principle?",
-      en: "Что утверждает Open/Closed Principle?",
+      en: "What does the Open/Closed Principle state?",
     },
     options: {
       ru: [
@@ -387,16 +387,16 @@ export const questions: Question[] = [
         "Много узких интерфейсов лучше одного «толстого»",
       ],
       en: [
-        "Высокоуровневые модули не должны зависеть от низкоуровневых",
-        "Сущности должны быть открыты для расширения, но закрыты для изменения",
-        "У модуля должна быть одна причина для изменения",
-        "Много узких интерфейсов лучше одного «толстого»",
+        "High-level modules should not depend on low-level ones",
+        "Entities should be open for extension but closed for modification",
+        "A module should have a single reason to change",
+        "Many narrow interfaces are better than one \"fat\" one",
       ],
     },
     correctIndex: 1,
     explanation: {
       ru: "OCP: новое поведение добавляется расширением, а существующий код не меняется. Первый вариант — это DIP, третий — SRP, четвёртый — ISP.",
-      en: "OCP: новое поведение добавляется расширением, а существующий код не меняется. Первый вариант — это DIP, третий — SRP, четвёртый — ISP.",
+      en: "OCP: new behavior is added through extension while existing code stays unchanged. The first option describes DIP, the third SRP, and the fourth ISP.",
     },
     conceptId: "ocp",
   },
@@ -407,7 +407,7 @@ export const questions: Question[] = [
     grade: "junior",
     prompt: {
       ru: "Какое требование выражает Liskov Substitution Principle?",
-      en: "Какое требование выражает Liskov Substitution Principle?",
+      en: "What requirement does the Liskov Substitution Principle express?",
     },
     options: {
       ru: [
@@ -417,16 +417,16 @@ export const questions: Question[] = [
         "Поведение можно менять, не трогая существующий код",
       ],
       en: [
-        "Каждый класс отвечает ровно за одну ответственность",
-        "Зависимости должны быть направлены на абстракции",
-        "Объекты базового типа можно заменить объектами подтипа без нарушения корректности программы",
-        "Поведение можно менять, не трогая существующий код",
+        "Each class is responsible for exactly one responsibility",
+        "Dependencies should point toward abstractions",
+        "Objects of the base type can be replaced with objects of a subtype without breaking the correctness of the program",
+        "Behavior can be changed without touching existing code",
       ],
     },
     correctIndex: 2,
     explanation: {
       ru: "LSP: подтип обязан соблюдать контракт базового типа и быть подставляемым вместо него. Первый вариант — SRP, второй — DIP, четвёртый — OCP.",
-      en: "LSP: подтип обязан соблюдать контракт базового типа и быть подставляемым вместо него. Первый вариант — SRP, второй — DIP, четвёртый — OCP.",
+      en: "LSP: a subtype must honor the base type's contract and be substitutable for it. The first option describes SRP, the second DIP, and the fourth OCP.",
     },
     conceptId: "lsp",
   },
@@ -437,7 +437,7 @@ export const questions: Question[] = [
     grade: "junior",
     prompt: {
       ru: "Что рекомендует Interface Segregation Principle?",
-      en: "Что рекомендует Interface Segregation Principle?",
+      en: "What does the Interface Segregation Principle recommend?",
     },
     options: {
       ru: [
@@ -447,16 +447,16 @@ export const questions: Question[] = [
         "У модуля должна быть одна причина для изменения",
       ],
       en: [
-        "Дробить крупные интерфейсы на узкие, специфичные для клиента",
-        "Подтип должен соблюдать контракт базового типа",
-        "Класс не должен сам создавать свои зависимости",
-        "У модуля должна быть одна причина для изменения",
+        "Break large interfaces into narrow, client-specific ones",
+        "A subtype must honor the contract of its base type",
+        "A class shouldn't create its own dependencies",
+        "A module should have only one reason to change",
       ],
     },
     correctIndex: 0,
     explanation: {
       ru: "ISP: клиент не должен зависеть от методов, которые не использует, поэтому «толстые» интерфейсы дробят на узкие роли. Второй вариант — LSP, третий отражает идею DIP, четвёртый — SRP.",
-      en: "ISP: клиент не должен зависеть от методов, которые не использует, поэтому «толстые» интерфейсы дробят на узкие роли. Второй вариант — LSP, третий отражает идею DIP, четвёртый — SRP.",
+      en: "ISP: a client shouldn't depend on methods it doesn't use, so fat interfaces are split into narrow roles. The second option is LSP, the third reflects the idea of DIP, and the fourth is SRP.",
     },
     conceptId: "isp",
   },
@@ -467,7 +467,7 @@ export const questions: Question[] = [
     grade: "middle",
     prompt: {
       ru: "Что утверждает Dependency Inversion Principle?",
-      en: "Что утверждает Dependency Inversion Principle?",
+      en: "What does the Dependency Inversion Principle state?",
     },
     options: {
       ru: [
@@ -477,16 +477,16 @@ export const questions: Question[] = [
         "Модули верхнего и нижнего уровня зависят от абстракций, а не друг от друга напрямую",
       ],
       en: [
-        "Интерфейсы должны быть как можно меньше",
-        "У класса должна быть одна причина для изменения",
-        "Наследники взаимозаменяемы с базовым классом",
-        "Модули верхнего и нижнего уровня зависят от абстракций, а не друг от друга напрямую",
+        "Interfaces should be as small as possible",
+        "A class should have a single reason to change",
+        "Subtypes are interchangeable with their base class",
+        "High-level and low-level modules depend on abstractions rather than directly on each other",
       ],
     },
     correctIndex: 3,
     explanation: {
       ru: "DIP: и высокоуровневые, и низкоуровневые модули зависят от абстракций; детали зависят от абстракций, а не наоборот. Первый вариант — ISP, второй — SRP, третий — LSP.",
-      en: "DIP: и высокоуровневые, и низкоуровневые модули зависят от абстракций; детали зависят от абстракций, а не наоборот. Первый вариант — ISP, второй — SRP, третий — LSP.",
+      en: "DIP: both high-level and low-level modules depend on abstractions; details depend on abstractions, not the other way around. The first option is ISP, the second is SRP, the third is LSP.",
     },
     conceptId: "dip",
   },
@@ -497,7 +497,7 @@ export const questions: Question[] = [
     grade: "junior",
     prompt: {
       ru: "В чём основной компромисс строгого следования SRP?",
-      en: "В чём основной компромисс строгого следования SRP?",
+      en: "What is the main trade-off of following SRP strictly?",
     },
     options: {
       ru: [
@@ -507,16 +507,16 @@ export const questions: Question[] = [
         "SRP всегда уменьшает общее количество классов",
       ],
       en: [
-        "Больше мелких классов и переходов между файлами в обмен на низкую связанность и лёгкость изменений",
-        "SRP ускоряет выполнение программы ценой расхода памяти",
-        "SRP избавляет от необходимости писать тесты",
-        "SRP всегда уменьшает общее количество классов",
+        "More small classes and more jumping between files, in exchange for low coupling and changes that are easy to make",
+        "SRP speeds up program execution at the cost of higher memory use",
+        "SRP removes the need to write tests",
+        "SRP always reduces the total number of classes",
       ],
     },
     correctIndex: 0,
     explanation: {
       ru: "Разделение ответственностей снижает связанность и локализует изменения, но увеличивает число классов и стоимость навигации по коду. Остальные варианты неверны: SRP не про производительность, не отменяет тесты и обычно увеличивает число классов.",
-      en: "Разделение ответственностей снижает связанность и локализует изменения, но увеличивает число классов и стоимость навигации по коду. Остальные варианты неверны: SRP не про производительность, не отменяет тесты и обычно увеличивает число классов.",
+      en: "Separating responsibilities lowers coupling and localizes changes, but it increases the number of classes and the cost of navigating the code. The other options are wrong: SRP is not about performance, does not do away with tests, and usually increases the number of classes.",
     },
     conceptId: "srp",
   },
@@ -527,7 +527,7 @@ export const questions: Question[] = [
     grade: "junior",
     prompt: {
       ru: "Когда применение OCP скорее вредит, чем помогает?",
-      en: "Когда применение OCP скорее вредит, чем помогает?",
+      en: "When does applying OCP tend to hurt more than help?",
     },
     options: {
       ru: [
@@ -537,16 +537,16 @@ export const questions: Question[] = [
         "Когда проект написан на TypeScript",
       ],
       en: [
-        "Когда набор вариантов стабилен: абстракция ради расширения добавляет сложность без реальной выгоды",
-        "Когда в проекте есть автотесты",
-        "OCP полезен всегда и во всех случаях без исключений",
-        "Когда проект написан на TypeScript",
+        "When the set of variants is stable: abstracting for the sake of extension adds complexity with no real payoff",
+        "When the project has automated tests",
+        "OCP is always beneficial, in every case without exception",
+        "When the project is written in TypeScript",
       ],
     },
     correctIndex: 0,
     explanation: {
       ru: "Гибкость OCP не бесплатна: если расширения не происходит, преждевременные абстракции лишь усложняют код (риск преждевременного обобщения). Наличие тестов и язык проекта к этому компромиссу отношения не имеют, а «полезен всегда» — как раз ложное утверждение.",
-      en: "Гибкость OCP не бесплатна: если расширения не происходит, преждевременные абстракции лишь усложняют код (риск преждевременного обобщения). Наличие тестов и язык проекта к этому компромиссу отношения не имеют, а «полезен всегда» — как раз ложное утверждение.",
+      en: "OCP's flexibility isn't free: if no extension ever happens, premature abstractions only complicate the code (the risk of premature generalization). Having tests and the project's language are irrelevant to this trade-off, and \"always beneficial\" is exactly the false claim.",
     },
     conceptId: "ocp",
   },
@@ -557,7 +557,7 @@ export const questions: Question[] = [
     grade: "middle",
     prompt: {
       ru: "Какой компромисс несёт применение Dependency Inversion Principle?",
-      en: "Какой компромисс несёт применение Dependency Inversion Principle?",
+      en: "What trade-off does applying the Dependency Inversion Principle carry?",
     },
     options: {
       ru: [
@@ -567,16 +567,16 @@ export const questions: Question[] = [
         "DIP запрещает использовать конкретные классы где-либо в системе",
       ],
       en: [
-        "DIP убирает все интерфейсы из проекта",
-        "Развязка модулей и тестируемость достигаются ценой лишних абстракций и косвенности",
-        "DIP ускоряет код за счёт отказа от полиморфизма",
-        "DIP запрещает использовать конкретные классы где-либо в системе",
+        "DIP removes all interfaces from the project",
+        "Decoupling of modules and testability come at the cost of extra abstractions and indirection",
+        "DIP speeds up the code by giving up polymorphism",
+        "DIP forbids using concrete classes anywhere in the system",
       ],
     },
     correctIndex: 1,
     explanation: {
       ru: "DIP развязывает бизнес-логику и инфраструктуру и упрощает тестирование через подмену реализаций, но добавляет абстракции, косвенность и потребность во внедрении зависимостей. Остальные варианты искажают суть: DIP вводит абстракции, а не убирает их, не про скорость и не запрещает конкретные классы — он лишь инвертирует направление зависимости.",
-      en: "DIP развязывает бизнес-логику и инфраструктуру и упрощает тестирование через подмену реализаций, но добавляет абстракции, косвенность и потребность во внедрении зависимостей. Остальные варианты искажают суть: DIP вводит абстракции, а не убирает их, не про скорость и не запрещает конкретные классы — он лишь инвертирует направление зависимости.",
+      en: "DIP decouples the business logic from the infrastructure and makes testing easier by swapping implementations, but it adds abstractions, indirection, and the need for dependency injection. The other options distort its point: DIP introduces abstractions rather than removing them, is not about speed, and does not forbid concrete classes — it merely inverts the direction of the dependency.",
     },
     conceptId: "dip",
   },

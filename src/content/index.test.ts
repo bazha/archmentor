@@ -43,14 +43,29 @@ describe('content catalog', () => {
     }
   });
 
-  it('all content is localized with en seeded from ru (phase A placeholder)', () => {
+  it('every English field is fully translated (no Cyrillic left)', () => {
+    const cyr = /[А-Яа-яЁё]/;
+    const bad: string[] = [];
+    const check = (where: string, v: string) => { if (cyr.test(v)) bad.push(where); };
     for (const c of concepts) {
-      expect(c.definition.ru).toBe(c.definition.en);
-      expect(c.codeExample.code.ru).toBe(c.codeExample.code.en);
+      check(`${c.id}.tagline`, c.tagline.en);
+      check(`${c.id}.definition`, c.definition.en);
+      check(`${c.id}.problem`, c.problem.en);
+      check(`${c.id}.solution`, c.solution.en);
+      check(`${c.id}.code`, c.codeExample.code.en);
+      for (const f of ['pros', 'cons', 'tradeoffs', 'whenToUse', 'whenNotToUse'] as const)
+        (c[f]?.en ?? []).forEach((x) => check(`${c.id}.${f}`, x));
     }
     for (const q of questions) {
-      expect(q.options.ru.length).toBe(q.options.en.length);
-      expect(q.prompt.ru).toBe(q.prompt.en);
+      check(`${q.id}.prompt`, q.prompt.en);
+      check(`${q.id}.explanation`, q.explanation.en);
+      q.options.en.forEach((o) => check(`${q.id}.option`, o));
+      if (q.code) check(`${q.id}.code`, q.code.code.en);
     }
+    expect(bad, `Cyrillic left in en fields: ${bad.join(', ')}`).toEqual([]);
+  });
+
+  it('ru/en options stay length-aligned (correctIndex safe in both languages)', () => {
+    for (const q of questions) expect(q.options.en.length).toBe(q.options.ru.length);
   });
 });

@@ -11,19 +11,19 @@ export const structural: Concept[] = [
     grade: "junior",
     tagline: {
       ru: "Переводчик между несовместимыми интерфейсами",
-      en: "Переводчик между несовместимыми интерфейсами",
+      en: "A translator between incompatible interfaces",
     },
     definition: {
       ru: "Преобразует интерфейс класса в другой интерфейс, ожидаемый клиентом. Adapter позволяет совместно работать классам, которые иначе не могли бы этого из-за несовместимых интерфейсов.",
-      en: "Преобразует интерфейс класса в другой интерфейс, ожидаемый клиентом. Adapter позволяет совместно работать классам, которые иначе не могли бы этого из-за несовместимых интерфейсов.",
+      en: "Converts the interface of a class into another interface that clients expect. Adapter lets classes work together that otherwise couldn't because of incompatible interfaces.",
     },
     problem: {
       ru: "Есть готовый полезный класс (сторонняя библиотека, легаси-код), но его интерфейс не совпадает с тем, который ожидает клиентский код. Править чужой или уже используемый код нельзя или слишком рискованно, а переписывать клиента под чужой интерфейс — значит привязать его к конкретной реализации.",
-      en: "Есть готовый полезный класс (сторонняя библиотека, легаси-код), но его интерфейс не совпадает с тем, который ожидает клиентский код. Править чужой или уже используемый код нельзя или слишком рискованно, а переписывать клиента под чужой интерфейс — значит привязать его к конкретной реализации.",
+      en: "You have a useful ready-made class (a third-party library, legacy code), but its interface doesn't match the one the client code expects. Modifying someone else's — or already-used — code is impossible or too risky, and rewriting the client around the foreign interface would couple it to that specific implementation.",
     },
     solution: {
       ru: "Вводим объект-адаптер, который реализует целевой интерфейс клиента и хранит ссылку на адаптируемый объект (adaptee). Каждый вызов целевого интерфейса адаптер транслирует в вызовы adaptee, попутно преобразуя данные. Клиент работает только с целевым интерфейсом и ничего не знает об адаптируемом классе.",
-      en: "Вводим объект-адаптер, который реализует целевой интерфейс клиента и хранит ссылку на адаптируемый объект (adaptee). Каждый вызов целевого интерфейса адаптер транслирует в вызовы adaptee, попутно преобразуя данные. Клиент работает только с целевым интерфейсом и ничего не знает об адаптируемом классе.",
+      en: "Introduce an adapter object that implements the client's target interface and holds a reference to the object being adapted (the adaptee). The adapter translates each call on the target interface into calls on the adaptee, converting the data along the way. The client works only against the target interface and knows nothing about the adapted class.",
     },
     codeExample: {
       lang: "typescript",
@@ -51,25 +51,25 @@ export const structural: Concept[] = [
           "runApp(new TelemetryLoggerAdapter(new LegacyTelemetry()));",
         ].join('\n'),
         en: [
-          "// Целевой интерфейс, который ожидает клиентский код",
+          "// Target interface that the client code expects",
           "interface Logger { log(message: string): void; }",
           "",
-          "// Существующий класс с несовместимым интерфейсом (adaptee); менять его нельзя",
+          "// Existing class with an incompatible interface (adaptee); we can't change it",
           "class LegacyTelemetry {",
           "  send(payload: { level: string; text: string }): void {",
           "    console.log(`[${payload.level}] ${payload.text}`);",
           "  }",
           "}",
           "",
-          "// Adapter реализует целевой интерфейс и транслирует вызовы в adaptee",
+          "// Adapter implements the target interface and translates calls to the adaptee",
           "class TelemetryLoggerAdapter implements Logger {",
           "  constructor(private telemetry: LegacyTelemetry) {}",
           "  log(message: string): void {",
-          "    this.telemetry.send({ level: 'info', text: message }); // преобразование вызова и данных",
+          "    this.telemetry.send({ level: 'info', text: message }); // translate the call and the data",
           "  }",
           "}",
           "",
-          "function runApp(logger: Logger) { logger.log('приложение запущено'); }",
+          "function runApp(logger: Logger) { logger.log('application started'); }",
           "runApp(new TelemetryLoggerAdapter(new LegacyTelemetry()));",
         ].join('\n'),
       },
@@ -81,9 +81,9 @@ export const structural: Concept[] = [
         "Логика преобразования интерфейсов и данных собрана в одном месте (соответствует SRP)",
       ],
       en: [
-        "Позволяет переиспользовать существующий класс, не меняя ни его, ни клиентский код",
-        "Отделяет клиента от конкретной сторонней реализации: при смене библиотеки меняется только адаптер",
-        "Логика преобразования интерфейсов и данных собрана в одном месте (соответствует SRP)",
+        "Lets you reuse an existing class without changing either it or the client code",
+        "Decouples the client from a specific third-party implementation: when you switch libraries, only the adapter changes",
+        "The interface- and data-conversion logic is gathered in one place (in line with the Single Responsibility Principle)",
       ],
     },
     cons: {
@@ -93,9 +93,9 @@ export const structural: Concept[] = [
         "Может маскировать плохой дизайн: цепочки адаптеров вместо приведения кода к единому интерфейсу",
       ],
       en: [
-        "Дополнительный слой объектов и косвенности усложняет код",
-        "При сильно различающихся интерфейсах адаптер разбухает логикой преобразования",
-        "Может маскировать плохой дизайн: цепочки адаптеров вместо приведения кода к единому интерфейсу",
+        "The extra layer of objects and indirection adds complexity",
+        "When the interfaces differ greatly, the adapter bloats with conversion logic",
+        "Can mask poor design: chains of adapters instead of bringing the code to a single unified interface",
       ],
     },
     tradeoffs: {
@@ -104,8 +104,8 @@ export const structural: Concept[] = [
         "Быстрая интеграция «как есть» против стоимости поддержки преобразований при эволюции обоих интерфейсов",
       ],
       en: [
-        "Совместимость без правки существующего кода против дополнительного слоя косвенности",
-        "Быстрая интеграция «как есть» против стоимости поддержки преобразований при эволюции обоих интерфейсов",
+        "Compatibility without touching existing code versus an extra layer of indirection",
+        "Fast, as-is integration versus the cost of maintaining the conversions as both interfaces evolve",
       ],
     },
     whenToUse: {
@@ -115,9 +115,9 @@ export const structural: Concept[] = [
         "Нужно изолировать систему от конкретного внешнего API, чтобы его можно было заменить",
       ],
       en: [
-        "Нужно использовать готовый класс, но его интерфейс не совпадает с ожидаемым в системе",
-        "Интеграция сторонней библиотеки или легаси-кода, который нельзя изменить",
-        "Нужно изолировать систему от конкретного внешнего API, чтобы его можно было заменить",
+        "You need to use a ready-made class, but its interface doesn't match what the system expects",
+        "Integrating a third-party library or legacy code that can't be modified",
+        "You need to isolate the system from a specific external API so that it can be swapped out",
       ],
     },
     whenNotToUse: {
@@ -126,8 +126,8 @@ export const structural: Concept[] = [
         "Оба класса ваши и их можно напрямую привести к общему интерфейсу",
       ],
       en: [
-        "Интерфейсы уже совместимы — обёртка будет лишним слоем",
-        "Оба класса ваши и их можно напрямую привести к общему интерфейсу",
+        "The interfaces are already compatible — a wrapper would just be an unnecessary extra layer",
+        "Both classes are yours and can be brought to a common interface directly",
       ],
     },
     related: [
@@ -151,19 +151,19 @@ export const structural: Concept[] = [
     grade: "senior",
     tagline: {
       ru: "Две независимые иерархии: абстракция и реализация развиваются порознь",
-      en: "Две независимые иерархии: абстракция и реализация развиваются порознь",
+      en: "Two independent hierarchies: abstraction and implementation evolve separately",
     },
     definition: {
       ru: "Отделяет абстракцию от её реализации так, чтобы обе могли изменяться независимо. Вместо наследования абстракция держит ссылку на объект-реализацию и делегирует ему работу.",
-      en: "Отделяет абстракцию от её реализации так, чтобы обе могли изменяться независимо. Вместо наследования абстракция держит ссылку на объект-реализацию и делегирует ему работу.",
+      en: "Decouples an abstraction from its implementation so that the two can vary independently. Instead of inheritance, the abstraction holds a reference to an implementation object and delegates the work to it.",
     },
     problem: {
       ru: "Класс варьируется по двум независимым измерениям (например, фигуры × способы отрисовки, пульты × устройства). Наследование связывает измерения в одну иерархию: на каждую комбинацию нужен отдельный подкласс, и число классов растёт как декартово произведение, а добавление варианта в одном измерении требует правок во всех ветках.",
-      en: "Класс варьируется по двум независимым измерениям (например, фигуры × способы отрисовки, пульты × устройства). Наследование связывает измерения в одну иерархию: на каждую комбинацию нужен отдельный подкласс, и число классов растёт как декартово произведение, а добавление варианта в одном измерении требует правок во всех ветках.",
+      en: "A class varies along two independent dimensions (for example, shapes × rendering methods, or remotes × devices). Inheritance ties both dimensions into a single hierarchy: every combination needs its own subclass, the number of classes grows as a Cartesian product, and adding a variant in one dimension forces edits across every branch.",
     },
     solution: {
       ru: "Разводим измерения в две иерархии: Abstraction (высокоуровневые операции) и Implementor (примитивные операции платформы/реализации). Абстракция получает реализацию через композицию и делегирует ей примитивы. Каждая иерархия расширяется своими подклассами независимо, а комбинации собираются в рантайме, а не наследованием.",
-      en: "Разводим измерения в две иерархии: Abstraction (высокоуровневые операции) и Implementor (примитивные операции платформы/реализации). Абстракция получает реализацию через композицию и делегирует ей примитивы. Каждая иерархия расширяется своими подклассами независимо, а комбинации собираются в рантайме, а не наследованием.",
+      en: "Split the dimensions into two hierarchies: the Abstraction (high-level operations) and the Implementor (the primitive operations of the platform/implementation). The abstraction receives its implementation through composition and delegates the primitives to it. Each hierarchy is extended by its own subclasses independently, and combinations are assembled at run time rather than through inheritance.",
     },
     codeExample: {
       lang: "typescript",
@@ -193,7 +193,7 @@ export const structural: Concept[] = [
           "const shape = new OutlinedCircle(new CanvasRenderer(), 10); // комбинация в рантайме",
         ].join('\n'),
         en: [
-          "interface Renderer { renderCircle(radius: number): string; } // иерархия реализации",
+          "interface Renderer { renderCircle(radius: number): string; } // implementation hierarchy",
           "class SvgRenderer implements Renderer {",
           "  renderCircle(r: number) { return `<circle r=\"${r}\" />`; }",
           "}",
@@ -201,7 +201,7 @@ export const structural: Concept[] = [
           "  renderCircle(r: number) { return `arc(0, 0, ${r})`; }",
           "}",
           "",
-          "// иерархия абстракции: держит реализацию по композиции — это и есть «мост»",
+          "// abstraction hierarchy: holds the implementation via composition — this is the «bridge»",
           "abstract class Shape {",
           "  constructor(protected renderer: Renderer) {}",
           "  abstract draw(): string;",
@@ -211,10 +211,10 @@ export const structural: Concept[] = [
           "  draw() { return this.renderer.renderCircle(this.radius); }",
           "}",
           "class OutlinedCircle extends Circle {",
-          "  draw() { return `outline: ${super.draw()}`; } // абстракция растёт независимо",
+          "  draw() { return `outline: ${super.draw()}`; } // the abstraction grows independently",
           "}",
           "",
-          "const shape = new OutlinedCircle(new CanvasRenderer(), 10); // комбинация в рантайме",
+          "const shape = new OutlinedCircle(new CanvasRenderer(), 10); // combination at run time",
         ].join('\n'),
       },
     },
@@ -226,10 +226,10 @@ export const structural: Concept[] = [
         "Детали платформы скрыты от высокоуровневого кода",
       ],
       en: [
-        "Иерархии абстракции и реализации расширяются независимо (соответствует OCP)",
-        "Вместо декартова произведения подклассов — сумма классов двух иерархий",
-        "Реализацию можно подменить в рантайме, клиент видит только абстракцию",
-        "Детали платформы скрыты от высокоуровневого кода",
+        "The abstraction and implementation hierarchies can be extended independently (in line with the Open/Closed Principle)",
+        "Instead of a Cartesian product of subclasses, you get the sum of the classes in the two hierarchies",
+        "The implementation can be swapped at run time, and the client sees only the abstraction",
+        "Platform details are hidden from the high-level code",
       ],
     },
     cons: {
@@ -239,9 +239,9 @@ export const structural: Concept[] = [
         "Дополнительная косвенность: каждый вызов идёт через делегирование",
       ],
       en: [
-        "Усложняет код, если измерение изменчивости всего одно",
-        "Требует заранее выделить правильные два измерения — ошибка в разбиении дорого исправляется",
-        "Дополнительная косвенность: каждый вызов идёт через делегирование",
+        "Adds complexity when there is only a single dimension of variation",
+        "Requires identifying the right two dimensions up front — getting the split wrong is expensive to fix",
+        "Extra indirection: every call goes through a delegation step",
       ],
     },
     tradeoffs: {
@@ -250,8 +250,8 @@ export const structural: Concept[] = [
         "Гибкость комбинаций в рантайме против более сложной начальной структуры по сравнению с прямым наследованием",
       ],
       en: [
-        "Независимая эволюция двух иерархий против дополнительной косвенности и предварительного проектирования",
-        "Гибкость комбинаций в рантайме против более сложной начальной структуры по сравнению с прямым наследованием",
+        "Independent evolution of the two hierarchies versus the extra indirection and up-front design it demands",
+        "Run-time flexibility in combining variants versus a more complex initial structure compared with straightforward inheritance",
       ],
     },
     whenToUse: {
@@ -261,9 +261,9 @@ export const structural: Concept[] = [
         "Одна абстракция должна работать поверх нескольких платформ/движков (рендереры, драйверы, API)",
       ],
       en: [
-        "Класс варьируется по двум независимым измерениям и наследование плодит комбинации",
-        "Нужно выбирать или менять реализацию в рантайме",
-        "Одна абстракция должна работать поверх нескольких платформ/движков (рендереры, драйверы, API)",
+        "A class varies along two independent dimensions and inheritance breeds a combinatorial explosion of subclasses",
+        "You need to select or switch the implementation at run time",
+        "A single abstraction must work on top of several platforms/engines (renderers, drivers, APIs)",
       ],
     },
     whenNotToUse: {
@@ -272,8 +272,8 @@ export const structural: Concept[] = [
         "Иерархия проста — мост добавит косвенность без выгоды",
       ],
       en: [
-        "Есть только одна реализация и второе измерение изменчивости не предвидится",
-        "Иерархия проста — мост добавит косвенность без выгоды",
+        "There is only one implementation and no second dimension of variation is anticipated",
+        "The hierarchy is simple — a bridge would add indirection with no benefit",
       ],
     },
     related: [
@@ -294,19 +294,19 @@ export const structural: Concept[] = [
     grade: "middle",
     tagline: {
       ru: "Дерево «часть–целое»: лист и контейнер за одним интерфейсом",
-      en: "Дерево «часть–целое»: лист и контейнер за одним интерфейсом",
+      en: "Part-whole tree: leaf and container behind a single interface",
     },
     definition: {
       ru: "Компонует объекты в древовидные структуры для представления иерархий «часть–целое». Composite позволяет клиентам единообразно трактовать как отдельные объекты, так и их композиции.",
-      en: "Компонует объекты в древовидные структуры для представления иерархий «часть–целое». Composite позволяет клиентам единообразно трактовать как отдельные объекты, так и их композиции.",
+      en: "Composes objects into tree structures to represent part-whole hierarchies. Composite lets clients treat individual objects and compositions of objects uniformly.",
     },
     problem: {
       ru: "Клиент работает с рекурсивной структурой (UI-дерево, файловая система, орг-структура), где есть простые элементы и контейнеры из элементов. Без общего интерфейса код клиента забит проверками «лист это или контейнер» и ветвлением на каждый случай, а каждая новая операция дублирует этот разбор.",
-      en: "Клиент работает с рекурсивной структурой (UI-дерево, файловая система, орг-структура), где есть простые элементы и контейнеры из элементов. Без общего интерфейса код клиента забит проверками «лист это или контейнер» и ветвлением на каждый случай, а каждая новая операция дублирует этот разбор.",
+      en: "The client works with a recursive structure (a UI tree, a file system, an org chart) that contains both simple elements and containers of elements. Without a common interface, the client code is littered with \"is this a leaf or a container?\" checks and branches for each case, and every new operation duplicates that dispatch.",
     },
     solution: {
       ru: "Объявляем общий интерфейс Component с операциями, осмысленными и для листа, и для контейнера. Leaf реализует операцию сам, а Composite хранит список дочерних компонентов и делегирует операцию им, рекурсивно агрегируя результат. Клиент вызывает операцию через интерфейс и не различает лист и поддерево.",
-      en: "Объявляем общий интерфейс Component с операциями, осмысленными и для листа, и для контейнера. Leaf реализует операцию сам, а Composite хранит список дочерних компонентов и делегирует операцию им, рекурсивно агрегируя результат. Клиент вызывает операцию через интерфейс и не различает лист и поддерево.",
+      en: "Declare a common Component interface whose operations are meaningful for both a leaf and a container. A Leaf carries out the operation itself, while a Composite holds a list of child components and delegates the operation to them, recursively aggregating the result. The client invokes the operation through the interface and never distinguishes a leaf from a subtree.",
     },
     codeExample: {
       lang: "typescript",
@@ -343,7 +343,7 @@ export const structural: Concept[] = [
           "class Folder implements FileSystemNode {",
           "  private children: FileSystemNode[] = [];",
           "  add(node: FileSystemNode) { this.children.push(node); return this; }",
-          "  // рекурсивная агрегация: папка делегирует операцию детям",
+          "  // recursive aggregation: the folder delegates the operation to its children",
           "  size() { return this.children.reduce((sum, c) => sum + c.size(), 0); }",
           "}",
           "",
@@ -351,7 +351,7 @@ export const structural: Concept[] = [
           "  .add(new FileLeaf(100))",
           "  .add(new Folder().add(new FileLeaf(200)).add(new FileLeaf(50)));",
           "",
-          "console.log(root.size()); // 350 — клиент не различает файл и папку",
+          "console.log(root.size()); // 350 — the client does not distinguish a file from a folder",
         ].join('\n'),
       },
     },
@@ -362,9 +362,9 @@ export const structural: Concept[] = [
         "Новые виды компонентов добавляются без правки клиентского кода (соответствует OCP)",
       ],
       en: [
-        "Клиент работает с листом и целым поддеревом единообразно, без ветвлений по типу",
-        "Рекурсивные структуры «часть–целое» выражаются естественно",
-        "Новые виды компонентов добавляются без правки клиентского кода (соответствует OCP)",
+        "The client treats a leaf and an entire subtree uniformly, with no branching on type",
+        "Recursive part-whole structures are expressed naturally",
+        "New kinds of components can be added without touching client code (honors the Open/Closed Principle)",
       ],
     },
     cons: {
@@ -373,8 +373,8 @@ export const structural: Concept[] = [
         "Дилемма размещения add/remove: в общем интерфейсе они бессмысленны для листа, только в Composite — теряется единообразие",
       ],
       en: [
-        "Общий интерфейс получается чрезмерно широким: трудно ограничить типами, какие дети допустимы в конкретном контейнере",
-        "Дилемма размещения add/remove: в общем интерфейсе они бессмысленны для листа, только в Composite — теряется единообразие",
+        "The common interface ends up too broad: it's hard to constrain at the type level which children a particular container may hold",
+        "The add/remove placement dilemma: in the common interface they are meaningless for a leaf, but keeping them only in Composite sacrifices uniformity",
       ],
     },
     tradeoffs: {
@@ -383,8 +383,8 @@ export const structural: Concept[] = [
         "Единообразие обработки против строгих типовых ограничений на состав дерева",
       ],
       en: [
-        "Прозрачность против безопасности (классический компромисс GoF): add/remove в общем интерфейсе дают единообразие, но позволяют бессмысленные вызовы на листе; add/remove только в Composite безопаснее, но клиенту приходится различать типы",
-        "Единообразие обработки против строгих типовых ограничений на состав дерева",
+        "Transparency vs. safety (the classic GoF trade-off): putting add/remove in the common interface gives uniformity but permits meaningless calls on a leaf; keeping add/remove only in Composite is safer but forces the client to distinguish types",
+        "Uniform handling vs. strict type constraints on what the tree may contain",
       ],
     },
     whenToUse: {
@@ -393,8 +393,8 @@ export const structural: Concept[] = [
         "Клиент должен одинаково выполнять операции над простыми и составными объектами",
       ],
       en: [
-        "Модель предметной области — иерархия «часть–целое»: дерево UI-компонентов, файловая система, орг-структура, вложенные меню",
-        "Клиент должен одинаково выполнять операции над простыми и составными объектами",
+        "The domain model is a part-whole hierarchy: a UI component tree, a file system, an org chart, nested menus",
+        "The client must perform operations on simple and composite objects in the same way",
       ],
     },
     whenNotToUse: {
@@ -403,8 +403,8 @@ export const structural: Concept[] = [
         "Элементы слишком различаются, и единый интерфейс операций получается искусственным",
       ],
       en: [
-        "Структура плоская и вложенности не предвидится — общий интерфейс с рекурсией избыточен",
-        "Элементы слишком различаются, и единый интерфейс операций получается искусственным",
+        "The structure is flat and no nesting is anticipated — a common interface with recursion is overkill",
+        "The elements differ too much, so a single operation interface would feel artificial",
       ],
     },
     related: [
@@ -428,19 +428,19 @@ export const structural: Concept[] = [
     grade: "middle",
     tagline: {
       ru: "Динамическое наращивание обязанностей через обёртки с тем же интерфейсом",
-      en: "Динамическое наращивание обязанностей через обёртки с тем же интерфейсом",
+      en: "Dynamically layering responsibilities through wrappers that share the same interface",
     },
     definition: {
       ru: "Динамически добавляет объекту новые обязанности, оборачивая его в объект с тем же интерфейсом. Decorator — гибкая альтернатива порождению подклассов для расширения функциональности.",
-      en: "Динамически добавляет объекту новые обязанности, оборачивая его в объект с тем же интерфейсом. Decorator — гибкая альтернатива порождению подклассов для расширения функциональности.",
+      en: "Dynamically adds new responsibilities to an object by wrapping it in another object with the same interface. Decorator is a flexible alternative to subclassing for extending functionality.",
     },
     problem: {
       ru: "Объекту нужно добавлять поведение (логирование, сжатие, шифрование) в разных сочетаниях. Наследование расширяет класс статически, на этапе компиляции, и на каждую комбинацию обязанностей требует свой подкласс — иерархия растёт комбинаторно.",
-      en: "Объекту нужно добавлять поведение (логирование, сжатие, шифрование) в разных сочетаниях. Наследование расширяет класс статически, на этапе компиляции, и на каждую комбинацию обязанностей требует свой подкласс — иерархия растёт комбинаторно.",
+      en: "An object needs behavior (logging, compression, encryption) added in various combinations. Inheritance extends a class statically, at compile time, and demands a separate subclass for every combination of responsibilities — the hierarchy grows combinatorially.",
     },
     solution: {
       ru: "Декоратор реализует тот же интерфейс, что и оборачиваемый объект, и хранит ссылку на него. Каждый вызов он делегирует дальше по цепочке, добавляя своё поведение до или после делегирования. Обёртки складываются друг на друга в любом порядке во время выполнения, а клиент работает с результатом как с исходным объектом.",
-      en: "Декоратор реализует тот же интерфейс, что и оборачиваемый объект, и хранит ссылку на него. Каждый вызов он делегирует дальше по цепочке, добавляя своё поведение до или после делегирования. Обёртки складываются друг на друга в любом порядке во время выполнения, а клиент работает с результатом как с исходным объектом.",
+      en: "A decorator implements the same interface as the object it wraps and holds a reference to it. It delegates each call further down the chain, adding its own behavior before or after delegating. Wrappers stack on top of one another in any order at runtime, and the client works with the result just as it would with the original object.",
     },
     codeExample: {
       lang: "typescript",
@@ -474,26 +474,26 @@ export const structural: Concept[] = [
           "interface DataSource { read(): string; }",
           "",
           "class FileSource implements DataSource {",
-          "  read() { return 'данные'; }",
+          "  read() { return 'data'; }",
           "}",
           "",
-          "// базовый декоратор: тот же интерфейс + ссылка на обёрнутый объект",
+          "// base decorator: same interface + reference to the wrapped object",
           "abstract class SourceDecorator implements DataSource {",
           "  constructor(protected wrappee: DataSource) {}",
           "  read() { return this.wrappee.read(); }",
           "}",
           "",
           "class DecryptionDecorator extends SourceDecorator {",
-          "  read() { return `decrypt(${super.read()})`; } // добавленная обязанность",
+          "  read() { return `decrypt(${super.read()})`; } // added responsibility",
           "}",
           "",
           "class UnzipDecorator extends SourceDecorator {",
           "  read() { return `unzip(${super.read()})`; }",
           "}",
           "",
-          "// обязанности наращиваются в рантайме, слой за слоем",
+          "// responsibilities are layered at runtime, one layer at a time",
           "const source: DataSource = new UnzipDecorator(new DecryptionDecorator(new FileSource()));",
-          "console.log(source.read()); // unzip(decrypt(данные))",
+          "console.log(source.read()); // unzip(decrypt(data))",
         ].join('\n'),
       },
     },
@@ -505,10 +505,10 @@ export const structural: Concept[] = [
         "Прозрачен для клиента: интерфейс совпадает с интерфейсом обёрнутого объекта",
       ],
       en: [
-        "Обязанности добавляются и сочетаются во время выполнения, а не на этапе компиляции",
-        "Комбинации поведений собираются из обёрток — без комбинаторного взрыва подклассов",
-        "Каждая обязанность живёт в своём классе (соответствует SRP)",
-        "Прозрачен для клиента: интерфейс совпадает с интерфейсом обёрнутого объекта",
+        "Responsibilities are added and combined at runtime rather than at compile time",
+        "Combinations of behaviors are assembled from wrappers — without a combinatorial explosion of subclasses",
+        "Each responsibility lives in its own class (honors the single-responsibility principle)",
+        "Transparent to the client: the interface matches that of the wrapped object",
       ],
     },
     cons: {
@@ -518,9 +518,9 @@ export const structural: Concept[] = [
         "Убрать конкретную обёртку из середины цепочки сложно",
       ],
       en: [
-        "Стопку из множества мелких обёрток трудно читать и отлаживать",
-        "Декорированный объект не тождественен исходному — проверки идентичности ломаются",
-        "Убрать конкретную обёртку из середины цепочки сложно",
+        "A stack of many small wrappers is hard to read and debug",
+        "A decorated object is not identical to the original — identity checks break",
+        "Removing a specific wrapper from the middle of the chain is difficult",
       ],
     },
     tradeoffs: {
@@ -529,8 +529,8 @@ export const structural: Concept[] = [
         "Независимость обёрток против скрытой зависимости от порядка обёртывания (unzip(decrypt(x)) ≠ decrypt(unzip(x)))",
       ],
       en: [
-        "Гибкость композиции поведения против прослеживаемости: длинная цепочка обёрток усложняет трассировку вызова",
-        "Независимость обёрток против скрытой зависимости от порядка обёртывания (unzip(decrypt(x)) ≠ decrypt(unzip(x)))",
+        "Flexibility of composing behavior versus traceability: a long chain of wrappers makes a call harder to trace",
+        "Independence of wrappers versus a hidden dependence on wrapping order (unzip(decrypt(x)) ≠ decrypt(unzip(x)))",
       ],
     },
     whenToUse: {
@@ -540,9 +540,9 @@ export const structural: Concept[] = [
         "Обязанности нужно снимать или менять местами в рантайме",
       ],
       en: [
-        "Нужно добавлять обязанности отдельным объектам динамически и незаметно для клиента",
-        "Расширение через наследование непрактично: сочетаний поведения много, подклассов потребовалось бы на каждую комбинацию",
-        "Обязанности нужно снимать или менять местами в рантайме",
+        "You need to add responsibilities to individual objects dynamically and transparently to the client",
+        "Extending through inheritance is impractical: there are many behavior combinations, and a subclass would be needed for each one",
+        "Responsibilities need to be removed or swapped around at runtime",
       ],
     },
     whenNotToUse: {
@@ -551,8 +551,8 @@ export const structural: Concept[] = [
         "Клиенту важна идентичность объекта: обёртка не равна оригиналу",
       ],
       en: [
-        "Поведение одно и стабильно — достаточно обычного класса или простого наследования",
-        "Клиенту важна идентичность объекта: обёртка не равна оригиналу",
+        "There is a single, stable behavior — an ordinary class or simple inheritance is enough",
+        "Object identity matters to the client: a wrapper is not equal to the original",
       ],
     },
     related: [
@@ -573,19 +573,19 @@ export const structural: Concept[] = [
     grade: "junior",
     tagline: {
       ru: "Единый простой интерфейс к сложной подсистеме",
-      en: "Единый простой интерфейс к сложной подсистеме",
+      en: "A single, simple interface to a complex subsystem",
     },
     definition: {
       ru: "Предоставляет унифицированный интерфейс к набору интерфейсов подсистемы. Facade определяет интерфейс более высокого уровня, который упрощает использование подсистемы.",
-      en: "Предоставляет унифицированный интерфейс к набору интерфейсов подсистемы. Facade определяет интерфейс более высокого уровня, который упрощает использование подсистемы.",
+      en: "Provides a unified interface to a set of interfaces in a subsystem. Facade defines a higher-level interface that makes the subsystem easier to use.",
     },
     problem: {
       ru: "Для типовой задачи клиенту приходится знать десяток внутренних классов подсистемы, порядок их вызовов и правила инициализации. Клиентский код жёстко связывается с внутренностями подсистемы, и любая её перестройка ломает всех клиентов.",
-      en: "Для типовой задачи клиенту приходится знать десяток внутренних классов подсистемы, порядок их вызовов и правила инициализации. Клиентский код жёстко связывается с внутренностями подсистемы, и любая её перестройка ломает всех клиентов.",
+      en: "For a routine task, the client has to know a dozen of the subsystem's internal classes, the order in which to call them, and their initialization rules. The client code ends up tightly coupled to the subsystem's internals, and any restructuring of it breaks every client.",
     },
     solution: {
       ru: "Вводим класс-фасад с несколькими высокоуровневыми методами под типовые сценарии. Фасад сам знает, каким объектам подсистемы и в каком порядке делегировать работу; клиент общается только с фасадом, но при необходимости может обращаться к классам подсистемы напрямую.",
-      en: "Вводим класс-фасад с несколькими высокоуровневыми методами под типовые сценарии. Фасад сам знает, каким объектам подсистемы и в каком порядке делегировать работу; клиент общается только с фасадом, но при необходимости может обращаться к классам подсистемы напрямую.",
+      en: "Introduce a facade class with a few high-level methods covering common scenarios. The facade itself knows which subsystem objects to delegate to, and in what order; the client talks only to the facade, but can still reach the subsystem classes directly when it needs to.",
     },
     codeExample: {
       lang: "typescript",
@@ -619,14 +619,14 @@ export const structural: Concept[] = [
           "class Payment { charge(amount: number) { return `charged:${amount}`; } }",
           "class Shipping { schedule(sku: string) { return `shipped:${sku}`; } }",
           "",
-          "// Facade: единая высокоуровневая точка входа в подсистему заказа",
+          "// Facade: a single high-level entry point into the order subsystem",
           "class OrderFacade {",
           "  private inventory = new Inventory();",
           "  private payment = new Payment();",
           "  private shipping = new Shipping();",
           "",
           "  placeOrder(sku: string, amount: number): string[] {",
-          "    // клиент не знает ни внутренних классов, ни порядка вызовов",
+          "    // the client knows neither the internal classes nor the call order",
           "    return [",
           "      this.inventory.reserve(sku),",
           "      this.payment.charge(amount),",
@@ -636,7 +636,7 @@ export const structural: Concept[] = [
           "}",
           "",
           "const shop = new OrderFacade();",
-          "shop.placeOrder('book-42', 100); // одна простая операция вместо трёх вызовов",
+          "shop.placeOrder('book-42', 100); // one simple operation instead of three calls",
         ].join('\n'),
       },
     },
@@ -647,9 +647,9 @@ export const structural: Concept[] = [
         "Даёт удобную точку входа для типовых сценариев и помогает разбивать систему на слои",
       ],
       en: [
-        "Изолирует клиентов от сложности и внутренних классов подсистемы",
-        "Снижает связанность клиентского кода с подсистемой: её можно перестраивать, не трогая клиентов",
-        "Даёт удобную точку входа для типовых сценариев и помогает разбивать систему на слои",
+        "Isolates clients from the subsystem's complexity and internal classes",
+        "Lowers coupling between the client code and the subsystem: you can restructure it without touching clients",
+        "Gives a convenient entry point for common scenarios and helps organize the system into layers",
       ],
     },
     cons: {
@@ -658,8 +658,8 @@ export const structural: Concept[] = [
         "Покрывает только типовые сценарии: для тонкой настройки клиенты вынуждены обходить фасад",
       ],
       en: [
-        "Рискует разрастись в god object, знающий обо всём приложении",
-        "Покрывает только типовые сценарии: для тонкой настройки клиенты вынуждены обходить фасад",
+        "Risks growing into a god object that knows about the entire application",
+        "Covers only common scenarios: for fine-grained control, clients are forced to bypass the facade",
       ],
     },
     tradeoffs: {
@@ -668,8 +668,8 @@ export const structural: Concept[] = [
         "Единая точка входа против риска концентрации знаний и логики в одном классе",
       ],
       en: [
-        "Простота типовых сценариев против потери гибкости тонкого управления подсистемой",
-        "Единая точка входа против риска концентрации знаний и логики в одном классе",
+        "Simplicity for common scenarios versus the loss of fine-grained control over the subsystem",
+        "A single entry point versus the risk of concentrating knowledge and logic in one class",
       ],
     },
     whenToUse: {
@@ -679,9 +679,9 @@ export const structural: Concept[] = [
         "Разбиваете систему на слои и нужна точка входа в каждый слой",
       ],
       en: [
-        "Нужен простой интерфейс к сложной подсистеме для типовых задач",
-        "Хотите уменьшить связанность клиентов с внутренними классами подсистемы",
-        "Разбиваете систему на слои и нужна точка входа в каждый слой",
+        "You need a simple interface to a complex subsystem for common tasks",
+        "You want to reduce coupling between clients and the subsystem's internal classes",
+        "You are organizing the system into layers and need an entry point into each layer",
       ],
     },
     whenNotToUse: {
@@ -690,8 +690,8 @@ export const structural: Concept[] = [
         "Клиентам постоянно нужен прямой тонкий доступ к внутренним классам — фасад будет лишь дублировать их API",
       ],
       en: [
-        "Подсистема проста, и обёртка ничего не упрощает",
-        "Клиентам постоянно нужен прямой тонкий доступ к внутренним классам — фасад будет лишь дублировать их API",
+        "The subsystem is simple and a wrapper simplifies nothing",
+        "Clients constantly need direct, fine-grained access to the internal classes — the facade would only duplicate their API",
       ],
     },
     related: [
@@ -715,19 +715,19 @@ export const structural: Concept[] = [
     grade: "senior",
     tagline: {
       ru: "Разделяемое внутреннее состояние вместо тысяч дублирующих друг друга объектов",
-      en: "Разделяемое внутреннее состояние вместо тысяч дублирующих друг друга объектов",
+      en: "Shared intrinsic state instead of thousands of duplicated objects",
     },
     definition: {
       ru: "Использует разделение (sharing) для эффективной поддержки большого числа мелких объектов. Состояние объекта делится на внутреннее (intrinsic) — неизменяемое и общее для многих объектов, и внешнее (extrinsic) — зависящее от контекста; разделяемые flyweight-объекты хранят только intrinsic-состояние, а extrinsic передаётся им извне при каждом вызове.",
-      en: "Использует разделение (sharing) для эффективной поддержки большого числа мелких объектов. Состояние объекта делится на внутреннее (intrinsic) — неизменяемое и общее для многих объектов, и внешнее (extrinsic) — зависящее от контекста; разделяемые flyweight-объекты хранят только intrinsic-состояние, а extrinsic передаётся им извне при каждом вызове.",
+      en: "Uses sharing to support large numbers of fine-grained objects efficiently. An object's state is split into intrinsic state — immutable and shared across many objects — and extrinsic state, which depends on context; shared flyweight objects store only the intrinsic state, while the extrinsic state is passed in from outside on each call.",
     },
     problem: {
       ru: "Приложение создаёт огромное количество однотипных мелких объектов (символы текста, деревья на карте, частицы, ячейки), у которых большая часть данных совпадает. Хранение дубликатов этих данных в каждом экземпляре раздувает потребление памяти и нагрузку на сборщик мусора вплоть до неработоспособности системы.",
-      en: "Приложение создаёт огромное количество однотипных мелких объектов (символы текста, деревья на карте, частицы, ячейки), у которых большая часть данных совпадает. Хранение дубликатов этих данных в каждом экземпляре раздувает потребление памяти и нагрузку на сборщик мусора вплоть до неработоспособности системы.",
+      en: "An application creates a huge number of small, similar objects (text characters, trees on a map, particles, cells) that share most of their data. Storing duplicate copies of that data in every instance bloats memory usage and garbage-collector pressure to the point where the system becomes unusable.",
     },
     solution: {
       ru: "Выделяем из объекта неизменяемую разделяемую часть (intrinsic) в отдельный flyweight-класс. Фабрика кэширует flyweight-объекты по ключу и при повторном запросе возвращает уже созданный экземпляр вместо нового. Контекстная часть (extrinsic: координаты, текущие параметры) в flyweight не хранится — клиент передаёт её параметрами методов. Flyweight обязан быть неизменяемым, иначе правка одного «объекта» незаметно изменит тысячи других.",
-      en: "Выделяем из объекта неизменяемую разделяемую часть (intrinsic) в отдельный flyweight-класс. Фабрика кэширует flyweight-объекты по ключу и при повторном запросе возвращает уже созданный экземпляр вместо нового. Контекстная часть (extrinsic: координаты, текущие параметры) в flyweight не хранится — клиент передаёт её параметрами методов. Flyweight обязан быть неизменяемым, иначе правка одного «объекта» незаметно изменит тысячи других.",
+      en: "Extract the immutable, shareable part (the intrinsic state) into a separate flyweight class. A factory caches flyweights by key and, on a repeat request, returns the existing instance instead of creating a new one. The contextual part (extrinsic state: coordinates, current parameters) is not stored in the flyweight — the client passes it as method arguments. A flyweight must be immutable; otherwise, editing one \"object\" would silently change thousands of others.",
     },
     codeExample: {
       lang: "typescript",
@@ -765,15 +765,15 @@ export const structural: Concept[] = [
           "}",
         ].join('\n'),
         en: [
-          "// Flyweight: intrinsic-состояние, разделяемое тысячами деревьев",
+          "// Flyweight: intrinsic state shared across thousands of trees",
           "class TreeType {",
           "  constructor(",
           "    readonly name: string,",
           "    readonly color: string,",
           "    readonly texture: string,",
           "  ) {}",
-          "  draw(x: number, y: number): string { // extrinsic-состояние приходит извне",
-          "    return `${this.name}/${this.color} в точке (${x}, ${y})`;",
+          "  draw(x: number, y: number): string { // extrinsic state comes from outside",
+          "    return `${this.name}/${this.color} at (${x}, ${y})`;",
           "  }",
           "}",
           "",
@@ -784,13 +784,13 @@ export const structural: Concept[] = [
           "    let type = this.cache.get(key);",
           "    if (!type) {",
           "      type = new TreeType(name, color, texture);",
-          "      this.cache.set(key, type); // переиспользуем вместо создания дубликата",
+          "      this.cache.set(key, type); // reuse instead of creating a duplicate",
           "    }",
           "    return type;",
           "  }",
           "}",
           "",
-          "// Лёгкий контекст: хранит только extrinsic-часть и ссылку на flyweight",
+          "// Lightweight context: holds only the extrinsic part plus a reference to the flyweight",
           "class Tree {",
           "  constructor(private x: number, private y: number, private type: TreeType) {}",
           "  draw() { return this.type.draw(this.x, this.y); }",
@@ -805,9 +805,9 @@ export const structural: Concept[] = [
         "Разделяемое состояние сосредоточено в одном месте и легко контролируется",
       ],
       en: [
-        "Резко снижает потребление памяти при большом числе однотипных объектов",
-        "Меньше создаваемых объектов — меньше нагрузка на сборщик мусора",
-        "Разделяемое состояние сосредоточено в одном месте и легко контролируется",
+        "Dramatically reduces memory usage when there are large numbers of similar objects",
+        "Fewer objects created means less pressure on the garbage collector",
+        "Shared state is concentrated in one place and is easy to control",
       ],
     },
     cons: {
@@ -817,9 +817,9 @@ export const structural: Concept[] = [
         "Flyweight должен быть неизменяемым — изменение разделяемого объекта затронет всех его пользователей",
       ],
       en: [
-        "Усложняет код: состояние приходится явно делить на intrinsic и extrinsic",
-        "Клиент обязан хранить или вычислять extrinsic-состояние и передавать его при каждом вызове",
-        "Flyweight должен быть неизменяемым — изменение разделяемого объекта затронет всех его пользователей",
+        "Adds complexity: state must be explicitly split into intrinsic and extrinsic parts",
+        "The client must store or compute the extrinsic state and pass it on every call",
+        "A flyweight must be immutable — changing a shared object affects every user of it",
       ],
     },
     tradeoffs: {
@@ -829,9 +829,9 @@ export const structural: Concept[] = [
         "Оправдан лишь при действительно массовом дублировании — на малых объёмах даёт только сложность",
       ],
       en: [
-        "Экономия памяти против затрат CPU на вычисление и передачу extrinsic-состояния",
-        "Простая модель «один объект — все его данные» против разделения состояния на две части",
-        "Оправдан лишь при действительно массовом дублировании — на малых объёмах даёт только сложность",
+        "Memory savings versus the CPU cost of computing and passing the extrinsic state",
+        "The simple \"one object owns all its data\" model versus splitting state into two parts",
+        "Justified only under genuinely massive duplication — at small scale it adds only complexity",
       ],
     },
     whenToUse: {
@@ -841,9 +841,9 @@ export const structural: Concept[] = [
         "Контекстную часть состояния можно передавать извне вместо хранения в каждом объекте",
       ],
       en: [
-        "Приложение создаёт огромное количество мелких объектов, и память становится узким местом",
-        "Большая часть состояния объектов дублируется и может быть вынесена в разделяемую неизменяемую часть",
-        "Контекстную часть состояния можно передавать извне вместо хранения в каждом объекте",
+        "The application creates a huge number of small objects and memory becomes the bottleneck",
+        "Most of the objects' state is duplicated and can be extracted into a shared, immutable part",
+        "The contextual part of the state can be passed in from outside instead of stored in every object",
       ],
     },
     whenNotToUse: {
@@ -852,8 +852,8 @@ export const structural: Concept[] = [
         "Состояние объектов преимущественно уникально или изменяемо: разделять нечего",
       ],
       en: [
-        "Объектов немного — экономия не окупит усложнение",
-        "Состояние объектов преимущественно уникально или изменяемо: разделять нечего",
+        "There are only a few objects — the savings won't justify the added complexity",
+        "The objects' state is mostly unique or mutable: there is nothing to share",
       ],
     },
     related: [
@@ -877,19 +877,19 @@ export const structural: Concept[] = [
     grade: "middle",
     tagline: {
       ru: "Заместитель контролирует доступ к реальному объекту, сохраняя его интерфейс",
-      en: "Заместитель контролирует доступ к реальному объекту, сохраняя его интерфейс",
+      en: "A surrogate controls access to the real object while preserving its interface",
     },
     definition: {
       ru: "Предоставляет суррогат (заместитель) другого объекта для контроля доступа к нему. Proxy реализует тот же интерфейс, что и реальный объект, поэтому для клиента подмена прозрачна.",
-      en: "Предоставляет суррогат (заместитель) другого объекта для контроля доступа к нему. Proxy реализует тот же интерфейс, что и реальный объект, поэтому для клиента подмена прозрачна.",
+      en: "Provides a surrogate, or placeholder, for another object to control access to it. A proxy implements the same interface as the real object, so the substitution is transparent to the client.",
     },
     problem: {
       ru: "Клиенту нужен объект, прямой доступ к которому нежелателен или дорог: создание тяжёлое (большой файл, соединение), объект находится в другом адресном пространстве, требуется проверка прав или кэширование. Зашивать эту логику в сам объект или в каждого клиента — значит смешивать ответственности и дублировать код.",
-      en: "Клиенту нужен объект, прямой доступ к которому нежелателен или дорог: создание тяжёлое (большой файл, соединение), объект находится в другом адресном пространстве, требуется проверка прав или кэширование. Зашивать эту логику в сам объект или в каждого клиента — значит смешивать ответственности и дублировать код.",
+      en: "A client needs an object that shouldn't or can't be accessed directly, or is expensive to access: it is costly to create (a large file, a connection), it lives in a different address space, or it requires permission checks or caching. Baking that logic into the object itself or into every client mixes responsibilities and duplicates code.",
     },
     solution: {
       ru: "Вводим класс-заместитель с тем же интерфейсом, что у реального объекта (Subject). Клиент работает с заместителем, не зная об этом; заместитель хранит ссылку на реальный объект, управляет его жизненным циклом (например, создаёт лениво при первом обращении) и решает, когда и как делегировать ему запрос — до или после своих проверок, кэша, учёта обращений.",
-      en: "Вводим класс-заместитель с тем же интерфейсом, что у реального объекта (Subject). Клиент работает с заместителем, не зная об этом; заместитель хранит ссылку на реальный объект, управляет его жизненным циклом (например, создаёт лениво при первом обращении) и решает, когда и как делегировать ему запрос — до или после своих проверок, кэша, учёта обращений.",
+      en: "Introduce a proxy class with the same interface as the real object (the Subject). The client works with the proxy without realizing it; the proxy holds a reference to the real object, manages its lifecycle (for example, creating it lazily on first access), and decides when and how to delegate the request to it — before or after its own checks, caching, and access accounting.",
     },
     codeExample: {
       lang: "typescript",
@@ -922,23 +922,23 @@ export const structural: Concept[] = [
           "",
           "class RealImage implements Image {",
           "  constructor(private filename: string) {",
-          "    console.log(`Загрузка ${filename} с диска...`); // тяжёлая операция",
+          "    console.log(`Loading ${filename} from disk...`); // heavy operation",
           "  }",
-          "  display() { return `Показ ${this.filename}`; }",
+          "  display() { return `Displaying ${this.filename}`; }",
           "}",
           "",
-          "// Virtual Proxy: тот же интерфейс, контролирует доступ к тяжёлому объекту",
+          "// Virtual Proxy: same interface, controls access to the heavy object",
           "class ImageProxy implements Image {",
           "  private real: RealImage | null = null;",
           "  constructor(private filename: string) {}",
           "  display() {",
-          "    this.real ??= new RealImage(this.filename); // создаём только при первом обращении",
+          "    this.real ??= new RealImage(this.filename); // create only on first access",
           "    return this.real.display();",
           "  }",
           "}",
           "",
-          "const image: Image = new ImageProxy('photo.png'); // загрузки ещё не было",
-          "image.display(); // реальный объект создаётся здесь, для клиента — прозрачно",
+          "const image: Image = new ImageProxy('photo.png'); // nothing has been loaded yet",
+          "image.display(); // the real object is created here — transparent to the client",
         ].join('\n'),
       },
     },
@@ -950,10 +950,10 @@ export const structural: Concept[] = [
         "Подмена прозрачна: клиент работает через общий интерфейс Subject",
       ],
       en: [
-        "Контроль доступа к объекту без изменения его кода и кода клиентов",
-        "Ленивое создание тяжёлых объектов экономит ресурсы (Virtual Proxy)",
-        "Сквозные заботы — проверка прав, кэширование, учёт обращений — выносятся из реального объекта",
-        "Подмена прозрачна: клиент работает через общий интерфейс Subject",
+        "Controls access to the object without changing its code or the clients' code",
+        "Lazy creation of heavy objects saves resources (Virtual Proxy)",
+        "Cross-cutting concerns — permission checks, caching, access accounting — are moved out of the real object",
+        "The substitution is transparent: the client works through the shared Subject interface",
       ],
     },
     cons: {
@@ -963,9 +963,9 @@ export const structural: Concept[] = [
         "Ещё один класс, который нужно поддерживать в синхроне с интерфейсом Subject",
       ],
       en: [
-        "Дополнительный уровень косвенности замедляет и усложняет отладку",
-        "Ответ может приходить с задержкой (ленивое создание, обращение к удалённому объекту)",
-        "Ещё один класс, который нужно поддерживать в синхроне с интерфейсом Subject",
+        "An extra layer of indirection slows things down and makes debugging harder",
+        "The response may come back with a delay (lazy creation, calls to a remote object)",
+        "One more class to keep in sync with the Subject interface",
       ],
     },
     tradeoffs: {
@@ -974,8 +974,8 @@ export const structural: Concept[] = [
         "Экономия ресурсов за счёт ленивой инициализации против непредсказуемого момента первой задержки",
       ],
       en: [
-        "Прозрачный контроль доступа против лишней косвенности на каждом вызове",
-        "Экономия ресурсов за счёт ленивой инициализации против непредсказуемого момента первой задержки",
+        "Transparent access control versus extra indirection on every call",
+        "Resource savings from lazy initialization versus an unpredictable moment for the first delay",
       ],
     },
     whenToUse: {
@@ -986,10 +986,10 @@ export const structural: Concept[] = [
         "Результаты обращений можно кэшировать, не трогая сам объект (Caching Proxy)",
       ],
       en: [
-        "Тяжёлый объект стоит создавать лениво, при первом реальном обращении (Virtual Proxy)",
-        "Нужен контроль прав доступа к объекту (Protection Proxy)",
-        "Объект живёт в другом процессе или на другой машине, а клиенту нужен локальный представитель (Remote Proxy)",
-        "Результаты обращений можно кэшировать, не трогая сам объект (Caching Proxy)",
+        "A heavy object is best created lazily, on the first real access (Virtual Proxy)",
+        "You need to control access rights to the object (Protection Proxy)",
+        "The object lives in another process or on another machine, and the client needs a local representative (Remote Proxy)",
+        "Call results can be cached without touching the object itself (Caching Proxy)",
       ],
     },
     whenNotToUse: {
@@ -998,8 +998,8 @@ export const structural: Concept[] = [
         "Цель — добавить объекту новые обязанности, а не управлять доступом: это задача Decorator",
       ],
       en: [
-        "Доступ к объекту не нужно контролировать — прямой вызов проще и быстрее",
-        "Цель — добавить объекту новые обязанности, а не управлять доступом: это задача Decorator",
+        "Access to the object doesn't need to be controlled — a direct call is simpler and faster",
+        "The goal is to add new responsibilities to the object rather than manage access: that's a job for Decorator",
       ],
     },
     related: [
@@ -1022,7 +1022,7 @@ export const structuralQuestions: Question[] = [
     grade: "junior",
     prompt: {
       ru: "Какое утверждение точнее всего описывает паттерн Adapter?",
-      en: "Какое утверждение точнее всего описывает паттерн Adapter?",
+      en: "Which statement most accurately describes the Adapter pattern?",
     },
     options: {
       ru: [
@@ -1032,16 +1032,16 @@ export const structuralQuestions: Question[] = [
         "Подставляет суррогатный объект с тем же интерфейсом, контролирующий доступ к реальному объекту",
       ],
       en: [
-        "Динамически добавляет объекту новые обязанности, сохраняя его исходный интерфейс",
-        "Преобразует интерфейс существующего класса к интерфейсу, который ожидает клиент, позволяя работать вместе классам с несовместимыми интерфейсами",
-        "Предоставляет единый упрощённый интерфейс к целой подсистеме из множества классов",
-        "Подставляет суррогатный объект с тем же интерфейсом, контролирующий доступ к реальному объекту",
+        "Dynamically adds new responsibilities to an object while preserving its original interface",
+        "Converts the interface of an existing class into the interface a client expects, letting classes with incompatible interfaces work together",
+        "Provides a single, simplified interface to an entire subsystem of many classes",
+        "Substitutes a surrogate object with the same interface that controls access to the real object",
       ],
     },
     correctIndex: 1,
     explanation: {
       ru: "Adapter по GoF преобразует интерфейс класса в другой, ожидаемый клиентом, — именно смена интерфейса и есть его суть. Первый вариант описывает Decorator: он добавляет поведение, но интерфейс не меняет. Третий — Facade: упрощённый вход в подсистему, а не приведение одного класса к уже существующему целевому интерфейсу. Четвёртый — Proxy: тот же интерфейс, что у реального объекта, плюс контроль доступа, тогда как Adapter интерфейс именно преобразует.",
-      en: "Adapter по GoF преобразует интерфейс класса в другой, ожидаемый клиентом, — именно смена интерфейса и есть его суть. Первый вариант описывает Decorator: он добавляет поведение, но интерфейс не меняет. Третий — Facade: упрощённый вход в подсистему, а не приведение одного класса к уже существующему целевому интерфейсу. Четвёртый — Proxy: тот же интерфейс, что у реального объекта, плюс контроль доступа, тогда как Adapter интерфейс именно преобразует.",
+      en: "In GoF, Adapter converts the interface of a class into another one that the client expects — changing the interface is precisely its essence. The first option describes Decorator: it adds behavior but doesn't change the interface. The third is Facade: a simplified entry point into a subsystem, not the adaptation of one class to an already-existing target interface. The fourth is Proxy: the same interface as the real object plus access control, whereas Adapter specifically converts the interface.",
     },
     conceptId: "adapter",
   },
@@ -1052,7 +1052,7 @@ export const structuralQuestions: Question[] = [
     grade: "junior",
     prompt: {
       ru: "Какой паттерн проектирования использован в этом коде?",
-      en: "Какой паттерн проектирования использован в этом коде?",
+      en: "Which design pattern is used in this code?",
     },
     code: {
       lang: "typescript",
@@ -1081,10 +1081,10 @@ export const structuralQuestions: Question[] = [
           "checkout(new StripePaymentAdapter(new StripeSdk()));",
         ].join('\n'),
         en: [
-          "// Интерфейс, который ожидает приложение",
+          "// Interface that the application expects",
           "interface PaymentProcessor { pay(amountCents: number): string; }",
           "",
-          "// Сторонний SDK с несовместимым интерфейсом — менять его нельзя",
+          "// Third-party SDK with an incompatible interface — we can't change it",
           "class StripeSdk {",
           "  makeCharge(amountDollars: number, currency: string): string {",
           "    return `charged ${amountDollars} ${currency}`;",
@@ -1094,7 +1094,7 @@ export const structuralQuestions: Question[] = [
           "class StripePaymentAdapter implements PaymentProcessor {",
           "  constructor(private sdk: StripeSdk) {}",
           "  pay(amountCents: number): string {",
-          "    return this.sdk.makeCharge(amountCents / 100, 'USD'); // трансляция вызова и данных",
+          "    return this.sdk.makeCharge(amountCents / 100, 'USD'); // translate the call and the data",
           "  }",
           "}",
           "",
@@ -1122,7 +1122,7 @@ export const structuralQuestions: Question[] = [
     correctIndex: 1,
     explanation: {
       ru: "StripePaymentAdapter реализует целевой интерфейс PaymentProcessor, ожидаемый приложением, оборачивает несовместимый StripeSdk и транслирует вызов pay() в makeCharge(), преобразуя данные (центы в доллары) — это Adapter. Не Facade: здесь не упрощается доступ к подсистеме из многих классов — один класс приводится к уже существующему интерфейсу клиента. Не Decorator: обёртка не добавляет объекту новых обязанностей и не сохраняет его исходный интерфейс — интерфейс именно меняется. Не Proxy: у Proxy интерфейс совпадает с интерфейсом оборачиваемого объекта и цель — контроль доступа, а здесь интерфейсы разные и цель — совместимость.",
-      en: "StripePaymentAdapter реализует целевой интерфейс PaymentProcessor, ожидаемый приложением, оборачивает несовместимый StripeSdk и транслирует вызов pay() в makeCharge(), преобразуя данные (центы в доллары) — это Adapter. Не Facade: здесь не упрощается доступ к подсистеме из многих классов — один класс приводится к уже существующему интерфейсу клиента. Не Decorator: обёртка не добавляет объекту новых обязанностей и не сохраняет его исходный интерфейс — интерфейс именно меняется. Не Proxy: у Proxy интерфейс совпадает с интерфейсом оборачиваемого объекта и цель — контроль доступа, а здесь интерфейсы разные и цель — совместимость.",
+      en: "StripePaymentAdapter implements the target interface PaymentProcessor that the application expects, wraps the incompatible StripeSdk, and translates the pay() call into makeCharge(), converting the data (cents to dollars) — this is Adapter. Not Facade: it isn't simplifying access to a subsystem of many classes — a single class is brought to the client's already-existing interface. Not Decorator: the wrapper doesn't add new responsibilities to the object and doesn't preserve its original interface — the interface is specifically changed. Not Proxy: with Proxy the interface matches that of the wrapped object and the goal is access control, whereas here the interfaces differ and the goal is compatibility.",
     },
     conceptId: "adapter",
   },
@@ -1133,7 +1133,7 @@ export const structuralQuestions: Question[] = [
     grade: "senior",
     prompt: {
       ru: "Какая формулировка точнее всего описывает назначение паттерна Bridge?",
-      en: "Какая формулировка точнее всего описывает назначение паттерна Bridge?",
+      en: "Which statement most accurately describes the intent of the Bridge pattern?",
     },
     options: {
       ru: [
@@ -1143,16 +1143,16 @@ export const structuralQuestions: Question[] = [
         "Предоставляет единый упрощённый интерфейс к сложной подсистеме",
       ],
       en: [
-        "Преобразует интерфейс существующего класса в интерфейс, ожидаемый клиентом, чтобы несовместимые классы работали вместе",
-        "Отделяет абстракцию от её реализации в две независимые иерархии, связанные композицией, чтобы обе могли изменяться независимо",
-        "Динамически добавляет объекту новые обязанности, оборачивая его в объект с тем же интерфейсом",
-        "Предоставляет единый упрощённый интерфейс к сложной подсистеме",
+        "Converts the interface of an existing class into the interface a client expects, so that incompatible classes can work together",
+        "Decouples an abstraction from its implementation into two independent hierarchies linked by composition, so that the two can vary independently",
+        "Dynamically adds new responsibilities to an object by wrapping it in an object with the same interface",
+        "Provides a single, simplified interface to a complex subsystem",
       ],
     },
     correctIndex: 1,
     explanation: {
       ru: "Bridge (GoF) — «отделить абстракцию от её реализации так, чтобы обе могли изменяться независимо»: абстракция держит реализацию по композиции и делегирует ей примитивы, каждая иерархия расширяется своими подклассами. Первый вариант — это Adapter: он задним числом стыкует уже существующие несовместимые интерфейсы, тогда как в Bridge обе стороны проектируются вместе заранее. Третий вариант — Decorator: обёртка с тем же интерфейсом ради добавления обязанностей, а не разведение двух измерений изменчивости. Четвёртый — Facade: упрощённая точка входа в подсистему, а не пара параллельных иерархий.",
-      en: "Bridge (GoF) — «отделить абстракцию от её реализации так, чтобы обе могли изменяться независимо»: абстракция держит реализацию по композиции и делегирует ей примитивы, каждая иерархия расширяется своими подклассами. Первый вариант — это Adapter: он задним числом стыкует уже существующие несовместимые интерфейсы, тогда как в Bridge обе стороны проектируются вместе заранее. Третий вариант — Decorator: обёртка с тем же интерфейсом ради добавления обязанностей, а не разведение двух измерений изменчивости. Четвёртый — Facade: упрощённая точка входа в подсистему, а не пара параллельных иерархий.",
+      en: "Bridge (GoF) means “decouple an abstraction from its implementation so that the two can vary independently”: the abstraction holds its implementation via composition and delegates the primitives to it, and each hierarchy is extended by its own subclasses. The first option is Adapter: it retrofits already-existing, incompatible interfaces to work together, whereas in Bridge both sides are designed together up front. The third option is Decorator: a wrapper with the same interface that adds responsibilities, not the separation of two dimensions of variation. The fourth is Facade: a simplified entry point into a subsystem, not a pair of parallel hierarchies.",
     },
     conceptId: "bridge",
   },
@@ -1163,7 +1163,7 @@ export const structuralQuestions: Question[] = [
     grade: "senior",
     prompt: {
       ru: "Какой паттерн проектирования использован в этом коде?",
-      en: "Какой паттерн проектирования использован в этом коде?",
+      en: "Which design pattern is used in this code?",
     },
     code: {
       lang: "typescript",
@@ -1194,7 +1194,7 @@ export const structuralQuestions: Question[] = [
           "const remote = new AdvancedRemote(new Radio()); // комбинации собираются в рантайме",
         ].join('\n'),
         en: [
-          "interface Device { volume(): number; setVolume(v: number): void; } // иерархия реализации",
+          "interface Device { volume(): number; setVolume(v: number): void; } // implementation hierarchy",
           "",
           "class Tv implements Device {",
           "  private v = 30;",
@@ -1207,16 +1207,16 @@ export const structuralQuestions: Question[] = [
           "  setVolume(v: number) { this.v = v; }",
           "}",
           "",
-          "// иерархия абстракции: держит устройство по композиции",
+          "// abstraction hierarchy: holds the device via composition",
           "class Remote {",
           "  constructor(protected device: Device) {}",
           "  volumeUp() { this.device.setVolume(this.device.volume() + 10); }",
           "}",
           "class AdvancedRemote extends Remote {",
-          "  mute() { this.device.setVolume(0); } // абстракция расширяется независимо от устройств",
+          "  mute() { this.device.setVolume(0); } // the abstraction is extended independently of the devices",
           "}",
           "",
-          "const remote = new AdvancedRemote(new Radio()); // комбинации собираются в рантайме",
+          "const remote = new AdvancedRemote(new Radio()); // combinations are assembled at run time",
         ].join('\n'),
       },
     },
@@ -1237,7 +1237,7 @@ export const structuralQuestions: Question[] = [
     correctIndex: 2,
     explanation: {
       ru: "Здесь две независимые иерархии: абстракция (Remote → AdvancedRemote) и реализация (Device → Tv, Radio), связанные композицией. Абстракция делегирует устройству примитивные операции, и обе иерархии расширяются независимо — это Bridge. Не Strategy: Device — не взаимозаменяемый алгоритм одного поведения, а целое измерение реализации, причём и сторона абстракции образует собственную иерархию подклассов (AdvancedRemote), чего в Strategy нет. Не Adapter: никакой существующий класс с несовместимым интерфейсом не приводится к ожидаемому — интерфейсы Remote и Device спроектированы совместно заранее. Не Abstract Factory: код ничего не порождает семействами связанных продуктов — устройство передаётся готовым, речь о структуре делегирования, а не о создании объектов.",
-      en: "Здесь две независимые иерархии: абстракция (Remote → AdvancedRemote) и реализация (Device → Tv, Radio), связанные композицией. Абстракция делегирует устройству примитивные операции, и обе иерархии расширяются независимо — это Bridge. Не Strategy: Device — не взаимозаменяемый алгоритм одного поведения, а целое измерение реализации, причём и сторона абстракции образует собственную иерархию подклассов (AdvancedRemote), чего в Strategy нет. Не Adapter: никакой существующий класс с несовместимым интерфейсом не приводится к ожидаемому — интерфейсы Remote и Device спроектированы совместно заранее. Не Abstract Factory: код ничего не порождает семействами связанных продуктов — устройство передаётся готовым, речь о структуре делегирования, а не о создании объектов.",
+      en: "Here there are two independent hierarchies: the abstraction (Remote → AdvancedRemote) and the implementation (Device → Tv, Radio), linked by composition. The abstraction delegates primitive operations to the device, and both hierarchies are extended independently — this is Bridge. Not Strategy: Device is not an interchangeable algorithm for a single behavior but an entire implementation dimension, and the abstraction side also forms its own subclass hierarchy (AdvancedRemote), which Strategy does not have. Not Adapter: no existing class with an incompatible interface is being adapted to an expected one — the Remote and Device interfaces were designed together up front. Not Abstract Factory: the code does not create anything in families of related products — the device is passed in ready-made, and the point is the delegation structure, not object creation.",
     },
     conceptId: "bridge",
   },
@@ -1248,7 +1248,7 @@ export const structuralQuestions: Question[] = [
     grade: "middle",
     prompt: {
       ru: "Какое утверждение точнее всего описывает паттерн Composite?",
-      en: "Какое утверждение точнее всего описывает паттерн Composite?",
+      en: "Which statement most accurately describes the Composite pattern?",
     },
     options: {
       ru: [
@@ -1258,16 +1258,16 @@ export const structuralQuestions: Question[] = [
         "Разделяет общее состояние между множеством мелких объектов ради экономии памяти",
       ],
       en: [
-        "Динамически добавляет объекту новые обязанности, оборачивая его в объект с тем же интерфейсом",
-        "Предоставляет унифицированный интерфейс к набору интерфейсов сложной подсистемы",
-        "Компонует объекты в древовидные структуры «часть–целое» и позволяет клиенту единообразно работать с отдельными объектами и их композициями",
-        "Разделяет общее состояние между множеством мелких объектов ради экономии памяти",
+        "Dynamically adds new responsibilities to an object by wrapping it in an object with the same interface",
+        "Provides a unified interface to a set of interfaces in a complex subsystem",
+        "Composes objects into part-whole tree structures and lets the client work uniformly with individual objects and their compositions",
+        "Shares common state among many fine-grained objects to save memory",
       ],
     },
     correctIndex: 2,
     explanation: {
       ru: "Composite (GoF) — это именно дерево «часть–целое» с общим интерфейсом Component: лист выполняет операцию сам, контейнер рекурсивно делегирует её детям, а клиент не различает одиночный объект и композицию. Первый вариант описывает Decorator: там обёртка вокруг ровно одного объекта добавляет обязанности, а не собирает иерархию. Второй — Facade: упрощённый вход в подсистему, без древовидной структуры. Четвёртый — Flyweight: экономия памяти через разделяемое состояние, к композиции «часть–целое» отношения не имеет.",
-      en: "Composite (GoF) — это именно дерево «часть–целое» с общим интерфейсом Component: лист выполняет операцию сам, контейнер рекурсивно делегирует её детям, а клиент не различает одиночный объект и композицию. Первый вариант описывает Decorator: там обёртка вокруг ровно одного объекта добавляет обязанности, а не собирает иерархию. Второй — Facade: упрощённый вход в подсистему, без древовидной структуры. Четвёртый — Flyweight: экономия памяти через разделяемое состояние, к композиции «часть–целое» отношения не имеет.",
+      en: "Composite (GoF) is precisely a part-whole tree built on a common Component interface: a leaf carries out the operation itself, a container recursively delegates it to its children, and the client does not distinguish a single object from a composition. The first option describes Decorator, where a wrapper around exactly one object adds responsibilities rather than assembling a hierarchy. The second is Facade — a simplified entry point into a subsystem, with no tree structure. The fourth is Flyweight — saving memory through shared state, which has nothing to do with part-whole composition.",
     },
     conceptId: "composite",
   },
@@ -1278,7 +1278,7 @@ export const structuralQuestions: Question[] = [
     grade: "middle",
     prompt: {
       ru: "Какой паттерн проектирования использован в этом коде?",
-      en: "Какой паттерн проектирования использован в этом коде?",
+      en: "Which design pattern is used in this code?",
     },
     code: {
       lang: "typescript",
@@ -1309,14 +1309,14 @@ export const structuralQuestions: Question[] = [
           "interface OrgUnit { headcount(): number; }",
           "",
           "class Employee implements OrgUnit {",
-          "  headcount() { return 1; } // лист: считает сам себя",
+          "  headcount() { return 1; } // leaf: counts itself",
           "}",
           "",
           "class Department implements OrgUnit {",
           "  private units: OrgUnit[] = [];",
           "  add(unit: OrgUnit) { this.units.push(unit); return this; }",
           "  headcount() {",
-          "    // контейнер рекурсивно делегирует операцию детям",
+          "    // the container recursively delegates the operation to its children",
           "    return this.units.reduce((total, u) => total + u.headcount(), 0);",
           "  }",
           "}",
@@ -1325,7 +1325,7 @@ export const structuralQuestions: Question[] = [
           "  .add(new Employee())",
           "  .add(new Department().add(new Employee()).add(new Employee()));",
           "",
-          "console.log(company.headcount()); // 3 — сотрудник и отдел обрабатываются единообразно",
+          "console.log(company.headcount()); // 3 — an employee and a department are handled uniformly",
         ].join('\n'),
       },
     },
@@ -1346,7 +1346,7 @@ export const structuralQuestions: Question[] = [
     correctIndex: 1,
     explanation: {
       ru: "Employee (лист) и Department (контейнер) реализуют общий интерфейс OrgUnit, контейнер хранит произвольное число детей и рекурсивно агрегирует headcount() по дереву «часть–целое», а клиент не различает сотрудника и целый отдел — это Composite. Не Decorator: декоратор оборачивает ровно один объект, добавляя ему обязанности, а здесь узел содержит много детей и агрегирует их, ничего не «дообогащая». Не Visitor: операция headcount() объявлена в самих узлах, нет отдельного объекта-посетителя и двойной диспетчеризации через accept/visit. Не Iterator: паттерн Iterator выделяет обход коллекции в отдельный объект с последовательным доступом, здесь же обход — внутренняя деталь рекурсивной операции, а не самостоятельная абстракция.",
-      en: "Employee (лист) и Department (контейнер) реализуют общий интерфейс OrgUnit, контейнер хранит произвольное число детей и рекурсивно агрегирует headcount() по дереву «часть–целое», а клиент не различает сотрудника и целый отдел — это Composite. Не Decorator: декоратор оборачивает ровно один объект, добавляя ему обязанности, а здесь узел содержит много детей и агрегирует их, ничего не «дообогащая». Не Visitor: операция headcount() объявлена в самих узлах, нет отдельного объекта-посетителя и двойной диспетчеризации через accept/visit. Не Iterator: паттерн Iterator выделяет обход коллекции в отдельный объект с последовательным доступом, здесь же обход — внутренняя деталь рекурсивной операции, а не самостоятельная абстракция.",
+      en: "Employee (the leaf) and Department (the container) implement a common OrgUnit interface; the container holds an arbitrary number of children and recursively aggregates headcount() over the part-whole tree, and the client does not distinguish an employee from an entire department — this is Composite. Not Decorator: a decorator wraps exactly one object to add responsibilities to it, whereas here a node holds many children and aggregates them without enriching anything. Not Visitor: the headcount() operation is declared on the nodes themselves, with no separate visitor object and no double dispatch through accept/visit. Not Iterator: the Iterator pattern extracts collection traversal into a separate object with sequential access, whereas here traversal is an internal detail of the recursive operation rather than a standalone abstraction.",
     },
     conceptId: "composite",
   },
@@ -1357,7 +1357,7 @@ export const structuralQuestions: Question[] = [
     grade: "middle",
     prompt: {
       ru: "Как точнее всего сформулировать назначение паттерна Decorator?",
-      en: "Как точнее всего сформулировать назначение паттерна Decorator?",
+      en: "Which statement most precisely captures the intent of the Decorator pattern?",
     },
     options: {
       ru: [
@@ -1367,16 +1367,16 @@ export const structuralQuestions: Question[] = [
         "Составляет объекты в древовидные структуры «часть—целое» и позволяет клиенту единообразно работать с листьями и контейнерами",
       ],
       en: [
-        "Подставляет вместо объекта суррогат с тем же интерфейсом, чтобы контролировать доступ к нему",
-        "Преобразует интерфейс класса к другому интерфейсу, который ожидает клиент",
-        "Динамически добавляет объекту новые обязанности, оборачивая его в объект с тем же интерфейсом, — гибкая альтернатива наследованию",
-        "Составляет объекты в древовидные структуры «часть—целое» и позволяет клиенту единообразно работать с листьями и контейнерами",
+        "Substitutes a surrogate with the same interface in place of an object in order to control access to it",
+        "Converts the interface of a class into another interface the client expects",
+        "Dynamically adds new responsibilities to an object by wrapping it in an object with the same interface — a flexible alternative to inheritance",
+        "Composes objects into part-whole tree structures and lets the client treat leaves and containers uniformly",
       ],
     },
     correctIndex: 2,
     explanation: {
       ru: "По GoF Decorator динамически навешивает на объект дополнительные обязанности через обёртку с тем же интерфейсом и служит гибкой альтернативой порождению подклассов: комбинации поведения собираются в рантайме, а не фиксируются иерархией. Первый вариант описывает Proxy — там обёртка нужна для контроля доступа (ленивая загрузка, кэширование, защита), а не для наращивания поведения. Второй — Adapter: он меняет интерфейс на несовместимый исходному, тогда как Decorator интерфейс сохраняет. Четвёртый — Composite: он про деревья «часть—целое», а не про добавление обязанностей одному объекту.",
-      en: "По GoF Decorator динамически навешивает на объект дополнительные обязанности через обёртку с тем же интерфейсом и служит гибкой альтернативой порождению подклассов: комбинации поведения собираются в рантайме, а не фиксируются иерархией. Первый вариант описывает Proxy — там обёртка нужна для контроля доступа (ленивая загрузка, кэширование, защита), а не для наращивания поведения. Второй — Adapter: он меняет интерфейс на несовместимый исходному, тогда как Decorator интерфейс сохраняет. Четвёртый — Composite: он про деревья «часть—целое», а не про добавление обязанностей одному объекту.",
+      en: "Per GoF, Decorator dynamically attaches additional responsibilities to an object through a wrapper with the same interface and serves as a flexible alternative to subclassing: behavior combinations are assembled at runtime rather than fixed by a hierarchy. The first option describes Proxy — there the wrapper exists to control access (lazy loading, caching, protection), not to build up behavior. The second is Adapter: it changes the interface to one incompatible with the original, whereas Decorator preserves the interface. The fourth is Composite: it is about part-whole trees, not about adding responsibilities to a single object.",
     },
     conceptId: "decorator",
   },
@@ -1387,7 +1387,7 @@ export const structuralQuestions: Question[] = [
     grade: "middle",
     prompt: {
       ru: "Какой паттерн проектирования использован в этом коде?",
-      en: "Какой паттерн проектирования использован в этом коде?",
+      en: "Which design pattern is used in this code?",
     },
     code: {
       lang: "typescript",
@@ -1437,7 +1437,7 @@ export const structuralQuestions: Question[] = [
           "class SmsNotifier extends NotifierWrapper {",
           "  send(msg: string) {",
           "    super.send(msg);",
-          "    console.log(`sms: ${msg}`); // добавленная обязанность",
+          "    console.log(`sms: ${msg}`); // added responsibility",
           "  }",
           "}",
           "",
@@ -1448,9 +1448,9 @@ export const structuralQuestions: Question[] = [
           "  }",
           "}",
           "",
-          "// обёртки складываются в рантайме в нужной комбинации",
+          "// wrappers are stacked at runtime in the desired combination",
           "const notifier: Notifier = new SlackNotifier(new SmsNotifier(new EmailNotifier()));",
-          "notifier.send('деплой завершён');",
+          "notifier.send('deploy complete');",
         ].join('\n'),
       },
     },
@@ -1471,7 +1471,7 @@ export const structuralQuestions: Question[] = [
     correctIndex: 1,
     explanation: {
       ru: "Каждая обёртка реализует тот же интерфейс Notifier, хранит ссылку на вложенный объект, делегирует ему вызов и добавляет собственное поведение, а обёртки складываются в цепочку в рантайме — это Decorator. Не Proxy: прокси контролирует доступ к одному объекту (ленивая загрузка, кэширование, защита), не добавляя стопку новых обязанностей, и обычно сам управляет жизненным циклом реального объекта — здесь же цель именно наращивание поведения слоями. Не Composite: там контейнер держит коллекцию потомков и строит дерево «часть—целое», а здесь каждая обёртка держит ровно один вложенный объект. Не Adapter: адаптер преобразует один интерфейс к другому, несовместимому, а здесь интерфейс на всех уровнях один и тот же.",
-      en: "Каждая обёртка реализует тот же интерфейс Notifier, хранит ссылку на вложенный объект, делегирует ему вызов и добавляет собственное поведение, а обёртки складываются в цепочку в рантайме — это Decorator. Не Proxy: прокси контролирует доступ к одному объекту (ленивая загрузка, кэширование, защита), не добавляя стопку новых обязанностей, и обычно сам управляет жизненным циклом реального объекта — здесь же цель именно наращивание поведения слоями. Не Composite: там контейнер держит коллекцию потомков и строит дерево «часть—целое», а здесь каждая обёртка держит ровно один вложенный объект. Не Adapter: адаптер преобразует один интерфейс к другому, несовместимому, а здесь интерфейс на всех уровнях один и тот же.",
+      en: "Each wrapper implements the same Notifier interface, holds a reference to the nested object, delegates the call to it, and adds its own behavior, and the wrappers stack into a chain at runtime — this is Decorator. Not Proxy: a proxy controls access to a single object (lazy loading, caching, protection) without adding a stack of new responsibilities, and it typically manages the lifecycle of the real object itself — here the goal is precisely layering behavior. Not Composite: there a container holds a collection of children and builds a part-whole tree, whereas here each wrapper holds exactly one nested object. Not Adapter: an adapter converts one interface into another, incompatible one, whereas here the interface is the same at every level.",
     },
     conceptId: "decorator",
   },
@@ -1482,7 +1482,7 @@ export const structuralQuestions: Question[] = [
     grade: "junior",
     prompt: {
       ru: "Как точнее всего описать назначение паттерна Facade?",
-      en: "Как точнее всего описать назначение паттерна Facade?",
+      en: "Which statement most accurately describes the intent of the Facade pattern?",
     },
     options: {
       ru: [
@@ -1492,16 +1492,16 @@ export const structuralQuestions: Question[] = [
         "Предоставляет суррогат объекта с тем же интерфейсом, контролирующий доступ к нему",
       ],
       en: [
-        "Предоставляет унифицированный высокоуровневый интерфейс к набору интерфейсов подсистемы, упрощая её использование",
-        "Преобразует интерфейс существующего класса в другой интерфейс, ожидаемый клиентом",
-        "Инкапсулирует взаимодействие множества объектов, которые общаются через посредника, а не напрямую друг с другом",
-        "Предоставляет суррогат объекта с тем же интерфейсом, контролирующий доступ к нему",
+        "Provides a unified, higher-level interface to a set of interfaces in a subsystem, making it easier to use",
+        "Converts the interface of an existing class into another interface that the client expects",
+        "Encapsulates the interaction of a set of objects that communicate through a mediator rather than directly with each other",
+        "Provides a surrogate with the same interface as an object in order to control access to it",
       ],
     },
     correctIndex: 0,
     explanation: {
       ru: "Facade по GoF предоставляет унифицированный интерфейс более высокого уровня к набору интерфейсов подсистемы, делая её проще в использовании; подсистема при этом остаётся доступной напрямую. Второй вариант — Adapter: он подгоняет несовместимый интерфейс под ожидаемый клиентом. Третий — Mediator: там объекты-коллеги общаются между собой через посредника, а не клиент с подсистемой. Четвёртый — Proxy: суррогат повторяет интерфейс одного объекта и контролирует доступ к нему, тогда как фасад вводит новый упрощённый интерфейс над несколькими объектами.",
-      en: "Facade по GoF предоставляет унифицированный интерфейс более высокого уровня к набору интерфейсов подсистемы, делая её проще в использовании; подсистема при этом остаётся доступной напрямую. Второй вариант — Adapter: он подгоняет несовместимый интерфейс под ожидаемый клиентом. Третий — Mediator: там объекты-коллеги общаются между собой через посредника, а не клиент с подсистемой. Четвёртый — Proxy: суррогат повторяет интерфейс одного объекта и контролирует доступ к нему, тогда как фасад вводит новый упрощённый интерфейс над несколькими объектами.",
+      en: "By the GoF definition, Facade provides a unified, higher-level interface to a set of interfaces in a subsystem, making it easier to use; the subsystem still remains directly accessible. The second option describes Adapter, which fits an incompatible interface to the one the client expects. The third is Mediator, where colleague objects communicate with one another through a mediator, rather than a client communicating with a subsystem. The fourth is Proxy: a surrogate mirrors the interface of a single object and controls access to it, whereas a facade introduces a new, simplified interface over several objects.",
     },
     conceptId: "facade",
   },
@@ -1512,7 +1512,7 @@ export const structuralQuestions: Question[] = [
     grade: "junior",
     prompt: {
       ru: "Какой паттерн проектирования использован в этом коде?",
-      en: "Какой паттерн проектирования использован в этом коде?",
+      en: "Which design pattern is used in this code?",
     },
     code: {
       lang: "typescript",
@@ -1550,7 +1550,7 @@ export const structuralQuestions: Question[] = [
           "  private mixer = new AudioMixer();",
           "",
           "  convert(file: string, format: string): string {",
-          "    // одна простая операция скрывает работу нескольких классов подсистемы",
+          "    // one simple operation hides the work of several subsystem classes",
           "    const codec = this.codecs.resolve(format);",
           "    const rate = this.bitrate.read(file);",
           "    const audio = this.mixer.mix(file);",
@@ -1580,7 +1580,7 @@ export const structuralQuestions: Question[] = [
     correctIndex: 1,
     explanation: {
       ru: "VideoConverter даёт клиенту один высокоуровневый метод convert(), за которым скрыты несколько классов подсистемы и порядок их вызовов, — это Facade. Не Mediator: классы подсистемы не общаются друг с другом через посредника — вызовы идут в одну сторону, от фасада к подсистеме, и подсистема о фасаде не знает. Не Adapter: здесь нет несовместимого интерфейса, который подгоняется под ожидаемый клиентом целевой интерфейс, — вводится новый упрощённый интерфейс. Не Proxy: конвертер не повторяет интерфейс одного реального объекта и не контролирует доступ к нему, а агрегирует несколько разных объектов под более простым API.",
-      en: "VideoConverter даёт клиенту один высокоуровневый метод convert(), за которым скрыты несколько классов подсистемы и порядок их вызовов, — это Facade. Не Mediator: классы подсистемы не общаются друг с другом через посредника — вызовы идут в одну сторону, от фасада к подсистеме, и подсистема о фасаде не знает. Не Adapter: здесь нет несовместимого интерфейса, который подгоняется под ожидаемый клиентом целевой интерфейс, — вводится новый упрощённый интерфейс. Не Proxy: конвертер не повторяет интерфейс одного реального объекта и не контролирует доступ к нему, а агрегирует несколько разных объектов под более простым API.",
+      en: "VideoConverter gives the client a single high-level convert() method that hides several subsystem classes and the order in which they are invoked — that is Facade. Not Mediator: the subsystem classes do not communicate with each other through a mediator; the calls flow one way, from the facade to the subsystem, and the subsystem is unaware of the facade. Not Adapter: there is no incompatible interface being fitted to a target interface the client expects — a new, simplified interface is introduced. Not Proxy: the converter does not mirror the interface of a single real object or control access to it; instead it aggregates several different objects under a simpler API.",
     },
     conceptId: "facade",
   },
@@ -1591,7 +1591,7 @@ export const structuralQuestions: Question[] = [
     grade: "senior",
     prompt: {
       ru: "Как точнее всего описать назначение паттерна Flyweight?",
-      en: "Как точнее всего описать назначение паттерна Flyweight?",
+      en: "Which statement best describes the intent of the Flyweight pattern?",
     },
     options: {
       ru: [
@@ -1601,16 +1601,16 @@ export const structuralQuestions: Question[] = [
         "Подставляет объект-заместитель с тем же интерфейсом, который контролирует доступ к реальному объекту",
       ],
       en: [
-        "Гарантирует существование единственного экземпляра класса и предоставляет глобальную точку доступа к нему",
-        "Разделяет неизменяемое внутреннее (intrinsic) состояние между множеством мелких объектов, а контекстное (extrinsic) состояние передаёт извне, экономя память",
-        "Создаёт новые объекты клонированием существующего образца, избегая дорогой повторной инициализации",
-        "Подставляет объект-заместитель с тем же интерфейсом, который контролирует доступ к реальному объекту",
+        "Ensures a class has only one instance and provides a global point of access to it",
+        "Shares immutable intrinsic state across many small objects and passes contextual (extrinsic) state in from outside, saving memory",
+        "Creates new objects by cloning an existing prototype, avoiding expensive re-initialization",
+        "Substitutes a surrogate object with the same interface that controls access to the real object",
       ],
     },
     correctIndex: 1,
     explanation: {
       ru: "По GoF, Flyweight «использует разделение для эффективной поддержки большого числа мелких объектов»: неизменяемая intrinsic-часть хранится в разделяемых объектах, которые переиспользует фабрика, а extrinsic-часть клиент передаёт извне — отсюда экономия памяти. Первый вариант описывает Singleton: там единственность экземпляра класса, а у Flyweight экземпляров много — по одному на каждую комбинацию intrinsic-состояния. Третий — Prototype: создание через клонирование, тогда как Flyweight, наоборот, избегает создания, возвращая уже существующий объект. Четвёртый — Proxy: заместитель контролирует доступ к одному объекту, а не разделяет состояние между множеством.",
-      en: "По GoF, Flyweight «использует разделение для эффективной поддержки большого числа мелких объектов»: неизменяемая intrinsic-часть хранится в разделяемых объектах, которые переиспользует фабрика, а extrinsic-часть клиент передаёт извне — отсюда экономия памяти. Первый вариант описывает Singleton: там единственность экземпляра класса, а у Flyweight экземпляров много — по одному на каждую комбинацию intrinsic-состояния. Третий — Prototype: создание через клонирование, тогда как Flyweight, наоборот, избегает создания, возвращая уже существующий объект. Четвёртый — Proxy: заместитель контролирует доступ к одному объекту, а не разделяет состояние между множеством.",
+      en: "Per GoF, Flyweight \"uses sharing to support large numbers of fine-grained objects efficiently\": the immutable intrinsic part lives in shared objects that a factory reuses, while the client passes the extrinsic part in from outside — hence the memory savings. The first option describes Singleton, where a class has a single instance; Flyweight has many instances — one per combination of intrinsic state. The third is Prototype: creation by cloning, whereas Flyweight does the opposite, avoiding creation by returning an object that already exists. The fourth is Proxy: a surrogate controls access to a single object rather than sharing state across many.",
     },
     conceptId: "flyweight",
   },
@@ -1621,7 +1621,7 @@ export const structuralQuestions: Question[] = [
     grade: "senior",
     prompt: {
       ru: "Какой паттерн проектирования использован в этом коде?",
-      en: "Какой паттерн проектирования использован в этом коде?",
+      en: "Which design pattern is used in this code?",
     },
     code: {
       lang: "typescript",
@@ -1656,8 +1656,8 @@ export const structuralQuestions: Question[] = [
         ].join('\n'),
         en: [
           "class Glyph {",
-          "  constructor(readonly char: string, readonly font: string) {} // разделяемая часть",
-          "  render(x: number, y: number): string { // позиция приходит извне",
+          "  constructor(readonly char: string, readonly font: string) {} // shared part",
+          "  render(x: number, y: number): string { // position comes from outside",
           "    return `${this.char}[${this.font}] @ (${x}, ${y})`;",
           "  }",
           "}",
@@ -1671,14 +1671,14 @@ export const structuralQuestions: Question[] = [
           "      glyph = new Glyph(char, font);",
           "      this.cache.set(key, glyph);",
           "    }",
-          "    return glyph; // тот же объект для тех же данных",
+          "    return glyph; // same object for the same data",
           "  }",
           "}",
           "",
           "const factory = new GlyphFactory();",
           "const a1 = factory.get('a', 'Arial');",
           "const a2 = factory.get('a', 'Arial');",
-          "console.log(a1 === a2); // true: один объект на тысячи вхождений символа",
+          "console.log(a1 === a2); // true: one object for thousands of occurrences of the character",
           "console.log(a1.render(10, 20));",
           "console.log(a2.render(300, 20));",
         ].join('\n'),
@@ -1701,7 +1701,7 @@ export const structuralQuestions: Question[] = [
     correctIndex: 1,
     explanation: {
       ru: "Glyph хранит только неизменяемую разделяемую (intrinsic) часть — символ и шрифт, а позиция (extrinsic) передаётся в render() извне; фабрика кэширует объекты по ключу и для одинаковых данных возвращает один и тот же экземпляр (a1 === a2) — это Flyweight. Не Singleton: класс не ограничивает себя единственным экземпляром — глифов много, по одному на каждую комбинацию «символ + шрифт». Не Prototype: объекты не создаются клонированием образца — фабрика либо создаёт через new, либо возвращает уже существующий. Не Proxy: GlyphFactory не является заместителем с тем же интерфейсом, контролирующим доступ к другому объекту, — она лишь переиспользует разделяемые экземпляры ради экономии памяти.",
-      en: "Glyph хранит только неизменяемую разделяемую (intrinsic) часть — символ и шрифт, а позиция (extrinsic) передаётся в render() извне; фабрика кэширует объекты по ключу и для одинаковых данных возвращает один и тот же экземпляр (a1 === a2) — это Flyweight. Не Singleton: класс не ограничивает себя единственным экземпляром — глифов много, по одному на каждую комбинацию «символ + шрифт». Не Prototype: объекты не создаются клонированием образца — фабрика либо создаёт через new, либо возвращает уже существующий. Не Proxy: GlyphFactory не является заместителем с тем же интерфейсом, контролирующим доступ к другому объекту, — она лишь переиспользует разделяемые экземпляры ради экономии памяти.",
+      en: "Glyph stores only the immutable, shared (intrinsic) part — the character and the font — while the position (extrinsic) is passed into render() from outside; the factory caches objects by key and returns the same instance for identical data (a1 === a2). That's Flyweight. Not Singleton: the class doesn't restrict itself to a single instance — there are many glyphs, one per \"character + font\" combination. Not Prototype: objects aren't created by cloning a prototype — the factory either creates one with new or returns an existing one. Not Proxy: GlyphFactory isn't a surrogate with the same interface controlling access to another object — it merely reuses shared instances to save memory.",
     },
     conceptId: "flyweight",
   },
@@ -1712,7 +1712,7 @@ export const structuralQuestions: Question[] = [
     grade: "middle",
     prompt: {
       ru: "Какое утверждение точнее всего описывает паттерн Proxy?",
-      en: "Какое утверждение точнее всего описывает паттерн Proxy?",
+      en: "Which statement most accurately describes the Proxy pattern?",
     },
     options: {
       ru: [
@@ -1722,16 +1722,16 @@ export const structuralQuestions: Question[] = [
         "Предоставляет единый упрощённый интерфейс к набору интерфейсов сложной подсистемы",
       ],
       en: [
-        "Динамически добавляет объекту новые обязанности, оборачивая его в цепочку обёрток",
-        "Предоставляет заместителя с тем же интерфейсом, который контролирует доступ к реальному объекту",
-        "Преобразует интерфейс класса в другой интерфейс, ожидаемый клиентом",
-        "Предоставляет единый упрощённый интерфейс к набору интерфейсов сложной подсистемы",
+        "Dynamically adds new responsibilities to an object by wrapping it in a chain of wrappers",
+        "Provides a surrogate with the same interface that controls access to the real object",
+        "Converts a class's interface into another interface the client expects",
+        "Provides a single, simplified interface to a set of interfaces in a complex subsystem",
       ],
     },
     correctIndex: 1,
     explanation: {
       ru: "Proxy — это суррогат другого объекта: он реализует тот же интерфейс Subject и контролирует доступ к реальному объекту (ленивое создание, проверка прав, кэширование, удалённый вызов). Первый вариант описывает Decorator: там цель — добавить обязанности, а не управлять доступом. Третий вариант — Adapter: он меняет интерфейс на несовместимый исходному, тогда как Proxy интерфейс сохраняет. Четвёртый — Facade: упрощённый фасад над целой подсистемой, а не заместитель одного объекта один-к-одному.",
-      en: "Proxy — это суррогат другого объекта: он реализует тот же интерфейс Subject и контролирует доступ к реальному объекту (ленивое создание, проверка прав, кэширование, удалённый вызов). Первый вариант описывает Decorator: там цель — добавить обязанности, а не управлять доступом. Третий вариант — Adapter: он меняет интерфейс на несовместимый исходному, тогда как Proxy интерфейс сохраняет. Четвёртый — Facade: упрощённый фасад над целой подсистемой, а не заместитель одного объекта один-к-одному.",
+      en: "A Proxy is a surrogate for another object: it implements the same Subject interface and controls access to the real object (lazy creation, permission checks, caching, remote calls). The first option describes Decorator, whose goal is to add responsibilities rather than manage access. The third is Adapter, which changes the interface to one incompatible with the original, whereas a Proxy preserves the interface. The fourth is Facade — a simplified front over a whole subsystem, not a one-to-one surrogate for a single object.",
     },
     conceptId: "proxy",
   },
@@ -1742,7 +1742,7 @@ export const structuralQuestions: Question[] = [
     grade: "middle",
     prompt: {
       ru: "Какой паттерн проектирования использован в этом коде?",
-      en: "Какой паттерн проектирования использован в этом коде?",
+      en: "Which design pattern is used in this code?",
     },
     code: {
       lang: "typescript",
@@ -1773,7 +1773,7 @@ export const structuralQuestions: Question[] = [
           "interface FinancialReport { read(): string; }",
           "",
           "class QuarterReport implements FinancialReport {",
-          "  read() { return 'финансовые показатели за квартал'; }",
+          "  read() { return 'quarterly financial figures'; }",
           "}",
           "",
           "class ReportProxy implements FinancialReport {",
@@ -1781,15 +1781,15 @@ export const structuralQuestions: Question[] = [
           "  constructor(private role: string) {}",
           "  read() {",
           "    if (this.role !== 'admin') {",
-          "      throw new Error('Доступ запрещён'); // контроль доступа до делегирования",
+          "      throw new Error('Access denied'); // access control before delegating",
           "    }",
-          "    this.real ??= new QuarterReport(); // реальный объект создаётся лениво",
+          "    this.real ??= new QuarterReport(); // the real object is created lazily",
           "    return this.real.read();",
           "  }",
           "}",
           "",
           "const report: FinancialReport = new ReportProxy('admin');",
-          "report.read(); // клиент не знает, что работает через заместителя",
+          "report.read(); // the client doesn't know it's working through a proxy",
         ].join('\n'),
       },
     },
@@ -1810,7 +1810,7 @@ export const structuralQuestions: Question[] = [
     correctIndex: 1,
     explanation: {
       ru: "ReportProxy реализует тот же интерфейс FinancialReport, сам управляет жизненным циклом реального объекта (создаёт QuarterReport лениво) и решает, допускать ли запрос до него (проверка роли) — это Proxy, контролирующий доступ к объекту. Не Decorator: обёртка не добавляет объекту новые обязанности к результату, а ограничивает и откладывает доступ; к тому же декоратору реальный объект передают готовым извне, а здесь заместитель создаёт его сам. Не Adapter: интерфейс не преобразуется — у заместителя и реального объекта он один и тот же (FinancialReport). Не Facade: нет упрощения сложной подсистемы из многих классов, есть представитель ровно одного объекта один-к-одному.",
-      en: "ReportProxy реализует тот же интерфейс FinancialReport, сам управляет жизненным циклом реального объекта (создаёт QuarterReport лениво) и решает, допускать ли запрос до него (проверка роли) — это Proxy, контролирующий доступ к объекту. Не Decorator: обёртка не добавляет объекту новые обязанности к результату, а ограничивает и откладывает доступ; к тому же декоратору реальный объект передают готовым извне, а здесь заместитель создаёт его сам. Не Adapter: интерфейс не преобразуется — у заместителя и реального объекта он один и тот же (FinancialReport). Не Facade: нет упрощения сложной подсистемы из многих классов, есть представитель ровно одного объекта один-к-одному.",
+      en: "ReportProxy implements the same FinancialReport interface, manages the real object's lifecycle itself (creating QuarterReport lazily), and decides whether to let the request reach it (a role check) — this is a Proxy that controls access to the object. It isn't Decorator: the wrapper doesn't add new responsibilities to the result but instead restricts and defers access; besides, a decorator is handed the real object ready-made from outside, whereas here the proxy creates it itself. It isn't Adapter: the interface isn't converted — the proxy and the real object share the same one (FinancialReport). It isn't Facade: there's no simplification of a complex, many-class subsystem, just a one-to-one representative for exactly one object.",
     },
     conceptId: "proxy",
   },
