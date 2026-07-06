@@ -2,12 +2,15 @@ import { Link } from 'react-router-dom';
 import { concepts } from '@/content/index';
 import { ProgressBar } from '@/components/ProgressBar';
 import { useStore, selectGradeProgress, selectReviewQueue } from '@/store/useStore';
+import { selectNextStep, selectCourseProgress } from '@/domain/course';
 import { GRADE_ORDER, GRADE_LABEL } from '@/lib/labels';
 import { todayISO } from '@/lib/date';
 import { useT } from '@/i18n/useT';
 
 export function Dashboard() {
   const state = useStore();
+  const next = selectNextStep(state);
+  const courseProgress = selectCourseProgress(state);
   const t = useT();
   const today = todayISO();
   const dueCount = selectReviewQueue(state, concepts, today).length;
@@ -42,8 +45,11 @@ export function Dashboard() {
         })}
       </section>
 
-      <Link to="/learn" className="inline-block rounded-lg bg-accent px-5 py-2.5 font-medium text-white hover:bg-accent-strong">
+      <Link to={next ? `/learn/${next}` : '/course'} className="inline-block rounded-lg bg-accent px-5 py-2.5 font-medium text-white hover:bg-accent-strong">
         {t('dashboard.continueLearning')}
+      </Link>
+      <Link to="/course" className="block mt-3 text-sm text-accent-soft hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft rounded">
+        {t('course.progress', { mastered: courseProgress.mastered, total: courseProgress.total })}
       </Link>
     </div>
   );
