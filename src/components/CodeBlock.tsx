@@ -16,8 +16,8 @@ export interface ResolvedCodeSample {
 
 export function CodeBlock({ sample }: { sample: ResolvedCodeSample }) {
   const dark = useStore((s) => s.settings.theme) === 'dark';
-  const bg = dark ? '#0F1015' : '#F6F7F9';
-  const highlight = dark ? 'rgba(255,180,84,0.14)' : 'rgba(154,83,18,0.10)';
+  const bg = 'rgb(var(--surface-code))';
+  const highlight = `rgb(var(--accent) / ${dark ? 0.14 : 0.1})`;
   return (
     <div className="overflow-hidden rounded-xl border border-line shadow-card">
       <div className="flex items-center gap-2 border-b border-line px-3.5 py-2.5" style={{ background: bg }}>

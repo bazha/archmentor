@@ -20,7 +20,7 @@ export function Dashboard() {
     <div className="space-y-8">
       {/* Hero */}
       <header className="space-y-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-faint">{t('nav.dashboard')}</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-faint">{t('dashboard.eyebrow')}</p>
         <h1 className="text-3xl font-bold tracking-tight text-bright">{t('dashboard.title')}</h1>
       </header>
 
@@ -28,7 +28,7 @@ export function Dashboard() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
         <Link
           to={next ? `/learn/${next}` : '/course'}
-          className="flex flex-1 items-center gap-4 rounded-2xl border border-line bg-surface-raised p-5 shadow-card transition hover:-translate-y-0.5 hover:border-line-strong hover:shadow-card-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          className="flex flex-1 items-center gap-4 rounded-2xl border border-line bg-surface-raised p-6 shadow-card transition hover:-translate-y-0.5 hover:border-line-strong hover:shadow-card-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         >
           <span className="grid h-12 w-12 flex-none place-items-center rounded-xl bg-accent/10 text-accent">
             <Icon name="learn" className="h-6 w-6" />

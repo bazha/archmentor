@@ -27,6 +27,14 @@ const PAIRS: [string, string, number, string][] = [
   ['muted', 'surface-raised', 4.5, 'muted / raised'],
   ['accent-soft', 'surface', 4.5, 'accent-soft text / surface'],
   ['accent-soft', 'surface-raised', 4.5, 'accent-soft text / raised'],
+  ['faint', 'surface', 4.5, 'faint / surface'],
+  ['faint', 'surface-raised', 4.5, 'faint / raised'],
+  ['good', 'surface', 4.5, 'good text / surface'],
+  ['good', 'surface-raised', 4.5, 'good text / raised'],
+  ['bad', 'surface', 4.5, 'bad text / surface'],
+  ['bad', 'surface-raised', 4.5, 'bad text / raised'],
+  ['info', 'surface', 4.5, 'info text / surface'],
+  ['info', 'surface-raised', 4.5, 'info text / raised'],
 ];
 
 describe('theme token contrast (WCAG AA)', () => {

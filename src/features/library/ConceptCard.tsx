@@ -17,7 +17,12 @@ export function ConceptCard({ concept, mastered }: { concept: ConceptView; maste
           <span className="h-2 w-2 rounded-full" style={{ backgroundColor: `rgb(var(--cat-${concept.category}))` }} aria-hidden="true" />
           <h3 className="font-bold text-bright">{concept.name}</h3>
         </div>
-        {mastered && <span className="text-good" title={t('card.mastered')}><Icon name="check" className="h-4 w-4" /></span>}
+        {mastered && (
+          <span className="text-good">
+            <Icon name="check" className="h-4 w-4" />
+            <span className="sr-only">{t('card.mastered')}</span>
+          </span>
+        )}
       </div>
       <p className="text-sm leading-relaxed text-muted">{concept.tagline}</p>
       <div className="mt-1 flex items-center justify-between">

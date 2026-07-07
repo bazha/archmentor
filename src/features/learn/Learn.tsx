@@ -47,7 +47,7 @@ export function Learn() {
     <div className="mx-auto max-w-2xl space-y-8">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-bold tracking-tight text-bright">{t('learn.title')}</h1>
-        <span className="text-sm tabular-nums text-faint">{t('common.counter', { index: index + 1, total: deck.length })}</span>
+        <span className="inline-flex items-center rounded-full border border-line bg-surface-raised px-3.5 py-1 text-sm font-bold tabular-nums text-muted shadow-card">{t('common.counter', { index: index + 1, total: deck.length })}</span>
       </div>
       {!conceptId && (
         <PillGroup

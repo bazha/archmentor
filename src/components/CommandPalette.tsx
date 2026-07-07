@@ -64,7 +64,12 @@ export function CommandPalette() {
   }, []);
 
   useEffect(() => {
-    if (open) { setQuery(''); setActive(0); requestAnimationFrame(() => inputRef.current?.focus()); }
+    if (!open) return;
+    const restore = document.activeElement as HTMLElement | null;
+    setQuery('');
+    setActive(0);
+    requestAnimationFrame(() => inputRef.current?.focus());
+    return () => restore?.focus?.(); // return focus to the trigger on close
   }, [open]);
 
   useEffect(() => { if (active >= filtered.length) setActive(0); }, [filtered.length, active]);
@@ -73,6 +78,7 @@ export function CommandPalette() {
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') { setOpen(false); }
+    else if (e.key === 'Tab') { e.preventDefault(); } // trap focus in the dialog (list is navigated with arrows)
     else if (e.key === 'ArrowDown') { e.preventDefault(); setActive((i) => Math.min(i + 1, filtered.length - 1)); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); setActive((i) => Math.max(i - 1, 0)); }
     else if (e.key === 'Enter') { e.preventDefault(); run(filtered[active]); }
@@ -117,12 +123,16 @@ export function CommandPalette() {
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={t('cmdk.placeholder')}
                 aria-label={t('cmdk.trigger')}
+                role="combobox"
+                aria-expanded={true}
+                aria-controls="cmdk-list"
+                aria-activedescendant={filtered[active] ? `cmdk-opt-${active}` : undefined}
                 autoComplete="off"
                 spellCheck={false}
                 className="flex-1 bg-transparent text-base text-bright outline-none placeholder:text-faint"
               />
             </div>
-            <ul ref={listRef} className="max-h-[21rem] overflow-y-auto p-1.5">
+            <ul ref={listRef} id="cmdk-list" role="listbox" aria-label={t('cmdk.trigger')} className="max-h-[21rem] overflow-y-auto p-1.5">
               {filtered.length === 0 && (
                 <li className="px-3 py-6 text-center text-sm text-faint">{t('cmdk.empty')}</li>
               )}
@@ -130,6 +140,9 @@ export function CommandPalette() {
                 <li key={cmd.id}>
                   <button
                     type="button"
+                    id={`cmdk-opt-${i}`}
+                    role="option"
+                    aria-selected={i === active}
                     data-active={i === active}
                     onMouseMove={() => setActive(i)}
                     onClick={() => run(cmd)}

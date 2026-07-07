@@ -13,10 +13,11 @@
   --surface: 251 251 253;        /* #FBFBFD near-white page   */
   --surface-raised: 255 255 255; /* #FFFFFF cards             */
   --surface-muted: 244 245 248;  /* #F4F5F8 hover / inset bg  */
+  --surface-code: 246 247 249;   /* #F6F7F9 code panel        */
   --content: 22 23 29;           /* #16171D body text         */
   --bright: 11 12 16;            /* #0B0C10 headings          */
   --muted: 92 95 107;            /* #5C5F6B secondary text    */
-  --faint: 138 141 153;          /* #8A8D99 de-emphasised     */
+  --faint: 111 113 120;          /* #6F7178 de-emphasised (AA) */
   --line: 231 232 238;           /* #E7E8EE hairline border   */
   --line-strong: 218 220 228;    /* #DADCE4 stronger border   */
   --accent: 154 83 18;           /* #9A5312 burnt amber       */
@@ -42,10 +43,11 @@
   --surface: 13 14 18;           /* #0D0E12 cool near-black   */
   --surface-raised: 23 25 34;    /* #171922 cards             */
   --surface-muted: 30 33 44;     /* #1E212C hover / inset bg  */
+  --surface-code: 15 16 21;      /* #0F1015 code panel        */
   --content: 233 234 240;        /* #E9EAF0 body text         */
   --bright: 247 248 251;         /* #F7F8FB headings          */
   --muted: 156 160 173;          /* #9CA0AD secondary text    */
-  --faint: 108 112 128;          /* #6C7080 de-emphasised     */
+  --faint: 134 138 156;          /* #868A9C de-emphasised (AA) */
   --line: 36 39 52;              /* #242734 hairline border   */
   --line-strong: 49 53 69;       /* #313545 stronger border   */
   --accent: 255 180 84;          /* #FFB454 amber             */
