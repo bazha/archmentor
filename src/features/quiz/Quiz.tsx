@@ -4,12 +4,17 @@ import { selectQuestions, isCorrect, scoreSession, type QuizFilter } from '@/dom
 import { CodeBlock } from '@/components/CodeBlock';
 import { PillGroup } from '@/components/PillGroup';
 import { EmptyState } from '@/components/EmptyState';
+import { ProgressBar } from '@/components/ProgressBar';
+import { Icon } from '@/components/Icon';
 import { useStore } from '@/store/useStore';
 import { todayISO } from '@/lib/date';
 import { useT } from '@/i18n/useT';
 import type { QuestionType } from '@/content/schema';
 
 const identityShuffle = <T,>(a: T[]) => a;
+
+const PRIMARY_BTN =
+  'inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-on-accent shadow-card transition hover:-translate-y-0.5 hover:bg-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
 
 export function Quiz() {
   const recordQuiz = useStore((s) => s.recordQuiz);
@@ -50,45 +55,101 @@ export function Quiz() {
   if (!q) {
     const { correct, total } = scoreSession(deck, answers);
     return (
-      <div className="text-center py-12 space-y-4">
-        <h1 className="text-2xl font-semibold">{t('quiz.doneTitle')}</h1>
-        <p className="text-lg">{t('quiz.result', { correct, total })}</p>
-        <button onClick={restart} className="rounded-lg bg-accent px-4 py-2 font-medium text-white hover:bg-accent-strong">{t('quiz.restart')}</button>
+      <div className="mx-auto max-w-2xl">
+        <div className="space-y-5 rounded-2xl border border-line bg-surface-raised p-8 text-center shadow-card">
+          <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-accent/10 text-accent">
+            <Icon name="quiz" className="h-7 w-7" />
+          </span>
+          <h1 className="text-2xl font-bold tracking-tight text-bright">{t('quiz.doneTitle')}</h1>
+          <p className="text-lg text-content">{t('quiz.result', { correct, total })}</p>
+          <div className="flex justify-center">
+            <button onClick={restart} className={PRIMARY_BTN}>{t('quiz.restart')}</button>
+          </div>
+        </div>
       </div>
     );
   }
 
+  const answeredCorrectly = selected === q.correctIndex;
+
   return (
-    <div className="space-y-6 max-w-2xl mx-auto">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">{t('quiz.title')}</h1>
-        <span className="text-sm text-muted">{t('common.counter', { index: i + 1, total: deck.length })}</span>
-      </div>
-      <PillGroup options={MODE_OPTIONS} value={mode} onChange={(m) => { setMode(m); restart(); }} />
-      <p className="text-lg">{q.prompt}</p>
-      {q.code && <CodeBlock sample={q.code} />}
-      <div className="space-y-2">
-        {q.options.map((opt, idx) => {
-          const isAnswer = idx === q.correctIndex;
-          const chosen = selected === idx;
-          const cls = selected === null ? 'border-surface-muted hover:border-accent-soft'
-            : isAnswer ? 'border-emerald-500 bg-emerald-500/10'
-            : chosen ? 'border-red-500 bg-red-500/10' : 'border-surface-muted opacity-60';
-          return (
-            <button key={idx} data-option={idx} onClick={() => answer(idx)} disabled={selected !== null}
-              className={`block w-full text-left rounded-lg border px-4 py-3 transition ${cls}`}>{opt}</button>
-          );
-        })}
-      </div>
-      {selected !== null && (
-        <div className="rounded-lg bg-surface-raised border border-surface-muted p-4">
-          <h3 className="font-semibold mb-1">{t('quiz.explanation')}</h3>
-          <p className="text-content">{q.explanation}</p>
-          <div className="mt-3 flex justify-end">
-            <button onClick={nextQuestion} className="rounded-lg bg-accent px-4 py-2 font-medium text-white hover:bg-accent-strong">{t('quiz.next')}</button>
-          </div>
+    <div className="mx-auto max-w-2xl space-y-6">
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-2xl font-bold tracking-tight text-bright">{t('quiz.title')}</h1>
+          <span className="inline-flex items-center rounded-full border border-line bg-surface-raised px-3 py-1 text-sm font-semibold tabular-nums text-muted">
+            {t('common.counter', { index: i + 1, total: deck.length })}
+          </span>
         </div>
-      )}
+        <PillGroup options={MODE_OPTIONS} value={mode} onChange={(m) => { setMode(m); restart(); }} />
+        <ProgressBar value={(i / deck.length) * 100} />
+      </div>
+
+      <div className="space-y-5 rounded-2xl border border-line bg-surface-raised p-6 shadow-card">
+        <p className="text-xl font-semibold leading-relaxed text-bright">{q.prompt}</p>
+        {q.code && <CodeBlock sample={q.code} />}
+
+        <div className="space-y-2.5">
+          {q.options.map((opt, idx) => {
+            const isAnswer = idx === q.correctIndex;
+            const chosen = selected === idx;
+            const answered = selected !== null;
+
+            const rowCls = !answered
+              ? 'border-line bg-surface hover:border-line-strong hover:bg-surface-muted'
+              : isAnswer
+                ? 'border-good bg-good/10 text-bright'
+                : chosen
+                  ? 'border-bad bg-bad/10'
+                  : 'border-line opacity-50';
+
+            const keyCls = !answered
+              ? 'border-line-strong text-muted group-hover:border-accent group-hover:text-accent'
+              : isAnswer
+                ? 'border-good bg-good text-on-accent'
+                : chosen
+                  ? 'border-bad bg-bad text-on-accent'
+                  : 'border-line text-muted';
+
+            return (
+              <button
+                key={idx}
+                data-option={idx}
+                onClick={() => answer(idx)}
+                disabled={answered}
+                className={`group flex w-full items-center gap-4 rounded-xl border px-4 py-3.5 text-left transition ${rowCls}`}
+              >
+                <span
+                  aria-hidden="true"
+                  className={`grid h-8 w-8 flex-none place-items-center rounded-lg border text-sm font-bold transition ${keyCls}`}
+                >
+                  {String.fromCharCode(65 + idx)}
+                </span>
+                <span className="flex-1">{opt}</span>
+                <span className="flex-none">
+                  {answered && isAnswer && <Icon name="check" className="h-5 w-5 text-good" />}
+                  {answered && chosen && !isAnswer && <Icon name="close" className="h-5 w-5 text-bad" />}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {selected !== null && (
+          <div className="space-y-4">
+            <div className={`rounded-xl border p-4 ${answeredCorrectly ? 'border-good/30 bg-good/10' : 'border-bad/30 bg-bad/10'}`}>
+              <h3 className={`mb-1.5 flex items-center gap-2 text-sm font-bold uppercase tracking-wide ${answeredCorrectly ? 'text-good' : 'text-bad'}`}>
+                <Icon name={answeredCorrectly ? 'check' : 'close'} className="h-4 w-4" />
+                {t('quiz.explanation')}
+              </h3>
+              <p className="leading-relaxed text-content">{q.explanation}</p>
+            </div>
+            <div className="flex justify-end">
+              <button onClick={nextQuestion} className={PRIMARY_BTN}>{t('quiz.next')}</button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
