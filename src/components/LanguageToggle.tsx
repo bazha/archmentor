@@ -11,7 +11,7 @@ export function LanguageToggle() {
       type="button"
       onClick={() => setSettings({ lang: next })}
       aria-label={t('lang.toggle')}
-      className="rounded-lg px-2 py-1.5 text-sm font-medium text-muted hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
+      className="grid h-9 min-w-9 place-items-center rounded-full border border-line px-2 text-sm font-semibold text-muted transition-colors hover:border-line-strong hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
     >
       {next.toUpperCase()}
     </button>
