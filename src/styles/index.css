@@ -2,32 +2,77 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================
+   ArchMentor — clean modern design tokens
+   Onest (UI) + JetBrains Mono (code). Warm amber accent.
+   Space-separated RGB so Tailwind `rgb(var(--x) / <alpha>)` works.
+   :root = light (clean near-white) · .dark = cool near-black
+   ============================================================ */
+
 :root {
-  --surface: 248 250 252;        /* slate-50  */
-  --surface-raised: 255 255 255; /* white     */
-  --surface-muted: 226 232 240;  /* slate-200 */
-  --content: 15 23 42;           /* slate-900 */
-  --muted: 71 85 105;            /* slate-600 */
-  --accent: 79 70 229;           /* indigo-600 */
-  --accent-soft: 79 70 229;      /* indigo-600 */
-  --accent-strong: 67 56 202;    /* indigo-700 — darker hover on accent fills */
+  --surface: 251 251 253;        /* #FBFBFD near-white page   */
+  --surface-raised: 255 255 255; /* #FFFFFF cards             */
+  --surface-muted: 244 245 248;  /* #F4F5F8 hover / inset bg  */
+  --content: 22 23 29;           /* #16171D body text         */
+  --bright: 11 12 16;            /* #0B0C10 headings          */
+  --muted: 92 95 107;            /* #5C5F6B secondary text    */
+  --faint: 138 141 153;          /* #8A8D99 de-emphasised     */
+  --line: 231 232 238;           /* #E7E8EE hairline border   */
+  --line-strong: 218 220 228;    /* #DADCE4 stronger border   */
+  --accent: 154 83 18;           /* #9A5312 burnt amber       */
+  --accent-soft: 154 83 18;      /* legible accent-as-text    */
+  --accent-strong: 126 67 13;    /* #7E430D darker hover      */
+  --on-accent: 255 255 255;      /* text on accent fill       */
+  --good: 58 102 28;             /* #3A661C                   */
+  --bad: 192 57 43;              /* #C0392B                   */
+  --info: 29 107 97;             /* #1D6B61                   */
+  --cat-solid: 154 83 18;
+  --cat-creational: 29 107 97;
+  --cat-structural: 176 58 110;
+  --cat-behavioral: 58 102 28;
+  --cat-architecture: 91 62 174;
+  --cat-tradeoff: 46 90 140;
+  --shadow-sm: 0 1px 2px rgba(20,22,30,.04), 0 4px 12px -5px rgba(20,22,30,.08);
+  --shadow-md: 0 2px 6px rgba(20,22,30,.05), 0 20px 44px -22px rgba(20,22,30,.16);
+  --app-glow: none;
   color-scheme: light;
 }
 
 .dark {
-  --surface: 15 23 42;           /* slate-900 */
-  --surface-raised: 30 41 59;    /* slate-800 */
-  --surface-muted: 51 65 85;     /* slate-700 */
-  --content: 241 245 249;        /* slate-100 */
-  --muted: 148 163 184;          /* slate-400 */
-  --accent: 79 70 229;           /* indigo-600 */
-  --accent-soft: 129 140 248;    /* indigo-400 */
-  --accent-strong: 67 56 202;    /* indigo-700 — darker hover on accent fills */
+  --surface: 13 14 18;           /* #0D0E12 cool near-black   */
+  --surface-raised: 23 25 34;    /* #171922 cards             */
+  --surface-muted: 30 33 44;     /* #1E212C hover / inset bg  */
+  --content: 233 234 240;        /* #E9EAF0 body text         */
+  --bright: 247 248 251;         /* #F7F8FB headings          */
+  --muted: 156 160 173;          /* #9CA0AD secondary text    */
+  --faint: 108 112 128;          /* #6C7080 de-emphasised     */
+  --line: 36 39 52;              /* #242734 hairline border   */
+  --line-strong: 49 53 69;       /* #313545 stronger border   */
+  --accent: 255 180 84;          /* #FFB454 amber             */
+  --accent-soft: 255 180 84;     /* legible accent-as-text    */
+  --accent-strong: 255 201 122;  /* #FFC97A brighter hover    */
+  --on-accent: 13 14 18;         /* dark text on amber fill   */
+  --good: 143 201 107;           /* #8FC96B                   */
+  --bad: 242 114 94;             /* #F2725E                   */
+  --info: 111 211 201;           /* #6FD3C9                   */
+  --cat-solid: 255 180 84;
+  --cat-creational: 111 211 201;
+  --cat-structural: 232 138 176;
+  --cat-behavioral: 143 201 107;
+  --cat-architecture: 179 157 255;
+  --cat-tradeoff: 127 180 232;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.4), 0 4px 12px -4px rgba(0,0,0,.5);
+  --shadow-md: 0 2px 6px rgba(0,0,0,.4), 0 20px 44px -20px rgba(0,0,0,.65);
+  --app-glow: radial-gradient(100% 55% at 50% -8%, rgb(255 180 84 / 0.09), transparent 55%);
   color-scheme: dark;
 }
 
 body {
-  @apply bg-surface text-content antialiased;
+  @apply bg-surface text-content antialiased font-sans;
+  letter-spacing: -0.006em;
+  background-image: var(--app-glow);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
 }
 
 @media (prefers-reduced-motion: reduce) {
