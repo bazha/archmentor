@@ -7,8 +7,11 @@ export function PillGroup<T extends string>({
         <button
           key={o.value}
           onClick={() => onChange(o.value)}
-          className={`rounded-full px-3 py-1 text-sm border transition ${
-            o.value === value ? 'bg-accent border-accent text-white' : 'border-surface-muted text-muted hover:border-accent-soft'
+          aria-pressed={o.value === value}
+          className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+            o.value === value
+              ? 'border-accent bg-accent text-on-accent'
+              : 'border-line text-muted hover:border-line-strong hover:text-content'
           }`}
         >
           {o.label}
