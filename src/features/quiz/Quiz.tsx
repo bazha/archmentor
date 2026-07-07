@@ -73,20 +73,20 @@ export function Quiz() {
   const answeredCorrectly = selected === q.correctIndex;
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <div className="space-y-4">
+    <div className="mx-auto max-w-2xl space-y-8">
+      <div className="space-y-5">
+        <h1 className="text-2xl font-bold tracking-tight text-bright">{t('quiz.title')}</h1>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-2xl font-bold tracking-tight text-bright">{t('quiz.title')}</h1>
-          <span className="inline-flex items-center rounded-full border border-line bg-surface-raised px-3 py-1 text-sm font-semibold tabular-nums text-muted">
+          <PillGroup options={MODE_OPTIONS} value={mode} onChange={(m) => { setMode(m); restart(); }} />
+          <span className="inline-flex items-center rounded-full border border-line bg-surface-raised px-3.5 py-1 text-sm font-bold tabular-nums text-muted shadow-card">
             {t('common.counter', { index: i + 1, total: deck.length })}
           </span>
         </div>
-        <PillGroup options={MODE_OPTIONS} value={mode} onChange={(m) => { setMode(m); restart(); }} />
         <ProgressBar value={(i / deck.length) * 100} />
       </div>
 
-      <div className="space-y-5 rounded-2xl border border-line bg-surface-raised p-6 shadow-card">
-        <p className="text-xl font-semibold leading-relaxed text-bright">{q.prompt}</p>
+      <div className="space-y-6 rounded-2xl border border-line bg-surface-raised p-6 shadow-card sm:p-7">
+        <p className="text-xl font-semibold leading-snug tracking-tight text-bright [text-wrap:pretty]">{q.prompt}</p>
         {q.code && <CodeBlock sample={q.code} />}
 
         <div className="space-y-2.5">
@@ -96,7 +96,7 @@ export function Quiz() {
             const answered = selected !== null;
 
             const rowCls = !answered
-              ? 'border-line bg-surface hover:border-line-strong hover:bg-surface-muted'
+              ? 'border-line bg-surface hover:translate-x-0.5 hover:border-line-strong hover:bg-surface-muted'
               : isAnswer
                 ? 'border-good bg-good/10 text-bright'
                 : chosen
@@ -136,7 +136,7 @@ export function Quiz() {
         </div>
 
         {selected !== null && (
-          <div className="space-y-4">
+          <div className="space-y-5 border-t border-line pt-5">
             <div className={`rounded-xl border p-4 ${answeredCorrectly ? 'border-good/30 bg-good/10' : 'border-bad/30 bg-bad/10'}`}>
               <h3 className={`mb-1.5 flex items-center gap-2 text-sm font-bold uppercase tracking-wide ${answeredCorrectly ? 'text-good' : 'text-bad'}`}>
                 <Icon name={answeredCorrectly ? 'check' : 'close'} className="h-4 w-4" />

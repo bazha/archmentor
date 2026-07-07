@@ -15,6 +15,9 @@ const GRADES: { label: string; quality: Quality; cls: string }[] = [
   { label: 'Easy', quality: QUALITY.easy, cls: 'text-info' },
 ];
 
+const GRADE_BTN =
+  'inline-flex items-center justify-center rounded-xl border border-line bg-surface-raised px-4 py-2.5 text-sm font-semibold shadow-card transition hover:-translate-y-0.5 hover:border-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
+
 export function Review() {
   const today = todayISO();
   const srs = useStore((s) => s.srs);
@@ -42,7 +45,7 @@ export function Review() {
 
   if (!concept) {
     return (
-      <div className="text-center">
+      <div className="mx-auto max-w-2xl text-center">
         <h1 className="text-2xl font-bold tracking-tight text-bright">{t('review.title')}</h1>
         <EmptyState icon="🎉" title={t('review.doneTitle')} hint={t('review.doneHint')} cta={{ to: '/learn', label: t('review.learnNew') }} />
       </div>
@@ -51,9 +54,11 @@ export function Review() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-8">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold tracking-tight text-bright">{t('review.title')}</h1>
-        <span className="text-sm font-medium tabular-nums text-muted">{t('review.remaining', { n: queue.length })}</span>
+        <span className="inline-flex items-center rounded-full border border-line bg-surface-raised px-3.5 py-1 text-sm font-bold tabular-nums text-muted shadow-card">
+          {t('review.remaining', { n: queue.length })}
+        </span>
       </div>
 
       <FlipCard
@@ -71,11 +76,7 @@ export function Review() {
       {flipped ? (
         <div className="grid grid-cols-4 gap-2.5">
           {GRADES.map((g) => (
-            <button
-              key={g.label}
-              onClick={() => grade(g.quality)}
-              className={`inline-flex items-center justify-center rounded-xl border border-line bg-surface-raised px-4 py-2.5 text-sm font-semibold shadow-card transition hover:-translate-y-0.5 hover:border-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${g.cls}`}
-            >
+            <button key={g.label} onClick={() => grade(g.quality)} className={`${GRADE_BTN} ${g.cls}`}>
               {g.label}
             </button>
           ))}

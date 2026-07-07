@@ -4,7 +4,6 @@ import { getConcept } from '@/content/index';
 import { useConcept } from '@/content/localize';
 import { CodeBlock } from '@/components/CodeBlock';
 import { Badge } from '@/components/Badge';
-import { Icon } from '@/components/Icon';
 import { EmptyState } from '@/components/EmptyState';
 import { GRADE_LABEL, CATEGORY_LABEL } from '@/lib/labels';
 import { useStore } from '@/store/useStore';
@@ -13,7 +12,7 @@ import { useT } from '@/i18n/useT';
 function SectionHeading({ children }: { children: ReactNode }) {
   return (
     <div className="flex items-center gap-4">
-      <h3 className="text-lg font-bold tracking-tight text-bright">{children}</h3>
+      <h2 className="text-lg font-bold tracking-tight text-bright">{children}</h2>
       <div className="h-px flex-1 bg-line" />
     </div>
   );
@@ -57,9 +56,8 @@ export function ConceptPage() {
     <article className="space-y-8">
       <Link
         to="/library"
-        className="inline-flex items-center gap-1.5 rounded text-sm font-medium text-muted transition hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        className="inline-flex w-fit items-center rounded text-sm font-medium text-muted transition hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
       >
-        <Icon name="chevronLeft" className="h-4 w-4" />
         {t('concept.backToLibrary')}
       </Link>
 
@@ -68,7 +66,7 @@ export function ConceptPage() {
           <Badge tone="category" category={c.category}>{CATEGORY_LABEL[lang][c.category]}</Badge>
           <Badge tone="grade">{GRADE_LABEL[c.grade]}</Badge>
         </div>
-        <h1 className="text-3xl font-bold tracking-tight text-bright">{c.name}</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-bright sm:text-4xl">{c.name}</h1>
         <p className="max-w-prose text-lg leading-relaxed text-muted">{c.tagline}</p>
       </header>
 
