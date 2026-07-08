@@ -4,13 +4,13 @@ export function EmptyState({
   icon = '🗂️', title, hint, cta,
 }: { icon?: string; title: string; hint?: string; cta?: { to: string; label: string } }) {
   return (
-    <div className="text-center py-12 space-y-3">
-      <div className="text-4xl" aria-hidden="true">{icon}</div>
-      <p className="text-lg font-medium text-content">{title}</p>
-      {hint && <p className="text-sm text-muted">{hint}</p>}
+    <div className="mx-auto max-w-md py-16 text-center">
+      <div className="mb-4 text-4xl" aria-hidden="true">{icon}</div>
+      <p className="text-lg font-semibold text-bright">{title}</p>
+      {hint && <p className="mt-2 text-sm text-muted">{hint}</p>}
       {cta && (
         <Link to={cta.to}
-          className="inline-block rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft">
+          className="mt-5 inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-on-accent shadow-card transition hover:-translate-y-0.5 hover:bg-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
           {cta.label}
         </Link>
       )}

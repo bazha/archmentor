@@ -16,7 +16,6 @@ const lin = (c: number) => { const s = c / 255; return s <= 0.03928 ? s / 12.92 
 const L = ([r, g, b]: RGB) => 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
 const ratio = (a: RGB, b: RGB) => { const x = L(a), y = L(b); const hi = Math.max(x, y), lo = Math.min(x, y); return (hi + 0.05) / (lo + 0.05); };
 
-const WHITE: RGB = [255, 255, 255];
 const themes = { light: tokens(':root'), dark: tokens('.dark') };
 
 // [fg token, bg token, min ratio, label]
@@ -28,6 +27,14 @@ const PAIRS: [string, string, number, string][] = [
   ['muted', 'surface-raised', 4.5, 'muted / raised'],
   ['accent-soft', 'surface', 4.5, 'accent-soft text / surface'],
   ['accent-soft', 'surface-raised', 4.5, 'accent-soft text / raised'],
+  ['faint', 'surface', 4.5, 'faint / surface'],
+  ['faint', 'surface-raised', 4.5, 'faint / raised'],
+  ['good', 'surface', 4.5, 'good text / surface'],
+  ['good', 'surface-raised', 4.5, 'good text / raised'],
+  ['bad', 'surface', 4.5, 'bad text / surface'],
+  ['bad', 'surface-raised', 4.5, 'bad text / raised'],
+  ['info', 'surface', 4.5, 'info text / surface'],
+  ['info', 'surface-raised', 4.5, 'info text / raised'],
 ];
 
 describe('theme token contrast (WCAG AA)', () => {
@@ -39,11 +46,13 @@ describe('theme token contrast (WCAG AA)', () => {
         expect(ratio(t[fg], t[bg])).toBeGreaterThanOrEqual(min);
       });
     }
-    it(`${name}: white on accent fill >= 4.5:1`, () => {
-      expect(ratio(WHITE, t['accent'])).toBeGreaterThanOrEqual(4.5);
+    // on-accent is theme-aware: dark text on amber (dark theme), white on burnt-amber (light).
+    it(`${name}: on-accent text on accent fill >= 4.5:1`, () => {
+      expect(t['on-accent'], '--on-accent defined').toBeDefined();
+      expect(ratio(t['on-accent'], t['accent'])).toBeGreaterThanOrEqual(4.5);
     });
-    it(`${name}: white on accent-strong (hover) fill >= 4.5:1`, () => {
-      expect(ratio(WHITE, t['accent-strong'])).toBeGreaterThanOrEqual(4.5);
+    it(`${name}: on-accent text on accent-strong (hover) fill >= 4.5:1`, () => {
+      expect(ratio(t['on-accent'], t['accent-strong'])).toBeGreaterThanOrEqual(4.5);
     });
   }
 });
