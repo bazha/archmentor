@@ -5,6 +5,8 @@ import { FlipCard } from '@/components/FlipCard';
 import { EmptyState } from '@/components/EmptyState';
 import { PillGroup } from '@/components/PillGroup';
 import { Badge } from '@/components/Badge';
+import { CodeBlock } from '@/components/CodeBlock';
+import { Icon } from '@/components/Icon';
 import { useStore } from '@/store/useStore';
 import { todayISO } from '@/lib/date';
 import { GRADE_ORDER, GRADE_LABEL, CATEGORY_LABEL } from '@/lib/labels';
@@ -16,6 +18,7 @@ export function Learn() {
   const [grade, setGrade] = useState<Grade | 'all'>('all');
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
+  const [showCode, setShowCode] = useState(false);
   const markSeen = useStore((s) => s.markSeen);
   const lang = useStore((s) => s.settings.lang);
   const t = useT();
@@ -38,6 +41,7 @@ export function Learn() {
   function next() {
     if (current) markSeen(current.id, todayISO());
     setFlipped(false);
+    setShowCode(false);
     setIndex((i) => (i + 1) % Math.max(deck.length, 1));
   }
 
@@ -73,8 +77,25 @@ export function Learn() {
             <span className="mt-4 block text-sm text-muted">{t('learn.whenPrefix', { list: current.whenToUse.join('; ') })}</span>
           </span>
         }
-        flipped={flipped} onFlip={() => setFlipped((f) => !f)}
+        flipped={flipped} onFlip={() => { setFlipped((f) => !f); setShowCode(false); }}
       />
+      {flipped && (
+        <div className="space-y-3">
+          <button
+            type="button"
+            onClick={() => setShowCode((s) => !s)}
+            aria-expanded={showCode}
+            aria-controls="learn-code"
+            className="inline-flex items-center gap-2 rounded-xl border border-line bg-surface-raised px-4 py-2 text-sm font-semibold text-content shadow-card transition hover:-translate-y-0.5 hover:border-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            <Icon name="chevronRight" className={`h-4 w-4 transition-transform ${showCode ? 'rotate-90' : ''}`} />
+            {showCode ? t('learn.hideCode') : t('learn.showCode')}
+          </button>
+          <div id="learn-code">
+            {showCode && <CodeBlock sample={current.codeExample} />}
+          </div>
+        </div>
+      )}
       <div className="flex justify-end">
         <button
           onClick={next}
