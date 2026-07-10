@@ -1,39 +1,47 @@
 # ArchMentor
 
-Клиентское SPA для изучения архитектуры ПО — от Junior до Lead: **SOLID**, **паттерны проектирования (GoF)**, **архитектурные trade-offs**. Карточки с определениями, интервальные повторения (SM-2) и квизы, включая режим «**определи паттерн по коду**».
+A client-side SPA for learning software architecture — from Junior to Lead: **SOLID**, the **23 GoF design patterns**, **architectural styles**, and cross-cutting **trade-offs**. Flashcards, spaced repetition (SM-2), quizzes, an adaptive mock interview, and side-by-side pattern comparison.
 
-> Интерфейс и объяснения — на русском; названия паттернов и термины — на английском (индустриальный стандарт).
+**Live:** https://bazha.github.io/archmentor/
 
-## Возможности
+> Fully bilingual — the UI and explanations switch between **Russian and English**; pattern names and core terms stay in English (industry standard). Light/dark themes and a `⌘K` command palette throughout.
 
-- **Дашборд** — траектория Junior → Middle → Senior → Lead, прогресс по грейдам, streak, «к повторению сегодня».
-- **Учить** — флешкарты (термин ↔ определение) с фильтром по грейду.
-- **Повторение** — очередь интервальных повторений по алгоритму **SM-2** (Again / Hard / Good / Easy).
-- **Квиз** — режимы «микс / определи паттерн / теория / trade-offs»; сигнатурный режим показывает идиоматичный код и просит выбрать паттерн, дистракторы — путаемые «соседи» (Strategy↔State, Factory Method↔Abstract Factory, …), с разбором.
-- **Библиотека** — каталог концептов с поиском и фильтрами; страница концепта (определение, проблема, решение, код, плюсы/минусы, trade-offs, когда применять, связанные).
-- **Прогресс** — точность квизов, освоенные концепты, статистика; всё сохраняется в localStorage.
+## Features
 
-## Стек
+- **Dashboard** — the Junior → Middle → Senior → Lead trajectory: per-grade progress, day streak, due-for-review count, and best interview grade.
+- **Course** — a single linear guided path through the catalog, grouped by grade, with per-step status (mastered / in-progress / not-started).
+- **Learn** — flashcards (term ↔ definition + "when to use") with a grade filter and a "show code" toggle that reveals the concept's code example on the answer side.
+- **Review** — a spaced-repetition queue powered by the **SM-2** algorithm (Again / Hard / Good / Easy).
+- **Quiz** — modes: Mix / Identify-the-pattern / Theory / Trade-offs / Fill-the-blank. The identify mode shows idiomatic code and asks you to pick the pattern; distractors are commonly-confused neighbours (Strategy↔State, Factory Method↔Abstract Factory, …), with an explanation after each answer.
+- **Interview** — an adaptive mock technical interview: difficulty climbs from junior as you answer correctly and stops once it finds your ceiling. Feedback is held until the end, which delivers a grade verdict, a per-level breakdown, and weak topics linking back into Learn.
+- **Compare** — two concepts side by side, field by field (definition, problem, solution, pros/cons, trade-offs, when to use, code). Pick any pair or start from a "commonly confused" preset; shareable via `/compare/:a/:b`.
+- **Library** — a searchable, filterable catalog; each concept page shows definition, problem, solution, code, pros/cons, trade-offs, when (not) to use, and related concepts.
+- **Progress** — quiz accuracy, mastered concepts, streak, best interview grade, and per-grade mastery. All progress persists in `localStorage`.
+
+## Content
+
+**42 concepts** (5 SOLID + all 23 GoF patterns + 8 architectural styles + 6 cross-cutting trade-offs) and **~119 questions** (77 multiple-choice + 42 fill-in-the-blank). Content is generated via a multi-agent workflow with adversarial verification (checked against the GoF / Fowler / Martin canon, single defensible answer per quiz question) and validated with zod at import time.
+
+## Stack
 
 Vite · React 18 · TypeScript (strict) · React Router · Zustand (+persist) · Tailwind CSS · Vitest + Testing Library · zod.
 
-Архитектура слоями: `content` (типизированные данные + zod-валидация) → `domain` (чистые SM-2 / quiz) → `store` (Zustand + persist) → `features` / `components` (React UI).
+Layered architecture: `content` (typed, localized data + zod validation) → `domain` (pure logic: SM-2, quiz selection, guided course, interview state machine, compare pairs) → `store` (Zustand + persist, versioned migrations) → `features` / `components` (React UI). In-house i18n (`src/i18n`) with type-enforced RU/EN key parity.
 
-## Разработка
+## Development
 
 ```bash
 npm install
-npm run dev      # http://localhost:5173
-npm test         # юнит- и компонентные тесты (Vitest)
-npm run build    # прод-сборка (tsc --noEmit + vite build)
+npm run dev        # http://localhost:5173
+npm test           # unit and component tests (Vitest)
+npm run typecheck  # tsc --noEmit
+npm run build      # production build (tsc --noEmit + vite build)
 ```
 
-## Статус
+Pushing to `master` deploys to GitHub Pages via GitHub Actions (`.github/workflows/deploy.yml`).
 
-**Фаза 1 (вертикальный срез)** завершена: полный цикл «учить → повторять (SM-2) → квиз → прогресс», схема контента заморожена.
+## Status
 
-**Фаза 2 (массовая генерация контента)** завершена: **42 концепта** (5 SOLID + все 23 GoF-паттерна + 8 архитектурных стилей + 6 сквозных trade-offs) и **77 вопросов** по замороженной схеме. Контент сгенерирован через multi-agent Workflow с adversarial-проверкой (сверка с каноном GoF / Fowler / Martin, однозначность ответа квиза) и проходит zod-валидацию.
+Feature-complete and deployed. Nine modes, fully bilingual (RU/EN) with light/dark themes, WCAG AA-guarded accessibility (skip link, visible focus rings, ARIA, `prefers-reduced-motion`, a contrast test), and 150+ passing tests.
 
-**Фаза 3 (полировка)** завершена: тёмная тема с переключением и персистентностью (no FOUC), доступность (skip-link, видимые focus rings, ARIA-метки, WCAG AA контрастность, prefers-reduced-motion), единообразные empty states, контент-бандл вынесен в отдельный чанк. Приложение feature-complete.
-
-Проектные документы: `docs/superpowers/specs/` (дизайн) и `docs/superpowers/plans/` (план реализации).
+Design and implementation docs live in `docs/superpowers/specs/` and `docs/superpowers/plans/`.
