@@ -17,6 +17,7 @@ const NAV: { to: string; key: MessageKey; icon: IconName; end?: boolean }[] = [
   { to: '/review', key: 'nav.review', icon: 'review' },
   { to: '/quiz', key: 'nav.quiz', icon: 'quiz' },
   { to: '/interview', key: 'nav.interview', icon: 'interview' },
+  { to: '/compare', key: 'nav.compare', icon: 'compare' },
   { to: '/library', key: 'nav.library', icon: 'library' },
   { to: '/progress', key: 'nav.progress', icon: 'progress' },
 ];
@@ -27,6 +28,7 @@ function titleKeyFor(pathname: string): MessageKey {
   if (pathname.startsWith('/review')) return 'nav.review';
   if (pathname.startsWith('/quiz')) return 'nav.quiz';
   if (pathname.startsWith('/interview')) return 'nav.interview';
+  if (pathname.startsWith('/compare')) return 'nav.compare';
   if (pathname.startsWith('/library')) return 'nav.library';
   if (pathname.startsWith('/progress')) return 'nav.progress';
   return 'nav.dashboard';

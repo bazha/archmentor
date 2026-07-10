@@ -13,6 +13,7 @@ const router = createBrowserRouter([
       { path: 'review', lazy: () => import('@/features/review/Review').then((m) => ({ Component: m.Review })) },
       { path: 'quiz', lazy: () => import('@/features/quiz/Quiz').then((m) => ({ Component: m.Quiz })) },
       { path: 'interview', lazy: () => import('@/features/interview/Interview').then((m) => ({ Component: m.Interview })) },
+      { path: 'compare/:a?/:b?', lazy: () => import('@/features/compare/Compare').then((m) => ({ Component: m.Compare })) },
       { path: 'library', lazy: () => import('@/features/library/Library').then((m) => ({ Component: m.Library })) },
       { path: 'library/:conceptId', lazy: () => import('@/features/library/ConceptPage').then((m) => ({ Component: m.ConceptPage })) },
       { path: 'progress', lazy: () => import('@/features/progress/Progress').then((m) => ({ Component: m.Progress })) },
