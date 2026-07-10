@@ -82,11 +82,19 @@ describe('interview machine', () => {
     expect(s2.verdict).toBe('lead');
   });
 
-  it('exhausting a tier pool counts as passing it (promote)', () => {
-    const s0 = initInterview();
-    const s1 = interviewReducer(s0, { type: 'exhausted' });
-    expect(s1.tier).toBe('middle');
-    expect(s1.status).toBe('active');
+  it('exhausting a tier AFTER answering it counts as passing it (promote)', () => {
+    let s = interviewReducer(initInterview(), { type: 'answer', correct: true, questionId: 'j1' });
+    s = interviewReducer(s, { type: 'exhausted' }); // pool ran dry after 1 correct, no STOP
+    expect(s.tier).toBe('middle');
+    expect(s.status).toBe('active');
+  });
+
+  it('exhausting a tier with NO activity does not credit it (guards phantom promotion)', () => {
+    // Empty pool at the starting tier, nothing answered → end at the highest demonstrated
+    // grade (none → null), never silently promote through an unanswered tier.
+    const s = interviewReducer(initInterview(), { type: 'exhausted' });
+    expect(s.status).toBe('done');
+    expect(s.verdict).toBeNull();
   });
 
   it('a done state is immutable to further events', () => {
@@ -110,12 +118,27 @@ describe('interview machine', () => {
     expect(pickNextQuestion(s, pool, identity)).toBeNull();
   });
 
-  it('drawNext advances past empty tiers to find a question', () => {
-    // no junior questions at all → should skip to middle
+  it('drawNext stops (does not phantom-skip) when the starting tier is empty', () => {
+    // No junior questions and nothing answered → cannot assess; ends below junior rather
+    // than silently skipping forward into a tier the candidate never earned.
     const pool = [q('m1', 'middle'), q('s1', 'senior')];
     const { state, question } = drawNext(initInterview(), pool, identity);
-    expect(state.tier).toBe('middle');
-    expect(question?.id).toBe('m1');
+    expect(state.status).toBe('done');
+    expect(state.verdict).toBeNull();
+    expect(question).toBeNull();
+  });
+
+  it('drawNext caps the verdict at the highest demonstrated tier (no phantom lead)', () => {
+    // Only junior has questions; the candidate answers one correctly, then every higher
+    // tier is empty. Must NOT cascade to a 'lead' verdict — caps at the demonstrated grade.
+    const pool = [q('j1', 'junior')];
+    let res = drawNext(initInterview(), pool, identity);
+    expect(res.question?.id).toBe('j1');
+    const answered = interviewReducer(res.state, { type: 'answer', correct: true, questionId: 'j1' });
+    res = drawNext(answered, pool, identity);
+    expect(res.state.status).toBe('done');
+    expect(res.state.verdict).toBe('junior'); // middle+ empty → not credited
+    expect(res.question).toBeNull();
   });
 
   it('end-to-end: all-correct run through a full ladder verdicts at lead', () => {
@@ -131,12 +154,14 @@ describe('interview machine', () => {
     expect(s.missedIds).toEqual([]);
   });
 
-  it('end-to-end: small lead pool is passed by exhaustion, still verdicts at lead', () => {
+  it('exhaustion AFTER answering the top tier still verdicts at lead', () => {
+    // Synthetic (real lead pool is >=6, so this exhaustion path never fires in production):
+    // one lead question answered correctly, then the pool is dry → activity-based pass → lead.
     const pool = [
       q('j1', 'junior'), q('j2', 'junior'),
       q('m1', 'middle'), q('m2', 'middle'),
       q('s1', 'senior'), q('s2', 'senior'),
-      q('l1', 'lead'), // only one lead question: one correct, then exhausted → pass
+      q('l1', 'lead'),
     ];
     const s = play(pool, [true, true, true, true, true, true, true]);
     expect(s.status).toBe('done');

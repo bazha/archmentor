@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { StrictMode } from 'react';
 import { render, screen, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
@@ -21,8 +22,10 @@ describe('Interview', () => {
     expect(findOption()).toBeTruthy();
   });
 
-  it('runs to a report and records the completed session exactly once', async () => {
-    render(<MemoryRouter><Interview /></MemoryRouter>);
+  it('runs to a report (with per-grade breakdown) and records the session once under StrictMode', async () => {
+    // StrictMode double-invokes effects on mount, so this genuinely exercises the
+    // record-exactly-once guard rather than merely asserting the happy path.
+    render(<StrictMode><MemoryRouter><Interview /></MemoryRouter></StrictMode>);
     await userEvent.click(screen.getByRole('button', { name: 'Начать собес' }));
 
     // Answer until the adaptive session resolves (always pick the first option).
@@ -33,8 +36,12 @@ describe('Interview', () => {
     }
 
     expect(screen.getByText('Итоги собеса')).toBeInTheDocument();
+    // Per-grade breakdown is shown with at least one "correct/total" tally.
+    expect(screen.getByText('По уровням')).toBeInTheDocument();
+    expect(screen.getAllByText(/^\d+\/\d+$/).length).toBeGreaterThan(0);
+
     const { interviews } = useStore.getState();
-    expect(interviews).toHaveLength(1);
+    expect(interviews).toHaveLength(1); // not 2 — StrictMode double-effect is guarded
     expect(interviews[0].asked).toBeGreaterThan(0);
   });
 

@@ -63,7 +63,15 @@ function promote(state: InterviewState): InterviewState {
 export function interviewReducer(state: InterviewState, event: InterviewEvent): InterviewState {
   if (state.status === 'done') return state;
 
-  if (event.type === 'exhausted') return promote(state);
+  if (event.type === 'exhausted') {
+    // Ran out of questions in this tier. If the candidate answered here, they cleared it
+    // without hitting STOP → pass (promote). If the tier had zero activity (empty pool),
+    // there's no basis to credit it — finish with the highest grade actually demonstrated,
+    // so an empty or filtered content set can never mint a phantom top-grade verdict.
+    const answeredThisTier = state.correctInTier > 0 || state.mistakesInTier > 0;
+    if (answeredThisTier) return promote(state);
+    return { ...state, status: 'done', verdict: predecessorGrade(state.tier) };
+  }
 
   const next: InterviewState = {
     ...state,
