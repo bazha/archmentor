@@ -36,17 +36,20 @@ export function Interview() {
   const recordInterview = useStore((s) => s.recordInterview);
 
   const [session, setSession] = useState<InterviewState | null>(null);
-  const [current, setCurrent] = useState<QuestionView | null>(null);
+  // Store the id, not the localized view — the view is derived from the reactive
+  // `deck` below so the displayed question re-localizes when the language changes.
+  const [currentId, setCurrentId] = useState<string | null>(null);
   const recorded = useRef(false);
 
   const byId = useMemo(() => new Map(deck.map((q) => [q.id, q])), [deck]);
   const conceptName = useMemo(() => new Map(concepts.map((c) => [c.id, c.name])), [concepts]);
+  const current = currentId ? byId.get(currentId) ?? null : null;
 
   function start() {
     recorded.current = false;
     const { state, question } = drawNext(initInterview(), deck, shuffle);
     setSession(state);
-    setCurrent(question);
+    setCurrentId(question?.id ?? null);
   }
 
   function answer(index: number) {
@@ -55,7 +58,7 @@ export function Interview() {
     const advanced = interviewReducer(session, { type: 'answer', correct, questionId: current.id });
     const { state, question } = drawNext(advanced, deck, shuffle);
     setSession(state);
-    setCurrent(question);
+    setCurrentId(question?.id ?? null);
   }
 
   // Persist the completed session exactly once.

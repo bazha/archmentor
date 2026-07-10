@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { Interview } from './Interview';
@@ -36,5 +36,22 @@ describe('Interview', () => {
     const { interviews } = useStore.getState();
     expect(interviews).toHaveLength(1);
     expect(interviews[0].asked).toBeGreaterThan(0);
+  });
+
+  it('re-localizes the currently shown question when the language switches', async () => {
+    const { container } = render(<MemoryRouter><Interview /></MemoryRouter>);
+    await userEvent.click(screen.getByRole('button', { name: 'Начать собес' }));
+
+    const prompt = () => container.querySelector('p.text-xl')?.textContent ?? '';
+    const ru = prompt();
+    const hasCyrillic = (s: string) => /[а-яА-Я]/.test(s);
+    expect(hasCyrillic(ru)).toBe(true); // Russian question shown
+
+    // Toggle language mid-question — the same question must re-localize, not go stale.
+    act(() => useStore.getState().setSettings({ lang: 'en' }));
+
+    const en = prompt();
+    expect(en).not.toBe(ru);
+    expect(hasCyrillic(en)).toBe(false); // now English, no leftover Cyrillic
   });
 });
