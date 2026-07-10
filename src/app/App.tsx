@@ -12,6 +12,7 @@ const router = createBrowserRouter([
       { path: 'course', lazy: () => import('@/features/course/Course').then((m) => ({ Component: m.Course })) },
       { path: 'review', lazy: () => import('@/features/review/Review').then((m) => ({ Component: m.Review })) },
       { path: 'quiz', lazy: () => import('@/features/quiz/Quiz').then((m) => ({ Component: m.Quiz })) },
+      { path: 'interview', lazy: () => import('@/features/interview/Interview').then((m) => ({ Component: m.Interview })) },
       { path: 'library', lazy: () => import('@/features/library/Library').then((m) => ({ Component: m.Library })) },
       { path: 'library/:conceptId', lazy: () => import('@/features/library/ConceptPage').then((m) => ({ Component: m.ConceptPage })) },
       { path: 'progress', lazy: () => import('@/features/progress/Progress').then((m) => ({ Component: m.Progress })) },

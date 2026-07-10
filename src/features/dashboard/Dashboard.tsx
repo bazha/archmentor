@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { concepts } from '@/content/index';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Icon } from '@/components/Icon';
-import { useStore, selectGradeProgress, selectReviewQueue } from '@/store/useStore';
+import { useStore, selectGradeProgress, selectReviewQueue, selectBestInterviewGrade } from '@/store/useStore';
 import { selectNextStep, selectCourseProgress } from '@/domain/course';
 import { GRADE_ORDER, GRADE_LABEL } from '@/lib/labels';
 import { todayISO } from '@/lib/date';
@@ -15,6 +15,7 @@ export function Dashboard() {
   const t = useT();
   const today = todayISO();
   const dueCount = selectReviewQueue(state, concepts, today).length;
+  const bestInterview = selectBestInterviewGrade(state);
 
   return (
     <div className="space-y-8">
@@ -47,7 +48,7 @@ export function Dashboard() {
       </div>
 
       {/* Stats */}
-      <section className="grid gap-5 sm:grid-cols-3">
+      <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-2xl border border-line bg-surface-raised p-6 shadow-card">
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-accent/10 text-accent">
             <Icon name="bolt" className="h-5 w-5" />
@@ -79,6 +80,18 @@ export function Dashboard() {
           <div className="mt-4 text-2xl font-bold tracking-tight text-bright">{t('dashboard.quiz')}</div>
           <div className="mt-2 text-sm text-muted">{t('dashboard.testYourself')}</div>
           <div className="mt-1 text-xs font-medium text-accent">{t('dashboard.identifyPattern')}</div>
+        </Link>
+
+        <Link
+          to="/interview"
+          className="rounded-2xl border border-line bg-surface-raised p-6 shadow-card transition hover:-translate-y-0.5 hover:border-line-strong hover:shadow-card-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        >
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-accent/10 text-accent">
+            <Icon name="interview" className="h-5 w-5" />
+          </span>
+          <div className="mt-4 text-2xl font-bold tracking-tight text-bright">{bestInterview ? GRADE_LABEL[bestInterview] : t('nav.interview')}</div>
+          <div className="mt-2 text-sm text-muted">{t('interview.bestLevel')}</div>
+          <div className="mt-1 text-xs font-medium text-accent">{t('interview.cta')}</div>
         </Link>
       </section>
 
