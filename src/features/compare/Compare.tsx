@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useConcepts, type ConceptView } from '@/content/localize';
 import { selectConfusablePairs } from '@/domain/compare/pairs';
@@ -65,13 +65,16 @@ function ColumnHeader({ c, lang }: { c: ConceptView; lang: 'ru' | 'en' }) {
 }
 
 function ConceptSelect({
-  concepts, exclude, placeholder, onPick,
+  concepts, exclude, placeholder, label, onPick,
 }: {
   concepts: ConceptView[];
   exclude?: string;
   placeholder: string;
+  label: string;
   onPick: (id: string) => void;
 }) {
+  const base = useId();
+  const listId = `${base}-list`;
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
@@ -98,7 +101,10 @@ function ConceptSelect({
         type="text"
         role="combobox"
         aria-expanded={open}
-        aria-label={placeholder}
+        aria-label={label}
+        aria-controls={listId}
+        aria-activedescendant={open && filtered[active] ? `${base}-opt-${active}` : undefined}
+        aria-autocomplete="list"
         autoComplete="off"
         value={query}
         placeholder={placeholder}
@@ -114,11 +120,12 @@ function ConceptSelect({
         className="w-full rounded-xl border border-line bg-surface-raised px-4 py-2.5 text-sm text-bright outline-none placeholder:text-faint focus-visible:ring-2 focus-visible:ring-accent"
       />
       {open && filtered.length > 0 && (
-        <ul role="listbox" className="absolute z-30 mt-1 max-h-72 w-full overflow-y-auto rounded-xl border border-line-strong bg-surface-raised p-1.5 shadow-card-lg">
+        <ul id={listId} role="listbox" className="absolute z-30 mt-1 max-h-72 w-full overflow-y-auto rounded-xl border border-line-strong bg-surface-raised p-1.5 shadow-card-lg">
           {filtered.map((c, i) => (
             <li key={c.id}>
               <button
                 type="button"
+                id={`${base}-opt-${i}`}
                 role="option"
                 aria-selected={i === active}
                 onMouseDown={(e) => e.preventDefault()}
@@ -171,12 +178,14 @@ export function Compare() {
           concepts={concepts}
           exclude={right?.id}
           placeholder={left ? left.name : t('compare.selectA')}
+          label={t('compare.selectA')}
           onPick={(id) => go(id, right?.id ?? null)}
         />
         <ConceptSelect
           concepts={concepts}
           exclude={left?.id}
           placeholder={right ? right.name : t('compare.selectB')}
+          label={t('compare.selectB')}
           onPick={(id) => go(left?.id ?? null, id)}
         />
       </div>

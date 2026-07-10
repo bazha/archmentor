@@ -52,4 +52,22 @@ describe('Compare', () => {
     const optionTexts = screen.getAllByRole('option').map((o) => o.textContent ?? '');
     expect(optionTexts.some((txt) => txt.includes(a.name))).toBe(false);
   });
+
+  it('wires aria-activedescendant to the active option for screen readers', async () => {
+    const a = rawConcepts[0];
+    renderAt(`/compare/${a.id}`); // left chosen, right empty → both combobox inputs render
+    const rightInput = screen.getAllByRole('combobox')[1];
+    await userEvent.click(rightInput); // focus opens the dropdown
+    await userEvent.keyboard('{ArrowDown}'); // move active from 0 → 1
+
+    const listId = rightInput.getAttribute('aria-controls');
+    expect(listId).toBeTruthy();
+    const listbox = screen.getAllByRole('listbox')[0];
+    expect(listbox).toHaveAttribute('id', listId);
+
+    const activeId = rightInput.getAttribute('aria-activedescendant');
+    expect(activeId).toBeTruthy();
+    const activeOption = screen.getAllByRole('option')[1];
+    expect(activeOption).toHaveAttribute('id', activeId);
+  });
 });
