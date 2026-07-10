@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 
 export type IconName =
-  | 'dashboard' | 'course' | 'learn' | 'review' | 'quiz' | 'library' | 'progress' | 'interview'
+  | 'dashboard' | 'course' | 'learn' | 'review' | 'quiz' | 'library' | 'progress' | 'interview' | 'compare'
   | 'search' | 'sun' | 'moon' | 'check' | 'close'
   | 'chevronRight' | 'chevronLeft' | 'arrowRight' | 'bolt' | 'layers' | 'command' | 'hash';
 
@@ -14,6 +14,7 @@ const PATHS: Record<IconName, ReactNode> = {
   library: (<><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19a1 1 0 0 1 1 1v14.5H6.5A1.5 1.5 0 0 0 5 20Z" /><path d="M5 18.5V4.5" /></>),
   progress: (<><path d="M5 20v-6" /><path d="M12 20V5" /><path d="M19 20v-9" /></>),
   interview: (<><path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-6l-4 4v-4H6a2 2 0 0 1-2-2Z" /><path d="M9.6 8.6a2.4 2.4 0 1 1 3.2 2.4c-.7.4-1.2.8-1.2 1.6" /><circle cx="11.6" cy="14.3" r=".55" fill="currentColor" stroke="none" /></>),
+  compare: (<><rect x="4" y="4" width="7" height="16" rx="1.8" /><rect x="13" y="4" width="7" height="16" rx="1.8" /></>),
   search: (<><circle cx="11" cy="11" r="7" /><path d="m20 20-3.4-3.4" /></>),
   sun: (<><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></>),
   moon: (<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />),
