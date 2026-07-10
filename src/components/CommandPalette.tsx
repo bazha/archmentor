@@ -14,6 +14,7 @@ const SCREENS: { key: MessageKey; to: string; icon: IconName }[] = [
   { key: 'nav.learn', to: '/learn', icon: 'learn' },
   { key: 'nav.review', to: '/review', icon: 'review' },
   { key: 'nav.quiz', to: '/quiz', icon: 'quiz' },
+  { key: 'nav.interview', to: '/interview', icon: 'interview' },
   { key: 'nav.library', to: '/library', icon: 'library' },
   { key: 'nav.progress', to: '/progress', icon: 'progress' },
 ];

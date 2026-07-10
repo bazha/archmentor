@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { useStore, selectDueConceptIds, selectGradeProgress, selectReviewQueue, isMastered } from './useStore';
+import { useStore, selectDueConceptIds, selectGradeProgress, selectReviewQueue, isMastered, selectBestInterviewGrade } from './useStore';
 import type { Concept } from '@/content/schema';
 import { detectLang } from '@/i18n/lang';
 
@@ -40,6 +40,26 @@ describe('store', () => {
     useStore.getState().recordQuiz('q1', 0, true, '2026-07-04');
     expect(useStore.getState().quizResults).toHaveLength(1);
     expect(useStore.getState().quizResults[0].correct).toBe(true);
+  });
+
+  it('recordInterview stores a session and advances the streak', () => {
+    useStore.getState().recordInterview(
+      { at: '2026-07-04', grade: 'middle', asked: 6, correct: 4, missedQuestionIds: ['m1', 'm2'] },
+      '2026-07-04',
+    );
+    const s = useStore.getState();
+    expect(s.interviews).toHaveLength(1);
+    expect(s.interviews[0].grade).toBe('middle');
+    expect(s.streak.current).toBe(1);
+  });
+
+  it('selectBestInterviewGrade returns the highest verdict, ignoring null verdicts', () => {
+    const g = useStore.getState;
+    expect(selectBestInterviewGrade(g())).toBeNull();
+    g().recordInterview({ at: '2026-07-04', grade: 'junior', asked: 4, correct: 2, missedQuestionIds: [] }, '2026-07-04');
+    g().recordInterview({ at: '2026-07-05', grade: null, asked: 2, correct: 0, missedQuestionIds: ['j1', 'j2'] }, '2026-07-05');
+    g().recordInterview({ at: '2026-07-06', grade: 'senior', asked: 6, correct: 5, missedQuestionIds: ['s1'] }, '2026-07-06');
+    expect(selectBestInterviewGrade(g())).toBe('senior');
   });
 
   it('selectDueConceptIds returns concepts whose due date has arrived', () => {
@@ -102,5 +122,24 @@ describe('persisted settings merge (rehydration)', () => {
     expect(useStore.getState().settings.theme).toBe('light'); // persisted value kept
     expect(useStore.getState().settings.lang).toBeDefined(); // missing key backfilled
     expect(useStore.getState().settings.lang).toBe(detectLang());
+  });
+
+  it('migrates a v1 payload (no interviews slice) without wiping existing progress', async () => {
+    localStorage.setItem('archmentor', JSON.stringify({
+      state: {
+        srs: { srp: { conceptId: 'srp', ease: 2.5, interval: 1, repetitions: 3, due: '2026-07-05', lastReviewed: '2026-07-04' } },
+        quizResults: [{ questionId: 'q1', selectedIndex: 0, correct: true, at: '2026-07-04' }],
+        conceptProgress: { srp: { seen: true } },
+        streak: { current: 5, longest: 9, lastActiveDate: '2026-07-04' },
+        settings: { theme: 'dark', lang: 'en', gradeFilter: 'all', categoryFilter: 'all' },
+      },
+      version: 1,
+    }));
+    await useStore.persist.rehydrate();
+    const s = useStore.getState();
+    expect(s.srs['srp'].repetitions).toBe(3); // pre-existing progress preserved
+    expect(s.streak.current).toBe(5);
+    expect(s.quizResults).toHaveLength(1);
+    expect(s.interviews).toEqual([]); // new slice backfilled, not undefined
   });
 });
