@@ -10,6 +10,7 @@ export interface QuizResult { questionId: string; selectedIndex: number; correct
 /** One completed interview session. `grade` is the verdict (null = "not yet junior"). */
 export interface InterviewResult { at: string; grade: Grade | null; asked: number; correct: number; missedQuestionIds: string[]; }
 export interface Streak { current: number; longest: number; lastActiveDate: string | null; }
+export interface DailyState { streak: number; longest: number; lastCompletedDate: string | null; lastSelectedIndex: number | null; }
 export interface Settings { theme: 'dark' | 'light'; lang: Lang; gradeFilter: Grade | 'all'; categoryFilter: Category | 'all'; }
 
 const MASTERY_REPETITIONS = 2;
@@ -18,23 +19,26 @@ export interface AppState {
   srs: Record<string, SrsState>;
   quizResults: QuizResult[];
   interviews: InterviewResult[];
+  daily: DailyState;
   conceptProgress: Record<string, { seen: boolean }>;
   streak: Streak;
   settings: Settings;
   reviewConcept: (conceptId: string, quality: Quality, today: string) => void;
   recordQuiz: (questionId: string, selectedIndex: number, correct: boolean, today: string) => void;
   recordInterview: (result: InterviewResult, today: string) => void;
+  completeDaily: (selectedIndex: number, today: string) => void;
   markSeen: (conceptId: string, today: string) => void;
   setSettings: (partial: Partial<Settings>) => void;
   resetProgress: () => void;
 }
 
-type PersistedState = Pick<AppState, 'srs' | 'quizResults' | 'interviews' | 'conceptProgress' | 'streak' | 'settings'>;
+type PersistedState = Pick<AppState, 'srs' | 'quizResults' | 'interviews' | 'daily' | 'conceptProgress' | 'streak' | 'settings'>;
 
 const initialData = (): PersistedState => ({
   srs: {},
   quizResults: [],
   interviews: [],
+  daily: { streak: 0, longest: 0, lastCompletedDate: null, lastSelectedIndex: null },
   conceptProgress: {},
   streak: { current: 0, longest: 0, lastActiveDate: null },
   settings: { theme: 'dark', lang: detectLang(), gradeFilter: 'all', categoryFilter: 'all' },
@@ -73,6 +77,22 @@ export const useStore = create<AppState>()(
           streak: bumpStreak(s.streak, today),
         })),
 
+      completeDaily: (selectedIndex, today) =>
+        set((s) => {
+          if (s.daily.lastCompletedDate === today) return {}; // already solved today — no-op
+          const consecutive = s.daily.lastCompletedDate != null && daysBetween(s.daily.lastCompletedDate, today) === 1;
+          const streak = consecutive ? s.daily.streak + 1 : 1;
+          return {
+            daily: {
+              streak,
+              longest: Math.max(s.daily.longest, streak),
+              lastCompletedDate: today,
+              lastSelectedIndex: selectedIndex,
+            },
+            streak: bumpStreak(s.streak, today), // a solved daily counts as activity
+          };
+        }),
+
       markSeen: (conceptId, today) =>
         set((s) => ({
           conceptProgress: { ...s.conceptProgress, [conceptId]: { seen: true } },
@@ -85,27 +105,27 @@ export const useStore = create<AppState>()(
     }),
     {
       name: 'archmentor',
-      version: 2,
+      version: 3,
       migrate: (persisted: unknown, version: number) => migrate(persisted, version),
       merge: (persisted: unknown, current: AppState): AppState => {
         const p = (persisted ?? {}) as Partial<PersistedState>;
         return { ...current, ...p, settings: { ...current.settings, ...(p.settings ?? {}) } };
       },
       partialize: (s): PersistedState => ({
-        srs: s.srs, quizResults: s.quizResults, interviews: s.interviews, conceptProgress: s.conceptProgress,
-        streak: s.streak, settings: s.settings,
+        srs: s.srs, quizResults: s.quizResults, interviews: s.interviews, daily: s.daily,
+        conceptProgress: s.conceptProgress, streak: s.streak, settings: s.settings,
       }),
     },
   ),
 );
 
 /**
- * Version migration hook. v1→v2 added the `interviews` slice; both shapes are accepted
- * as-is (the missing `interviews` key is backfilled to `[]` by `merge` against defaults),
- * so existing srs/streak/quiz progress is preserved. Unknown shapes reset safely.
+ * Version migration hook. v1→v2 added `interviews`; v2→v3 added `daily`. All known shapes
+ * are accepted as-is — missing slices are backfilled from defaults by `merge`, so existing
+ * srs/streak/quiz/interviews progress is preserved. Unknown shapes reset safely.
  */
 export function migrate(persisted: unknown, version: number): PersistedState {
-  if ((version === 1 || version === 2) && persisted && typeof persisted === 'object') return persisted as PersistedState;
+  if (version >= 1 && version <= 3 && persisted && typeof persisted === 'object') return persisted as PersistedState;
   return initialData();
 }
 
@@ -133,6 +153,11 @@ export function selectBestInterviewGrade(state: AppState): Grade | null {
     best = Math.max(best, GRADE_ORDER.indexOf(iv.grade));
   }
   return best < 0 ? null : GRADE_ORDER[best];
+}
+
+/** True when today's daily challenge has already been completed. */
+export function isDailyDone(state: AppState, today: string): boolean {
+  return state.daily.lastCompletedDate === today;
 }
 
 export function selectGradeProgress(
