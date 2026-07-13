@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { useStore, selectDueConceptIds, selectGradeProgress, selectReviewQueue, isMastered, selectBestInterviewGrade } from './useStore';
+import { useStore, selectDueConceptIds, selectGradeProgress, selectReviewQueue, isMastered, selectBestInterviewGrade, isDailyDone } from './useStore';
 import type { Concept } from '@/content/schema';
 import { detectLang } from '@/i18n/lang';
 
@@ -92,6 +92,36 @@ describe('store', () => {
     expect(q).not.toContain('srp');
     expect(q.sort()).toEqual(['ocp', 'strategy']);
   });
+
+  it('completeDaily records the day, sets streak to 1, stores the pick, and advances the global streak', () => {
+    useStore.getState().completeDaily(2, '2026-07-13');
+    const s = useStore.getState();
+    expect(s.daily.streak).toBe(1);
+    expect(s.daily.longest).toBe(1);
+    expect(s.daily.lastCompletedDate).toBe('2026-07-13');
+    expect(s.daily.lastSelectedIndex).toBe(2);
+    expect(s.streak.current).toBe(1); // daily counts as activity
+    expect(isDailyDone(s, '2026-07-13')).toBe(true);
+    expect(isDailyDone(s, '2026-07-14')).toBe(false);
+  });
+
+  it('completeDaily is a no-op when already completed today', () => {
+    const g = useStore.getState;
+    g().completeDaily(1, '2026-07-13');
+    g().completeDaily(3, '2026-07-13'); // same day again
+    expect(g().daily.streak).toBe(1);
+    expect(g().daily.lastSelectedIndex).toBe(1); // unchanged
+  });
+
+  it('daily streak grows on consecutive days and resets after a gap', () => {
+    const g = useStore.getState;
+    g().completeDaily(0, '2026-07-13');
+    g().completeDaily(0, '2026-07-14');
+    expect(g().daily.streak).toBe(2);
+    g().completeDaily(0, '2026-07-17'); // gap
+    expect(g().daily.streak).toBe(1);
+    expect(g().daily.longest).toBe(2);
+  });
 });
 
 describe('settings.lang', () => {
@@ -141,5 +171,25 @@ describe('persisted settings merge (rehydration)', () => {
     expect(s.streak.current).toBe(5);
     expect(s.quizResults).toHaveLength(1);
     expect(s.interviews).toEqual([]); // new slice backfilled, not undefined
+  });
+
+  it('migrates a v2 payload (no daily slice) without wiping progress and backfills daily', async () => {
+    localStorage.setItem('archmentor', JSON.stringify({
+      state: {
+        srs: { srp: { conceptId: 'srp', ease: 2.5, interval: 1, repetitions: 3, due: '2026-07-14', lastReviewed: '2026-07-13' } },
+        quizResults: [{ questionId: 'q1', selectedIndex: 0, correct: true, at: '2026-07-13' }],
+        interviews: [{ at: '2026-07-13', grade: 'middle', asked: 6, correct: 4, missedQuestionIds: [] }],
+        conceptProgress: { srp: { seen: true } },
+        streak: { current: 5, longest: 9, lastActiveDate: '2026-07-13' },
+        settings: { theme: 'dark', lang: 'en', gradeFilter: 'all', categoryFilter: 'all' },
+      },
+      version: 2,
+    }));
+    await useStore.persist.rehydrate();
+    const s = useStore.getState();
+    expect(s.srs['srp'].repetitions).toBe(3);       // preserved
+    expect(s.interviews).toHaveLength(1);            // preserved
+    expect(s.streak.current).toBe(5);                // preserved
+    expect(s.daily).toEqual({ streak: 0, longest: 0, lastCompletedDate: null, lastSelectedIndex: null }); // backfilled
   });
 });

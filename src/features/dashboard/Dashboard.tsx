@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { concepts } from '@/content/index';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Icon } from '@/components/Icon';
-import { useStore, selectGradeProgress, selectReviewQueue, selectBestInterviewGrade } from '@/store/useStore';
+import { useStore, selectGradeProgress, selectReviewQueue, selectBestInterviewGrade, isDailyDone } from '@/store/useStore';
 import { selectNextStep, selectCourseProgress } from '@/domain/course';
 import { GRADE_ORDER, GRADE_LABEL } from '@/lib/labels';
 import { todayISO } from '@/lib/date';
@@ -16,6 +16,8 @@ export function Dashboard() {
   const today = todayISO();
   const dueCount = selectReviewQueue(state, concepts, today).length;
   const bestInterview = selectBestInterviewGrade(state);
+  const dailyDone = isDailyDone(state, today);
+  const dailyStreak = state.daily.streak;
 
   return (
     <div className="space-y-8">
@@ -24,6 +26,21 @@ export function Dashboard() {
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-faint">{t('dashboard.eyebrow')}</p>
         <h1 className="text-3xl font-bold tracking-tight text-bright">{t('dashboard.title')}</h1>
       </header>
+
+      {/* Daily challenge */}
+      <Link
+        to="/daily"
+        className="flex items-center gap-4 rounded-2xl border border-line bg-surface-raised p-5 shadow-card transition hover:-translate-y-0.5 hover:border-line-strong hover:shadow-card-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      >
+        <span className="grid h-11 w-11 flex-none place-items-center rounded-xl bg-accent/10 text-accent">
+          <Icon name="bolt" className="h-6 w-6" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-base font-semibold text-bright">{t('dashboard.dailyTitle')}</span>
+          <span className="block text-sm font-medium text-accent">{dailyDone ? t('dashboard.dailyDone') : t('dashboard.dailyCta')}</span>
+        </span>
+        <span className="flex-none text-lg font-bold tabular-nums text-bright">{dailyStreak}🔥</span>
+      </Link>
 
       {/* Continue learning */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
