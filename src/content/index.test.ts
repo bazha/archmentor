@@ -1,12 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { concepts, questions, getConcept } from './index';
-import { validateContent } from './schema';
 
+// Note: full structural validation (incl. duplicate ids) runs at import time via
+// `validateContent` in ./index (DEV/test), so importing this module already guards
+// it — those invariants aren't re-asserted here. `validateContent`'s own logic is
+// unit-tested against invalid fixtures in ./schema.test.ts.
 describe('content catalog', () => {
-  it('passes full content validation', () => {
-    expect(() => validateContent(concepts, questions)).not.toThrow();
-  });
-
   it('is the complete catalog: 42 concepts across every category', () => {
     const byCat = (c: string) => concepts.filter((x) => x.category === c).length;
     expect(concepts).toHaveLength(42);
@@ -17,11 +16,6 @@ describe('content catalog', () => {
     expect(byCat('behavioral')).toBe(11);
     expect(byCat('architecture')).toBe(8);
     expect(byCat('tradeoff')).toBe(6);
-  });
-
-  it('has unique concept and question ids', () => {
-    expect(new Set(concepts.map((c) => c.id)).size).toBe(concepts.length);
-    expect(new Set(questions.map((q) => q.id)).size).toBe(questions.length);
   });
 
   it('includes canonical concepts', () => {

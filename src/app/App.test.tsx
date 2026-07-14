@@ -5,6 +5,7 @@ import { Layout } from './Layout';
 import { Dashboard } from '@/features/dashboard/Dashboard';
 import { Library } from '@/features/library/Library';
 import { useStore } from '@/store/useStore';
+import type { Lang } from '@/i18n/lang';
 
 function renderAt(path: string) {
   const router = createMemoryRouter(
@@ -17,19 +18,25 @@ function renderAt(path: string) {
   return render(<RouterProvider router={router} />);
 }
 
-describe('app shell', () => {
-  beforeEach(() => useStore.getState().setSettings({ lang: 'ru' }));
+// The shell renders correctly in both languages; the library nav link and the
+// library page heading share a label, so heading-role scoping disambiguates.
+const CASES: { lang: Lang; library: string; dashboard: string }[] = [
+  { lang: 'ru', library: 'Библиотека', dashboard: 'Путь от Junior до Lead' },
+  { lang: 'en', library: 'Library', dashboard: 'The path from Junior to Lead' },
+];
 
-  it('renders nav and dashboard at /', () => {
+describe.each(CASES)('app shell ($lang)', ({ lang, library, dashboard }) => {
+  beforeEach(() => useStore.getState().setSettings({ lang }));
+
+  it('renders the nav and dashboard at /', () => {
     renderAt('/');
     expect(screen.getByText('ArchMentor')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Библиотека' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: library })).toBeInTheDocument();
+    expect(screen.getByText(dashboard)).toBeInTheDocument();
   });
 
-  it('renders library at /library', () => {
+  it('renders the library heading at /library', () => {
     renderAt('/library');
-    // Both the nav link and the placeholder heading read "Библиотека";
-    // scope to the heading role to disambiguate.
-    expect(screen.getByRole('heading', { name: 'Библиотека' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: library })).toBeInTheDocument();
   });
 });
