@@ -47,4 +47,15 @@ describe('diagram content', () => {
     };
     expect(isPassed(validate(noCdn, sc.constraints))).toBe(true);
   });
+
+  it('scenarios pass without a cache (cache is warn-only, not hard-required)', () => {
+    for (const id of ['url-shortener', 'rate-limiter', 'news-feed', 'chat']) {
+      const sc = scenarios.find((s) => s.id === id)!;
+      const noCache = {
+        nodes: sc.reference.nodes.filter((nd) => nd.type !== 'cache'),
+        edges: sc.reference.edges.filter((e) => e.from !== 'cache' && e.to !== 'cache'),
+      };
+      expect(isPassed(validate(noCache, sc.constraints))).toBe(true);
+    }
+  });
 });

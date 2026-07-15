@@ -81,7 +81,6 @@ export const scenarios: Scenario[] = [
     constraints: [
       { kind: 'required-node', node: 'client' },
       { kind: 'required-node', node: 'api-server' },
-      { kind: 'required-node', node: 'cache' },
       { kind: 'any-of', nodes: ['sql-db', 'nosql-db'] },
       { kind: 'required-edge', from: 'api-server', to: 'cache' },
       { kind: 'forbidden-node', node: 'message-queue', severity: 'warn' },
@@ -110,7 +109,6 @@ export const scenarios: Scenario[] = [
       { kind: 'required-node', node: 'client' },
       { kind: 'required-node', node: 'rate-limiter' },
       { kind: 'required-node', node: 'api-server' },
-      { kind: 'required-node', node: 'cache' },
       { kind: 'between', middle: 'rate-limiter', from: 'client', to: 'api-server' },
       { kind: 'required-edge', from: 'rate-limiter', to: 'cache' },
     ],
@@ -165,7 +163,6 @@ export const scenarios: Scenario[] = [
     constraints: [
       { kind: 'required-node', node: 'client' },
       { kind: 'required-node', node: 'api-server' },
-      { kind: 'required-node', node: 'cache' },
       { kind: 'any-of', nodes: ['sql-db', 'nosql-db'] },
       { kind: 'required-edge', from: 'api-server', to: 'cache' },
       { kind: 'required-edge', from: 'client', to: 'cdn' },
@@ -195,9 +192,9 @@ export const scenarios: Scenario[] = [
       { kind: 'required-node', node: 'client' },
       { kind: 'required-node', node: 'api-server' },
       { kind: 'required-node', node: 'message-queue' },
-      { kind: 'required-node', node: 'cache' },
       { kind: 'any-of', nodes: ['nosql-db', 'sql-db'] },
       { kind: 'required-edge', from: 'api-server', to: 'message-queue' },
+      { kind: 'required-edge', from: 'api-server', to: 'cache' },
     ],
     reference: {
       nodes: [n('client'), n('load-balancer'), n('api-server'), n('message-queue'), n('cache'), n('nosql-db')],
