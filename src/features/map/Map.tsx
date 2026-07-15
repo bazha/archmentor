@@ -62,8 +62,11 @@ export function Map() {
   }), [edgePairs, selectedId]);
 
   const selected = selectedId ? concepts.find((c) => c.id === selectedId) ?? null : null;
-  const related = selected
-    ? selected.related.map((id) => ({ id, name: concepts.find((c) => c.id === id)?.name ?? id }))
+  const related = selected && neighbours
+    ? [...neighbours]
+        .filter((id) => id !== selected.id)
+        .sort()
+        .map((id) => ({ id, name: concepts.find((c) => c.id === id)?.name ?? id }))
     : [];
 
   return (
