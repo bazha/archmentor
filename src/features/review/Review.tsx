@@ -46,7 +46,7 @@ export function Review() {
   if (!concept) {
     return (
       <div className="mx-auto max-w-2xl text-center">
-        <h1 className="text-2xl font-bold tracking-tight text-bright">{t('review.title')}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-bright">{t('review.title')}</h1>
         <EmptyState icon="🎉" title={t('review.doneTitle')} hint={t('review.doneHint')} cta={{ to: '/learn', label: t('review.learnNew') }} />
       </div>
     );
@@ -55,7 +55,7 @@ export function Review() {
   return (
     <div className="mx-auto max-w-2xl space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold tracking-tight text-bright">{t('review.title')}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-bright">{t('review.title')}</h1>
         <span className="inline-flex items-center rounded-full border border-line bg-surface-raised px-3.5 py-1 text-sm font-bold tabular-nums text-muted shadow-card">
           {t('review.remaining', { n: queue.length })}
         </span>
@@ -64,7 +64,7 @@ export function Review() {
       <FlipCard
         front={
           <span className="block">
-            <span className="text-2xl font-bold tracking-tight text-bright">{concept.name}</span>
+            <span className="text-2xl font-semibold tracking-tight text-bright">{concept.name}</span>
             <span className="mt-2 block text-sm font-normal text-muted">{concept.tagline}</span>
           </span>
         }

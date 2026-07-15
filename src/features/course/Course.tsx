@@ -59,7 +59,7 @@ export function Course() {
   return (
     <div className="space-y-8">
       <header className="space-y-4">
-        <h1 className="text-2xl font-bold tracking-tight text-bright">{t('course.title')}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-bright">{t('course.title')}</h1>
         <ProgressBar value={progress.pct} label={t('course.progress', { mastered: progress.mastered, total: progress.total })} />
       </header>
       {done && <EmptyState icon="🎓" title={t('course.done')} />}

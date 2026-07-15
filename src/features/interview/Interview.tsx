@@ -91,7 +91,7 @@ export function Interview() {
           <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-accent/10 text-accent">
             <Icon name="interview" className="h-7 w-7" />
           </span>
-          <h1 className="text-2xl font-bold tracking-tight text-bright">{t('interview.introTitle')}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-bright">{t('interview.introTitle')}</h1>
           <p className="leading-relaxed text-content [text-wrap:pretty]">{t('interview.introBody')}</p>
           <div className="flex justify-center">
             <button onClick={start} className={PRIMARY_BTN}>{t('interview.start')}</button>
@@ -111,7 +111,7 @@ export function Interview() {
   return (
     <div className="mx-auto max-w-2xl space-y-8">
       <div className="space-y-5">
-        <h1 className="text-2xl font-bold tracking-tight text-bright">{t('interview.title')}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-bright">{t('interview.title')}</h1>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <span className="inline-flex items-center rounded-full border border-line bg-surface-raised px-3.5 py-1 text-sm font-semibold text-accent shadow-card">
             {t('interview.tier', { grade: GRADE_LABEL[session.tier] })}
@@ -180,9 +180,9 @@ function Report({
         <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-accent/10 text-accent">
           <Icon name="interview" className="h-7 w-7" />
         </span>
-        <h1 className="text-2xl font-bold tracking-tight text-bright">{t('interview.reportTitle')}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-bright">{t('interview.reportTitle')}</h1>
         {session.verdict ? (
-          <p className="text-2xl font-extrabold tracking-tight text-accent">
+          <p className="text-2xl font-semibold tracking-tight text-accent">
             {t('interview.verdict', { grade: GRADE_LABEL[session.verdict as Grade] })}
           </p>
         ) : (

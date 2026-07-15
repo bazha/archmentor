@@ -49,7 +49,7 @@ function ColumnHeader({ c, lang }: { c: ConceptView; lang: 'ru' | 'en' }) {
   return (
     <div className="space-y-2 rounded-2xl border border-line bg-surface-raised p-5 shadow-card">
       <div className="flex flex-wrap items-center gap-2">
-        <h2 className="text-xl font-bold tracking-tight text-bright">{c.name}</h2>
+        <h2 className="text-xl font-semibold tracking-tight text-bright">{c.name}</h2>
         <Badge tone="grade">{GRADE_LABEL[c.grade]}</Badge>
         <Badge tone="category" category={c.category}>{CATEGORY_LABEL[lang][c.category]}</Badge>
       </div>
@@ -170,7 +170,7 @@ export function Compare() {
     <div className="space-y-8">
       <header className="space-y-3">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-faint">{t('nav.compare')}</p>
-        <h1 className="text-3xl font-bold tracking-tight text-bright">{t('compare.title')}</h1>
+        <h1 className="text-3xl font-semibold tracking-tight text-bright">{t('compare.title')}</h1>
       </header>
 
       <div className="grid gap-4 sm:grid-cols-2">

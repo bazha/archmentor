@@ -60,7 +60,7 @@ export function Quiz() {
           <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-accent/10 text-accent">
             <Icon name="quiz" className="h-7 w-7" />
           </span>
-          <h1 className="text-2xl font-bold tracking-tight text-bright">{t('quiz.doneTitle')}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-bright">{t('quiz.doneTitle')}</h1>
           <p className="text-lg text-content">{t('quiz.result', { correct, total })}</p>
           <div className="flex justify-center">
             <button onClick={restart} className={PRIMARY_BTN}>{t('quiz.restart')}</button>
@@ -75,7 +75,7 @@ export function Quiz() {
   return (
     <div className="mx-auto max-w-2xl space-y-8">
       <div className="space-y-5">
-        <h1 className="text-2xl font-bold tracking-tight text-bright">{t('quiz.title')}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-bright">{t('quiz.title')}</h1>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <PillGroup options={MODE_OPTIONS} value={mode} onChange={(m) => { setMode(m); restart(); }} />
           <span className="inline-flex items-center rounded-full border border-line bg-surface-raised px-3.5 py-1 text-sm font-bold tabular-nums text-muted shadow-card">

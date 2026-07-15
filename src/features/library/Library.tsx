@@ -37,7 +37,7 @@ export function Library() {
         <span className="grid h-10 w-10 place-items-center rounded-xl bg-accent/10 text-accent" aria-hidden="true">
           <Icon name="library" className="h-5 w-5" />
         </span>
-        <h1 className="text-2xl font-bold tracking-tight text-bright">{t('library.title')}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-bright">{t('library.title')}</h1>
       </div>
 
       <div className="space-y-4">
