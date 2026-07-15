@@ -43,6 +43,14 @@ npm run build      # production build (tsc --noEmit + vite build)
 
 Pushing to `master` deploys to GitHub Pages via GitHub Actions (`.github/workflows/deploy.yml`).
 
+## Search / SEO
+
+The app ships English metadata, Open Graph/Twitter tags, JSON-LD, a crawlable landing hero,
+and a sitemap at `/archmentor/sitemap.xml`. To get it indexed by Google, submit the site to
+[Google Search Console](https://search.google.com/search-console) and add the sitemap URL
+`https://bazha.github.io/archmentor/sitemap.xml` there (a `robots.txt` can't be used because
+GitHub Pages only honors one at the host root, which this project subpath doesn't control).
+
 ## Status
 
 Feature-complete and deployed. Eleven sidebar modes plus a daily challenge, fully bilingual (RU/EN) with light/dark themes, WCAG AA-guarded accessibility (skip link, visible focus rings, ARIA, `prefers-reduced-motion`, a contrast test), and 198 passing tests.

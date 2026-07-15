@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import html from '../index.html?raw';
+import sitemap from '../public/sitemap.xml?raw';
 
 describe('SEO metadata (index.html)', () => {
   it('declares English as the document language', () => {
@@ -28,5 +29,13 @@ describe('SEO metadata (index.html)', () => {
   it('has crawlable descriptive hero text inside #root', () => {
     expect(html).toContain('Learn software architecture');
     expect(html).toContain('GoF design patterns');
+  });
+});
+
+describe('sitemap', () => {
+  it('is XML declaring the homepage URL', () => {
+    expect(sitemap).toContain('<?xml');
+    expect(sitemap).toContain('<urlset');
+    expect(sitemap).toContain('https://bazha.github.io/archmentor/');
   });
 });
