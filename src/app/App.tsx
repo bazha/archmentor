@@ -14,6 +14,7 @@ const router = createBrowserRouter([
       { path: 'quiz', lazy: () => import('@/features/quiz/Quiz').then((m) => ({ Component: m.Quiz })) },
       { path: 'interview', lazy: () => import('@/features/interview/Interview').then((m) => ({ Component: m.Interview })) },
       { path: 'daily', lazy: () => import('@/features/daily/Daily').then((m) => ({ Component: m.Daily })) },
+      { path: 'diagram/:scenarioId?', lazy: () => import('@/features/diagram/Diagram').then((m) => ({ Component: m.Diagram })) },
       { path: 'compare/:a?/:b?', lazy: () => import('@/features/compare/Compare').then((m) => ({ Component: m.Compare })) },
       { path: 'library', lazy: () => import('@/features/library/Library').then((m) => ({ Component: m.Library })) },
       { path: 'library/:conceptId', lazy: () => import('@/features/library/ConceptPage').then((m) => ({ Component: m.ConceptPage })) },

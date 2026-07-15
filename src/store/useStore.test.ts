@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { useStore, selectDueConceptIds, selectGradeProgress, selectReviewQueue, isMastered, selectBestInterviewGrade, isDailyDone } from './useStore';
+import { useStore, selectDueConceptIds, selectGradeProgress, selectReviewQueue, isMastered, selectBestInterviewGrade, isDailyDone, isScenarioDone, selectDiagramProgress } from './useStore';
 import type { Concept } from '@/content/schema';
 import { detectLang } from '@/i18n/lang';
 
@@ -121,6 +121,32 @@ describe('store', () => {
     g().completeDaily(0, '2026-07-17'); // gap
     expect(g().daily.streak).toBe(1);
     expect(g().daily.longest).toBe(2);
+  });
+});
+
+describe('diagram slice', () => {
+  it('completeScenario records result and advances the streak', () => {
+    useStore.getState().completeScenario('url-shortener', true, '2026-07-15');
+    const s = useStore.getState();
+    expect(s.diagram.completed['url-shortener']).toEqual({ at: '2026-07-15', passed: true });
+    expect(isScenarioDone(s, 'url-shortener')).toBe(true);
+    expect(isScenarioDone(s, 'news-feed')).toBe(false);
+    expect(s.streak.current).toBe(1);
+  });
+
+  it('a later attempt overwrites the stored result', () => {
+    const g = useStore.getState;
+    g().completeScenario('news-feed', false, '2026-07-15');
+    g().completeScenario('news-feed', true, '2026-07-15');
+    expect(g().diagram.completed['news-feed'].passed).toBe(true);
+  });
+
+  it('selectDiagramProgress counts completed of total', () => {
+    const g = useStore.getState;
+    g().completeScenario('url-shortener', true, '2026-07-15');
+    g().completeScenario('news-feed', false, '2026-07-15');
+    const p = selectDiagramProgress(g(), ['url-shortener', 'news-feed', 'rate-limiter']);
+    expect(p).toEqual({ done: 2, total: 3, pct: 67 });
   });
 });
 

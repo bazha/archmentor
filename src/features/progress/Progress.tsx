@@ -1,7 +1,8 @@
 import { concepts } from '@/content/index';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Icon } from '@/components/Icon';
-import { useStore, selectGradeProgress, isMastered, selectBestInterviewGrade } from '@/store/useStore';
+import { useStore, selectGradeProgress, isMastered, selectBestInterviewGrade, selectDiagramProgress } from '@/store/useStore';
+import { scenarios } from '@/content/diagram';
 import { GRADE_ORDER, GRADE_LABEL } from '@/lib/labels';
 import { useT } from '@/i18n/useT';
 
@@ -15,6 +16,7 @@ export function Progress() {
   const mastered = concepts.filter((c) => isMastered(state, c.id)).length;
   const masteredPct = concepts.length === 0 ? 0 : Math.round((mastered / concepts.length) * 100);
   const bestInterview = selectBestInterviewGrade(state);
+  const diagramProgress = selectDiagramProgress(state, scenarios.map((s) => s.id));
 
   return (
     <div className="space-y-8">
@@ -65,6 +67,16 @@ export function Progress() {
           <div className="mt-4 text-3xl font-bold tracking-tight text-bright">{bestInterview ? GRADE_LABEL[bestInterview] : '—'}</div>
           <div className="mt-2 text-sm text-muted">{t('interview.bestLevel')}</div>
           <div className="mt-1 text-xs text-faint">{bestInterview ? '' : t('interview.notTaken')}</div>
+        </div>
+
+        <div className="rounded-2xl border border-line bg-surface-raised p-6 shadow-card">
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-accent/10 text-accent">
+            <Icon name="diagram" className="h-5 w-5" />
+          </span>
+          <div className="mt-4 text-3xl font-bold tracking-tight text-bright tabular-nums">
+            {diagramProgress.done}<span className="text-base font-medium text-muted">/{diagramProgress.total}</span>
+          </div>
+          <div className="mt-2 text-sm text-muted">{t('progress.diagram')}</div>
         </div>
       </section>
 
