@@ -70,7 +70,10 @@ export function CanvasBuilder({ diagram, positions, onAdd, onConnect, onRemoveNo
   );
 
   const edges: Edge[] = useMemo(
-    () => diagram.edges.map((e, i) => ({ id: `e-${i}`, source: e.from, target: e.to, selected: selectedEdgeIds.has(`e-${i}`) })),
+    () => diagram.edges.map((e) => {
+      const id = `${e.from}->${e.to}`;
+      return { id, source: e.from, target: e.to, selected: selectedEdgeIds.has(id) };
+    }),
     [diagram.edges, selectedEdgeIds],
   );
 
@@ -84,6 +87,14 @@ export function CanvasBuilder({ diagram, positions, onAdd, onConnect, onRemoveNo
           return next;
         });
       }
+      if (c.type === 'remove') {
+        setSelectedNodeIds((prev) => {
+          if (!prev.has(c.id)) return prev;
+          const next = new Set(prev);
+          next.delete(c.id);
+          return next;
+        });
+      }
     }
   }, [onMove]);
 
@@ -93,6 +104,14 @@ export function CanvasBuilder({ diagram, positions, onAdd, onConnect, onRemoveNo
         setSelectedEdgeIds((prev) => {
           const next = new Set(prev);
           if (c.selected) next.add(c.id); else next.delete(c.id);
+          return next;
+        });
+      }
+      if (c.type === 'remove') {
+        setSelectedEdgeIds((prev) => {
+          if (!prev.has(c.id)) return prev;
+          const next = new Set(prev);
+          next.delete(c.id);
           return next;
         });
       }
