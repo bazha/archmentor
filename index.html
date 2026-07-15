@@ -1,10 +1,56 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
-    <title>ArchMentor</title>
+
+    <title>ArchMentor — Learn Software Architecture: SOLID, Design Patterns &amp; System Design</title>
+    <meta name="description" content="Free, bilingual (English/Russian) app to learn software architecture from Junior to Lead: SOLID, all 23 GoF design patterns, architectural styles, and trade-offs — with flashcards, spaced repetition, quizzes, a mock interview, and a system-design diagram builder." />
+    <link rel="canonical" href="https://bazha.github.io/archmentor/" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#FCFCFD" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0D0F21" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="ArchMentor" />
+    <meta property="og:title" content="ArchMentor — Learn Software Architecture" />
+    <meta property="og:description" content="Learn SOLID, the 23 GoF design patterns, architectural styles, and trade-offs — from Junior to Lead. Flashcards, spaced repetition, quizzes, a mock interview, and a system-design diagram builder. Free and bilingual." />
+    <meta property="og:url" content="https://bazha.github.io/archmentor/" />
+    <meta property="og:image" content="https://bazha.github.io/archmentor/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="en_US" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="ArchMentor — Learn Software Architecture" />
+    <meta name="twitter:description" content="Learn SOLID, GoF design patterns, architectural styles, and trade-offs — from Junior to Lead. Free and bilingual." />
+    <meta name="twitter:image" content="https://bazha.github.io/archmentor/og-image.png" />
+
+    <script type="application/ld+json">
+      [
+        {
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          "name": "ArchMentor",
+          "url": "https://bazha.github.io/archmentor/",
+          "applicationCategory": "EducationalApplication",
+          "operatingSystem": "Web",
+          "description": "Learn software architecture from Junior to Lead: SOLID, the 23 GoF design patterns, architectural styles, and cross-cutting trade-offs, with flashcards, spaced repetition, quizzes, a mock interview, and a system-design diagram builder.",
+          "inLanguage": ["en", "ru"],
+          "isAccessibleForFree": true,
+          "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          "name": "ArchMentor",
+          "url": "https://bazha.github.io/archmentor/",
+          "description": "Learn software architecture: SOLID, design patterns, architectural styles, and trade-offs.",
+          "inLanguage": ["en", "ru"]
+        }
+      ]
+    </script>
+
     <script>
       try {
         var s = JSON.parse(localStorage.getItem('archmentor') || '{}');
@@ -17,7 +63,14 @@
     </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <main style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;padding:2rem;background:#0D0F21;color:#E9EAF0;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;text-align:center;">
+        <h1 style="font-size:2rem;font-weight:800;color:#F5F6FC;margin:0;">ArchMentor</h1>
+        <p style="max-width:42rem;font-size:1.15rem;line-height:1.5;color:#C9CCDA;margin:0;">Learn software architecture from Junior to Lead — SOLID, all 23 GoF design patterns, architectural styles, and cross-cutting trade-offs.</p>
+        <p style="max-width:42rem;line-height:1.6;color:#989DB8;margin:0;">Flashcards, SM-2 spaced repetition, quizzes, an adaptive mock interview, side-by-side pattern comparison, an interactive concept map, and a system-design diagram builder. 42 concepts · ~119 questions · bilingual (English / Russian) · free.</p>
+        <p style="color:#8C91AC;font-size:.9rem;margin:0;">Loading the app…</p>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
