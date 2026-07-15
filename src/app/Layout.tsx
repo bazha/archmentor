@@ -60,7 +60,7 @@ export function Layout() {
             <path d="m3.5 12 8.5 4.75L20.5 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" opacity="0.55" />
             <path d="m3.5 16.75 8.5 4.75 8.5-4.75" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" opacity="0.3" />
           </svg>
-          <span className="text-[1.05rem] font-extrabold tracking-tight text-bright">ArchMentor</span>
+          <span className="text-[1.05rem] font-bold tracking-tight text-bright">ArchMentor</span>
         </div>
 
         <nav aria-label={t('common.mainNav')} className="flex flex-none items-center gap-1 md:flex-col md:items-stretch md:gap-0.5">
@@ -101,7 +101,7 @@ export function Layout() {
             <ThemeToggle />
           </div>
         </header>
-        <main id="main" tabIndex={-1} className="flex-1 px-4 py-8 focus:outline-none md:px-7 md:py-10">
+        <main id="main" tabIndex={-1} className="flex-1 px-4 py-10 focus:outline-none md:px-8 md:py-14">
           <div className="mx-auto w-full max-w-5xl">
             <Outlet />
           </div>

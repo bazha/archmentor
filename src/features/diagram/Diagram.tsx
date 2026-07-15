@@ -37,7 +37,7 @@ function ScenarioPicker() {
   return (
     <div className="mx-auto max-w-2xl space-y-8">
       <header className="space-y-2">
-        <h1 className="text-2xl font-bold tracking-tight text-bright">{t('diagram.title')}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-bright">{t('diagram.title')}</h1>
         <p className="text-sm text-muted">{t('diagram.pickScenario')}</p>
       </header>
       {GRADE_ORDER.map((grade) => {
@@ -117,7 +117,7 @@ function ScenarioBuilder({ scenario }: { scenario: Scenario }) {
     <div className="mx-auto max-w-3xl space-y-8">
       <header className="space-y-2">
         <Link to="/diagram" className="text-sm font-medium text-accent hover:underline">← {t('diagram.title')}</Link>
-        <h1 className="text-2xl font-bold tracking-tight text-bright">{scenario.title[lang]}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-bright">{scenario.title[lang]}</h1>
         <p className="text-content [text-wrap:pretty]">{scenario.brief[lang]}</p>
       </header>
 

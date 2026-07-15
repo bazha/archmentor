@@ -26,7 +26,7 @@ export function Dashboard() {
       {/* Hero */}
       <header className="space-y-3">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-faint">{t('dashboard.eyebrow')}</p>
-        <h1 className="text-3xl font-bold tracking-tight text-bright">{t('dashboard.title')}</h1>
+        <h1 className="text-3xl font-semibold tracking-tight text-bright">{t('dashboard.title')}</h1>
       </header>
 
       {/* Daily challenge */}
@@ -88,7 +88,7 @@ export function Dashboard() {
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-accent/10 text-accent">
             <Icon name="bolt" className="h-5 w-5" />
           </span>
-          <div className="mt-4 text-3xl font-bold tracking-tight text-bright">{state.streak.current}🔥</div>
+          <div className="mt-4 text-3xl font-semibold tracking-tight text-bright">{state.streak.current}🔥</div>
           <div className="mt-2 text-sm text-muted">{t('dashboard.streak')}</div>
           <div className="mt-1 text-xs text-faint">{t('dashboard.record', { n: state.streak.longest })}</div>
         </div>
@@ -100,7 +100,7 @@ export function Dashboard() {
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-info/10 text-info">
             <Icon name="review" className="h-5 w-5" />
           </span>
-          <div className="mt-4 text-3xl font-bold tracking-tight text-bright">{dueCount}</div>
+          <div className="mt-4 text-3xl font-semibold tracking-tight text-bright">{dueCount}</div>
           <div className="mt-2 text-sm text-muted">{t('dashboard.dueToday')}</div>
           <div className="mt-1 text-xs font-medium text-accent">{t('dashboard.startReview')}</div>
         </Link>
@@ -112,7 +112,7 @@ export function Dashboard() {
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-accent/10 text-accent">
             <Icon name="quiz" className="h-5 w-5" />
           </span>
-          <div className="mt-4 text-2xl font-bold tracking-tight text-bright">{t('dashboard.quiz')}</div>
+          <div className="mt-4 text-2xl font-semibold tracking-tight text-bright">{t('dashboard.quiz')}</div>
           <div className="mt-2 text-sm text-muted">{t('dashboard.testYourself')}</div>
           <div className="mt-1 text-xs font-medium text-accent">{t('dashboard.identifyPattern')}</div>
         </Link>
@@ -124,7 +124,7 @@ export function Dashboard() {
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-accent/10 text-accent">
             <Icon name="interview" className="h-5 w-5" />
           </span>
-          <div className="mt-4 text-2xl font-bold tracking-tight text-bright">{bestInterview ? GRADE_LABEL[bestInterview] : t('nav.interview')}</div>
+          <div className="mt-4 text-2xl font-semibold tracking-tight text-bright">{bestInterview ? GRADE_LABEL[bestInterview] : t('nav.interview')}</div>
           <div className="mt-2 text-sm text-muted">{t('interview.bestLevel')}</div>
           <div className="mt-1 text-xs font-medium text-accent">{t('interview.cta')}</div>
         </Link>

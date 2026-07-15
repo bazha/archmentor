@@ -66,7 +66,7 @@ export function ConceptPage() {
           <Badge tone="category" category={c.category}>{CATEGORY_LABEL[lang][c.category]}</Badge>
           <Badge tone="grade">{GRADE_LABEL[c.grade]}</Badge>
         </div>
-        <h1 className="text-3xl font-bold tracking-tight text-bright sm:text-4xl">{c.name}</h1>
+        <h1 className="text-3xl font-semibold tracking-tight text-bright sm:text-4xl">{c.name}</h1>
         <p className="max-w-prose text-lg leading-relaxed text-muted">{c.tagline}</p>
       </header>
 

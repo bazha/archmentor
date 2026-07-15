@@ -38,7 +38,7 @@ export function Daily() {
   return (
     <div className="mx-auto max-w-2xl space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold tracking-tight text-bright">{t('daily.title')}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-bright">{t('daily.title')}</h1>
         <span className="inline-flex items-center gap-2 rounded-full border border-line bg-surface-raised px-3.5 py-1 text-sm font-bold text-bright shadow-card">
           {daily.streak}🔥 <span className="font-medium text-muted">{t('daily.streak')}</span>
         </span>

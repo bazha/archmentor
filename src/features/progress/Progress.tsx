@@ -23,7 +23,7 @@ export function Progress() {
       {/* Hero */}
       <header className="space-y-3">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-faint">{t('nav.progress')}</p>
-        <h1 className="text-3xl font-bold tracking-tight text-bright">{t('progress.title')}</h1>
+        <h1 className="text-3xl font-semibold tracking-tight text-bright">{t('progress.title')}</h1>
       </header>
 
       {/* Stats */}
@@ -32,7 +32,7 @@ export function Progress() {
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-good/10 text-good">
             <Icon name="check" className="h-5 w-5" />
           </span>
-          <div className="mt-4 text-3xl font-bold tracking-tight text-bright tabular-nums">{accuracy}%</div>
+          <div className="mt-4 text-3xl font-semibold tracking-tight text-bright tabular-nums">{accuracy}%</div>
           <div className="mt-2 text-sm text-muted">{t('progress.quizAccuracy')}</div>
           <div className="mt-1 text-xs text-faint">{t('progress.ofTotal', { correct, total })}</div>
           <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-surface-muted" aria-hidden="true">
@@ -44,7 +44,7 @@ export function Progress() {
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-accent/10 text-accent">
             <Icon name="bolt" className="h-5 w-5" />
           </span>
-          <div className="mt-4 text-3xl font-bold tracking-tight text-bright">{state.streak.current}🔥</div>
+          <div className="mt-4 text-3xl font-semibold tracking-tight text-bright">{state.streak.current}🔥</div>
           <div className="mt-2 text-sm text-muted">{t('progress.streak')}</div>
         </div>
 
@@ -52,7 +52,7 @@ export function Progress() {
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-accent/10 text-accent">
             <Icon name="layers" className="h-5 w-5" />
           </span>
-          <div className="mt-4 text-3xl font-bold tracking-tight text-bright tabular-nums">{mastered}</div>
+          <div className="mt-4 text-3xl font-semibold tracking-tight text-bright tabular-nums">{mastered}</div>
           <div className="mt-2 text-sm text-muted">{t('progress.conceptsMastered')}</div>
           <div className="mt-1 text-xs text-faint">{t('progress.outOf', { total: concepts.length })}</div>
           <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-surface-muted" aria-hidden="true">
@@ -64,7 +64,7 @@ export function Progress() {
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-accent/10 text-accent">
             <Icon name="interview" className="h-5 w-5" />
           </span>
-          <div className="mt-4 text-3xl font-bold tracking-tight text-bright">{bestInterview ? GRADE_LABEL[bestInterview] : '—'}</div>
+          <div className="mt-4 text-3xl font-semibold tracking-tight text-bright">{bestInterview ? GRADE_LABEL[bestInterview] : '—'}</div>
           <div className="mt-2 text-sm text-muted">{t('interview.bestLevel')}</div>
           <div className="mt-1 text-xs text-faint">{bestInterview ? '' : t('interview.notTaken')}</div>
         </div>
@@ -73,7 +73,7 @@ export function Progress() {
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-accent/10 text-accent">
             <Icon name="diagram" className="h-5 w-5" />
           </span>
-          <div className="mt-4 text-3xl font-bold tracking-tight text-bright tabular-nums">
+          <div className="mt-4 text-3xl font-semibold tracking-tight text-bright tabular-nums">
             {diagramProgress.done}<span className="text-base font-medium text-muted">/{diagramProgress.total}</span>
           </div>
           <div className="mt-2 text-sm text-muted">{t('progress.diagram')}</div>
