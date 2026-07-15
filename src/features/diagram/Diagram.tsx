@@ -4,6 +4,7 @@ import { scenarios, type Scenario } from '@/content/diagram';
 import { validate, isPassed } from '@/domain/diagram/validate';
 import { addNode, removeNode, addEdge, removeEdge, emptyDiagram } from '@/domain/diagram/edit';
 import type { Diagram as Dgm, ComponentType, CheckResult } from '@/domain/diagram/types';
+import { gridSlot, type XY } from '@/domain/diagram/positions';
 import { useStore } from '@/store/useStore';
 import { todayISO } from '@/lib/date';
 import { EmptyState } from '@/components/EmptyState';
@@ -14,6 +15,7 @@ import { GRADE_ORDER, GRADE_LABEL } from '@/lib/labels';
 import { ListBuilder } from './ListBuilder';
 import { Report } from './Report';
 import { useComponentName } from './useComponentName';
+import { DND_MIME } from './dnd';
 
 const CanvasBuilder = lazy(() => import('./CanvasBuilder').then((m) => ({ default: m.CanvasBuilder })));
 
@@ -86,19 +88,27 @@ function ScenarioBuilder({ scenario }: { scenario: Scenario }) {
   const completeScenario = useStore((s) => s.completeScenario);
   const name = useComponentName();
   const [diagram, setDiagram] = useState<Dgm>(emptyDiagram);
+  const [positions, setPositions] = useState<Record<string, XY>>({});
   const [counter, setCounter] = useState(0);
   const [results, setResults] = useState<CheckResult[] | null>(null);
   const [view, setView] = useState<'list' | 'canvas'>('list');
 
-  const add = (type: ComponentType) => {
-    setDiagram((d) => addNode(d, type, `${type}-${counter}`));
+  const add = (type: ComponentType, at?: XY) => {
+    const id = `${type}-${counter}`;
+    setDiagram((d) => addNode(d, type, id));
+    setPositions((p) => ({ ...p, [id]: at ?? gridSlot(counter) }));
     setCounter((c) => c + 1);
     setResults(null);
   };
-  const rmNode = (id: string) => { setDiagram((d) => removeNode(d, id)); setResults(null); };
+  const rmNode = (id: string) => {
+    setDiagram((d) => removeNode(d, id));
+    setPositions((p) => { const { [id]: _drop, ...rest } = p; return rest; });
+    setResults(null);
+  };
+  const move = (id: string, at: XY) => setPositions((p) => ({ ...p, [id]: at }));
   const connect = (from: string, to: string) => { setDiagram((d) => addEdge(d, from, to)); setResults(null); };
   const disconnect = (from: string, to: string) => { setDiagram((d) => removeEdge(d, from, to)); setResults(null); };
-  const reset = () => { setDiagram(emptyDiagram); setResults(null); };
+  const reset = () => { setDiagram(emptyDiagram); setPositions({}); setResults(null); };
 
   const submit = () => {
     const r = validate(diagram, scenario.constraints);
@@ -142,14 +152,19 @@ function ScenarioBuilder({ scenario }: { scenario: Scenario }) {
           <div className="space-y-4">
             <div className="flex flex-wrap gap-2">
               {scenario.palette.map((type) => (
-                <button key={type} type="button" onClick={() => add(type)}
-                  className="rounded-lg border border-line bg-surface px-3 py-2 text-sm font-medium text-content transition hover:border-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+                <button key={type} type="button" draggable
+                  onDragStart={(e) => e.dataTransfer.setData(DND_MIME, type)}
+                  onClick={() => add(type)}
+                  className="cursor-grab rounded-lg border border-line bg-surface px-3 py-2 text-sm font-medium text-content transition hover:border-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:cursor-grabbing">
                   + {name(type)}
                 </button>
               ))}
             </div>
             <Suspense fallback={<div className="h-[420px] animate-pulse rounded-xl bg-surface" />}>
-              <CanvasBuilder diagram={diagram} onConnect={connect} />
+              <CanvasBuilder
+                diagram={diagram} positions={positions}
+                onAdd={add} onConnect={connect} onRemoveNode={rmNode} onDisconnect={disconnect} onMove={move}
+              />
             </Suspense>
           </div>
         )}
