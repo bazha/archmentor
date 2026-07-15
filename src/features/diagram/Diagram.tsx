@@ -2,6 +2,7 @@ import { lazy, Suspense, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { scenarios, type Scenario } from '@/content/diagram';
 import { validate, isPassed } from '@/domain/diagram/validate';
+import { diffDiagrams } from '@/domain/diagram/diff';
 import { addNode, removeNode, addEdge, removeEdge, emptyDiagram } from '@/domain/diagram/edit';
 import type { Diagram as Dgm, ComponentType, CheckResult } from '@/domain/diagram/types';
 import { gridSlot, type XY } from '@/domain/diagram/positions';
@@ -18,6 +19,7 @@ import { useComponentName } from './useComponentName';
 import { DND_MIME } from './dnd';
 
 const CanvasBuilder = lazy(() => import('./CanvasBuilder').then((m) => ({ default: m.CanvasBuilder })));
+const DiffCanvas = lazy(() => import('./DiffCanvas').then((m) => ({ default: m.DiffCanvas })));
 
 export function Diagram() {
   const { scenarioId } = useParams();
@@ -118,10 +120,15 @@ function ScenarioBuilder({ scenario }: { scenario: Scenario }) {
 
   const passed = results != null && isPassed(results);
 
-  const referenceLabel = (id: string): string => {
-    const t2 = scenario.reference.nodes.find((nd) => nd.id === id)?.type;
-    return t2 ? name(t2) : id;
-  };
+  const theme = useStore((s) => s.settings.theme);
+  const diff = useMemo(
+    () => (results ? diffDiagrams(diagram, scenario.reference) : null),
+    [results, diagram, scenario.reference],
+  );
+  const refPositions = useMemo(
+    () => Object.fromEntries(scenario.reference.nodes.map((nd, i) => [nd.id, gridSlot(i)])),
+    [scenario.reference],
+  );
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
@@ -188,14 +195,30 @@ function ScenarioBuilder({ scenario }: { scenario: Scenario }) {
             {passed ? t('diagram.passed') : t('diagram.hasIssues')}
           </h2>
           <Report results={results} />
-          <div className="border-t border-line pt-4">
-            <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted">{t('diagram.reference')}</h3>
-            <ul className="space-y-1.5 text-sm text-content">
-              {scenario.reference.edges.map((e, i) => (
-                <li key={i} className="text-muted">{referenceLabel(e.from)} → {referenceLabel(e.to)}</li>
-              ))}
-            </ul>
-          </div>
+          {diff && (
+            <div className="space-y-3 border-t border-line pt-4">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                <h3 className="text-sm font-bold uppercase tracking-wide text-muted">{t('diagram.comparison')}</h3>
+                <span className="flex items-center gap-1.5 text-xs text-muted"><span className="h-2 w-2 rounded-full bg-good" />{t('diagram.diffMatch')}</span>
+                <span className="flex items-center gap-1.5 text-xs text-muted"><span className="h-2 w-2 rounded-full bg-info" />{t('diagram.diffExtra')}</span>
+                <span className="flex items-center gap-1.5 text-xs text-muted"><span className="h-2 w-2 rounded-full border border-dashed border-line-strong" />{t('diagram.diffMissing')}</span>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <figure className="space-y-1.5">
+                  <figcaption className="text-xs font-medium text-muted">{t('diagram.yourDiagram')}</figcaption>
+                  <Suspense fallback={<div className="h-[300px] animate-pulse rounded-xl bg-surface" />}>
+                    <DiffCanvas diagram={diagram} positions={positions} nodeStatus={diff.userNodes} edgeStatus={diff.userEdges} colorMode={theme} />
+                  </Suspense>
+                </figure>
+                <figure className="space-y-1.5">
+                  <figcaption className="text-xs font-medium text-muted">{t('diagram.reference')}</figcaption>
+                  <Suspense fallback={<div className="h-[300px] animate-pulse rounded-xl bg-surface" />}>
+                    <DiffCanvas diagram={scenario.reference} positions={refPositions} nodeStatus={diff.refNodes} edgeStatus={diff.refEdges} colorMode={theme} />
+                  </Suspense>
+                </figure>
+              </div>
+            </div>
+          )}
         </section>
       )}
     </div>
