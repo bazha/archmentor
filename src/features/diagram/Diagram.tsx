@@ -2,6 +2,7 @@ import { lazy, Suspense, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { scenarios, type Scenario } from '@/content/diagram';
 import { validate, isPassed } from '@/domain/diagram/validate';
+import { diffDiagrams } from '@/domain/diagram/diff';
 import { addNode, removeNode, addEdge, removeEdge, emptyDiagram } from '@/domain/diagram/edit';
 import type { Diagram as Dgm, ComponentType, CheckResult } from '@/domain/diagram/types';
 import { gridSlot, type XY } from '@/domain/diagram/positions';
@@ -16,8 +17,10 @@ import { ListBuilder } from './ListBuilder';
 import { Report } from './Report';
 import { useComponentName } from './useComponentName';
 import { DND_MIME } from './dnd';
+import type { Note } from './CanvasBuilder';
 
 const CanvasBuilder = lazy(() => import('./CanvasBuilder').then((m) => ({ default: m.CanvasBuilder })));
+const DiffCanvas = lazy(() => import('./DiffCanvas').then((m) => ({ default: m.DiffCanvas })));
 
 export function Diagram() {
   const { scenarioId } = useParams();
@@ -92,6 +95,17 @@ function ScenarioBuilder({ scenario }: { scenario: Scenario }) {
   const [counter, setCounter] = useState(0);
   const [results, setResults] = useState<CheckResult[] | null>(null);
   const [view, setView] = useState<'list' | 'canvas'>('list');
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [noteCounter, setNoteCounter] = useState(0);
+  const addNote = () => {
+    const id = `note-${noteCounter}`;
+    const off = (noteCounter % 5) * 24;
+    setNotes((n) => [...n, { id, text: '', x: 40 + off, y: 40 + off }]);
+    setNoteCounter((c) => c + 1);
+  };
+  const editNote = (id: string, text: string) => setNotes((n) => n.map((x) => (x.id === id ? { ...x, text } : x)));
+  const moveNote = (id: string, at: XY) => setNotes((n) => n.map((x) => (x.id === id ? { ...x, x: at.x, y: at.y } : x)));
+  const removeNote = (id: string) => setNotes((n) => n.filter((x) => x.id !== id));
 
   const add = (type: ComponentType, at?: XY) => {
     const id = `${type}-${counter}`;
@@ -108,7 +122,7 @@ function ScenarioBuilder({ scenario }: { scenario: Scenario }) {
   const move = (id: string, at: XY) => setPositions((p) => ({ ...p, [id]: at }));
   const connect = (from: string, to: string) => { setDiagram((d) => addEdge(d, from, to)); setResults(null); };
   const disconnect = (from: string, to: string) => { setDiagram((d) => removeEdge(d, from, to)); setResults(null); };
-  const reset = () => { setDiagram(emptyDiagram); setPositions({}); setResults(null); };
+  const reset = () => { setDiagram(emptyDiagram); setPositions({}); setNotes([]); setResults(null); };
 
   const submit = () => {
     const r = validate(diagram, scenario.constraints);
@@ -118,10 +132,15 @@ function ScenarioBuilder({ scenario }: { scenario: Scenario }) {
 
   const passed = results != null && isPassed(results);
 
-  const referenceLabel = (id: string): string => {
-    const t2 = scenario.reference.nodes.find((nd) => nd.id === id)?.type;
-    return t2 ? name(t2) : id;
-  };
+  const theme = useStore((s) => s.settings.theme);
+  const diff = useMemo(
+    () => (results ? diffDiagrams(diagram, scenario.reference) : null),
+    [results, diagram, scenario.reference],
+  );
+  const refPositions = useMemo(
+    () => Object.fromEntries(scenario.reference.nodes.map((nd, i) => [nd.id, gridSlot(i)])),
+    [scenario.reference],
+  );
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
@@ -159,11 +178,16 @@ function ScenarioBuilder({ scenario }: { scenario: Scenario }) {
                   + {name(type)}
                 </button>
               ))}
+              <button type="button" onClick={addNote}
+                className="rounded-lg border border-dashed border-line px-3 py-2 text-sm font-medium text-muted transition hover:border-line-strong hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+                {t('diagram.addNote')}
+              </button>
             </div>
             <Suspense fallback={<div className="h-[420px] animate-pulse rounded-xl bg-surface" />}>
               <CanvasBuilder
-                diagram={diagram} positions={positions}
+                diagram={diagram} positions={positions} notes={notes}
                 onAdd={add} onConnect={connect} onRemoveNode={rmNode} onDisconnect={disconnect} onMove={move}
+                onEditNote={editNote} onMoveNote={moveNote} onRemoveNote={removeNote}
               />
             </Suspense>
           </div>
@@ -188,14 +212,30 @@ function ScenarioBuilder({ scenario }: { scenario: Scenario }) {
             {passed ? t('diagram.passed') : t('diagram.hasIssues')}
           </h2>
           <Report results={results} />
-          <div className="border-t border-line pt-4">
-            <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted">{t('diagram.reference')}</h3>
-            <ul className="space-y-1.5 text-sm text-content">
-              {scenario.reference.edges.map((e, i) => (
-                <li key={i} className="text-muted">{referenceLabel(e.from)} → {referenceLabel(e.to)}</li>
-              ))}
-            </ul>
-          </div>
+          {diff && (
+            <div className="space-y-3 border-t border-line pt-4">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                <h3 className="text-sm font-bold uppercase tracking-wide text-muted">{t('diagram.comparison')}</h3>
+                <span className="flex items-center gap-1.5 text-xs text-muted"><span className="h-2 w-2 rounded-full bg-good" />{t('diagram.diffMatch')}</span>
+                <span className="flex items-center gap-1.5 text-xs text-muted"><span className="h-2 w-2 rounded-full bg-info" />{t('diagram.diffExtra')}</span>
+                <span className="flex items-center gap-1.5 text-xs text-muted"><span className="h-2 w-2 rounded-full border border-dashed border-line-strong" />{t('diagram.diffMissing')}</span>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <figure className="space-y-1.5">
+                  <figcaption className="text-xs font-medium text-muted">{t('diagram.yourDiagram')}</figcaption>
+                  <Suspense fallback={<div className="h-[300px] animate-pulse rounded-xl bg-surface" />}>
+                    <DiffCanvas diagram={diagram} positions={positions} nodeStatus={diff.userNodes} edgeStatus={diff.userEdges} colorMode={theme} />
+                  </Suspense>
+                </figure>
+                <figure className="space-y-1.5">
+                  <figcaption className="text-xs font-medium text-muted">{t('diagram.reference')}</figcaption>
+                  <Suspense fallback={<div className="h-[300px] animate-pulse rounded-xl bg-surface" />}>
+                    <DiffCanvas diagram={scenario.reference} positions={refPositions} nodeStatus={diff.refNodes} edgeStatus={diff.refEdges} colorMode={theme} />
+                  </Suspense>
+                </figure>
+              </div>
+            </div>
+          )}
         </section>
       )}
     </div>
