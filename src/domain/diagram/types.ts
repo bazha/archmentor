@@ -1,6 +1,6 @@
 export const COMPONENT_TYPES = [
   'client', 'load-balancer', 'api-server', 'cache', 'sql-db', 'nosql-db',
-  'message-queue', 'cdn', 'object-store', 'rate-limiter',
+  'message-queue', 'cdn', 'object-store', 'rate-limiter', 'worker',
 ] as const;
 export type ComponentType = (typeof COMPONENT_TYPES)[number];
 
