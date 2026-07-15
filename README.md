@@ -53,6 +53,6 @@ GitHub Pages only honors one at the host root, which this project subpath doesn'
 
 ## Status
 
-Feature-complete and deployed. Eleven sidebar modes plus a daily challenge, fully bilingual (RU/EN) with light/dark themes, WCAG AA-guarded accessibility (skip link, visible focus rings, ARIA, `prefers-reduced-motion`, a contrast test), and 198 passing tests.
+Feature-complete and deployed. Eleven sidebar modes plus a daily challenge, fully bilingual (RU/EN) with light/dark themes, WCAG AA-guarded accessibility (skip link, visible focus rings, ARIA, `prefers-reduced-motion`, a contrast test), and 214 passing tests.
 
 Design and implementation docs live in `docs/superpowers/specs/` and `docs/superpowers/plans/`.
