@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { lazy, Suspense, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { scenarios, type Scenario } from '@/content/diagram';
 import { validate, isPassed } from '@/domain/diagram/validate';
@@ -12,6 +12,8 @@ import { useT } from '@/i18n/useT';
 import { ListBuilder } from './ListBuilder';
 import { Report } from './Report';
 import { useComponentName } from './useComponentName';
+
+const CanvasBuilder = lazy(() => import('./CanvasBuilder').then((m) => ({ default: m.CanvasBuilder })));
 
 export function Diagram() {
   const { scenarioId } = useParams();
@@ -65,6 +67,7 @@ function ScenarioBuilder({ scenario }: { scenario: Scenario }) {
   const [diagram, setDiagram] = useState<Dgm>(emptyDiagram);
   const [counter, setCounter] = useState(0);
   const [results, setResults] = useState<CheckResult[] | null>(null);
+  const [view, setView] = useState<'list' | 'canvas'>('list');
 
   const add = (type: ComponentType) => {
     setDiagram((d) => addNode(d, type, `${type}-${counter}`));
@@ -97,11 +100,38 @@ function ScenarioBuilder({ scenario }: { scenario: Scenario }) {
         <p className="text-content [text-wrap:pretty]">{scenario.brief[lang]}</p>
       </header>
 
+      <div className="flex gap-2" role="group" aria-label={t('diagram.title')}>
+        <button type="button" onClick={() => setView('list')}
+          className={`rounded-lg px-3 py-1.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${view === 'list' ? 'bg-accent/10 text-accent' : 'text-muted hover:text-content'}`}>
+          {t('diagram.viewList')}
+        </button>
+        <button type="button" onClick={() => setView('canvas')}
+          className={`rounded-lg px-3 py-1.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${view === 'canvas' ? 'bg-accent/10 text-accent' : 'text-muted hover:text-content'}`}>
+          {t('diagram.viewCanvas')}
+        </button>
+      </div>
+
       <div className="rounded-2xl border border-line bg-surface-raised p-6 shadow-card">
-        <ListBuilder
-          diagram={diagram} palette={scenario.palette}
-          onAdd={add} onRemoveNode={rmNode} onConnect={connect} onDisconnect={disconnect}
-        />
+        {view === 'list' ? (
+          <ListBuilder
+            diagram={diagram} palette={scenario.palette}
+            onAdd={add} onRemoveNode={rmNode} onConnect={connect} onDisconnect={disconnect}
+          />
+        ) : (
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              {scenario.palette.map((type) => (
+                <button key={type} type="button" onClick={() => add(type)}
+                  className="rounded-lg border border-line bg-surface px-3 py-2 text-sm font-medium text-content transition hover:border-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+                  + {name(type)}
+                </button>
+              ))}
+            </div>
+            <Suspense fallback={<div className="h-[420px] animate-pulse rounded-xl bg-surface" />}>
+              <CanvasBuilder diagram={diagram} onConnect={connect} />
+            </Suspense>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-3">
