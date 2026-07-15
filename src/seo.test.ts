@@ -1,7 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
-
-const html = readFileSync('index.html', 'utf8');
+import html from '../index.html?raw';
 
 describe('SEO metadata (index.html)', () => {
   it('declares English as the document language', () => {
