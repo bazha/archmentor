@@ -70,6 +70,9 @@ describe('diagram content', () => {
         }
       }
     }
-    expect(withExplain).toBeGreaterThan(0); // url-shortener slice populated in Task 1
+    expect(withExplain).toBeGreaterThanOrEqual(12); // key constraints across all 8 scenarios
+
+    const scenariosWithExplain = scenarios.filter((sc) => sc.constraints.some((c) => 'explain' in c && c.explain));
+    expect(scenariosWithExplain.length).toBeGreaterThanOrEqual(7);
   });
 });
