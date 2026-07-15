@@ -11,6 +11,8 @@ import { useT } from '@/i18n/useT';
 import { useComponentName } from './useComponentName';
 import { DND_MIME } from './dnd';
 
+export interface Note { id: string; text: string; x: number; y: number }
+
 function ComponentNode({ data }: NodeProps) {
   const d = data as { label: string; removeLabel: string; onDelete: () => void };
   return (
@@ -30,19 +32,49 @@ function ComponentNode({ data }: NodeProps) {
   );
 }
 
-const nodeTypes = { component: ComponentNode };
+function NoteNode({ data }: NodeProps) {
+  const d = data as { text: string; placeholder: string; removeLabel: string; onEdit: (t: string) => void; onDelete: () => void };
+  return (
+    <div className="relative rounded-md border border-accent/30 bg-accent/10 p-2 shadow-card" style={{ width: 160 }}>
+      <textarea
+        value={d.text}
+        onChange={(e) => d.onEdit(e.target.value)}
+        placeholder={d.placeholder}
+        className="nodrag h-16 w-full resize-none bg-transparent text-xs text-content outline-none placeholder:text-faint"
+      />
+      <button
+        type="button"
+        onClick={d.onDelete}
+        aria-label={d.removeLabel}
+        className="nodrag absolute -right-2 -top-2 grid h-4 w-4 place-items-center rounded-full border border-line bg-surface-raised text-[0.7rem] leading-none text-faint transition hover:border-bad hover:text-bad focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      >
+        ×
+      </button>
+    </div>
+  );
+}
+
+const nodeTypes = { component: ComponentNode, note: NoteNode };
 
 interface Props {
   diagram: Diagram;
   positions: Record<string, XY>;
+  notes: Note[];
   onAdd: (type: ComponentType, at: XY) => void;
   onConnect: (from: string, to: string) => void;
   onRemoveNode: (id: string) => void;
   onDisconnect: (from: string, to: string) => void;
   onMove: (id: string, at: XY) => void;
+  onEditNote: (id: string, text: string) => void;
+  onMoveNote: (id: string, at: XY) => void;
+  onRemoveNote: (id: string) => void;
 }
 
-export function CanvasBuilder({ diagram, positions, onAdd, onConnect, onRemoveNode, onDisconnect, onMove }: Props) {
+export function CanvasBuilder({
+  diagram, positions, notes,
+  onAdd, onConnect, onRemoveNode, onDisconnect, onMove,
+  onEditNote, onMoveNote, onRemoveNote,
+}: Props) {
   const name = useComponentName();
   const t = useT();
   const theme = useStore((s) => s.settings.theme);
@@ -54,10 +86,9 @@ export function CanvasBuilder({ diagram, positions, onAdd, onConnect, onRemoveNo
   const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
   const [selectedEdgeIds, setSelectedEdgeIds] = useState<Set<string>>(new Set());
 
-  const nodes: Node[] = useMemo(
-    () => diagram.nodes.map((nd) => ({
-      id: nd.id,
-      type: 'component',
+  const nodes: Node[] = useMemo(() => {
+    const componentNodes: Node[] = diagram.nodes.map((nd) => ({
+      id: nd.id, type: 'component',
       position: positions[nd.id] ?? { x: 0, y: 0 },
       selected: selectedNodeIds.has(nd.id),
       data: {
@@ -65,9 +96,21 @@ export function CanvasBuilder({ diagram, positions, onAdd, onConnect, onRemoveNo
         removeLabel: `${t('diagram.remove')}: ${name(nd.type)}`,
         onDelete: () => onRemoveNode(nd.id),
       },
-    })),
-    [diagram.nodes, positions, name, t, onRemoveNode, selectedNodeIds],
-  );
+    }));
+    const noteNodes: Node[] = notes.map((nt) => ({
+      id: nt.id, type: 'note',
+      position: { x: nt.x, y: nt.y },
+      selected: selectedNodeIds.has(nt.id),
+      data: {
+        text: nt.text,
+        placeholder: t('diagram.notePlaceholder'),
+        removeLabel: t('diagram.removeNote'),
+        onEdit: (text: string) => onEditNote(nt.id, text),
+        onDelete: () => onRemoveNote(nt.id),
+      },
+    }));
+    return [...componentNodes, ...noteNodes];
+  }, [diagram.nodes, positions, notes, name, t, onRemoveNode, onEditNote, onRemoveNote, selectedNodeIds]);
 
   const edges: Edge[] = useMemo(
     () => diagram.edges.map((e) => {
@@ -79,7 +122,10 @@ export function CanvasBuilder({ diagram, positions, onAdd, onConnect, onRemoveNo
 
   const onNodesChange = useCallback((changes: NodeChange[]) => {
     for (const c of changes) {
-      if (c.type === 'position' && c.position) onMove(c.id, c.position);
+      if (c.type === 'position' && c.position) {
+        if (c.id.startsWith('note-')) onMoveNote(c.id, c.position);
+        else onMove(c.id, c.position);
+      }
       if (c.type === 'select') {
         setSelectedNodeIds((prev) => {
           const next = new Set(prev);
@@ -96,7 +142,7 @@ export function CanvasBuilder({ diagram, positions, onAdd, onConnect, onRemoveNo
         });
       }
     }
-  }, [onMove]);
+  }, [onMove, onMoveNote]);
 
   const onEdgesChange = useCallback((changes: EdgeChange[]) => {
     for (const c of changes) {
@@ -140,7 +186,7 @@ export function CanvasBuilder({ diagram, positions, onAdd, onConnect, onRemoveNo
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={handleConnect}
-          onNodesDelete={(ns) => ns.forEach((n) => onRemoveNode(n.id))}
+          onNodesDelete={(ns) => ns.forEach((n) => (n.id.startsWith('note-') ? onRemoveNote(n.id) : onRemoveNode(n.id)))}
           onEdgesDelete={(es) => es.forEach((e) => onDisconnect(e.source, e.target))}
           onInit={setRf}
           deleteKeyCode={['Delete', 'Backspace']}
