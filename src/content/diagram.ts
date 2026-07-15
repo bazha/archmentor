@@ -5,11 +5,11 @@ import { COMPONENT_TYPES, type ComponentType } from '@/domain/diagram/types';
 const ComponentTypeSchema = z.enum(COMPONENT_TYPES);
 
 const ConstraintSchema = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('required-node'), node: ComponentTypeSchema }),
-  z.object({ kind: z.literal('any-of'), nodes: z.array(ComponentTypeSchema).min(2) }),
-  z.object({ kind: z.literal('forbidden-node'), node: ComponentTypeSchema, severity: z.enum(['warn', 'fail']) }),
-  z.object({ kind: z.literal('required-edge'), from: ComponentTypeSchema, to: ComponentTypeSchema }),
-  z.object({ kind: z.literal('between'), middle: ComponentTypeSchema, from: ComponentTypeSchema, to: ComponentTypeSchema }),
+  z.object({ kind: z.literal('required-node'), node: ComponentTypeSchema, explain: LocalizedSchema.optional() }),
+  z.object({ kind: z.literal('any-of'), nodes: z.array(ComponentTypeSchema).min(2), explain: LocalizedSchema.optional() }),
+  z.object({ kind: z.literal('forbidden-node'), node: ComponentTypeSchema, severity: z.enum(['warn', 'fail']), explain: LocalizedSchema.optional() }),
+  z.object({ kind: z.literal('required-edge'), from: ComponentTypeSchema, to: ComponentTypeSchema, explain: LocalizedSchema.optional() }),
+  z.object({ kind: z.literal('between'), middle: ComponentTypeSchema, from: ComponentTypeSchema, to: ComponentTypeSchema, explain: LocalizedSchema.optional() }),
 ]);
 
 const DiagramNodeSchema = z.object({ id: z.string().min(1), type: ComponentTypeSchema });
@@ -58,7 +58,8 @@ export const scenarios: Scenario[] = [
     constraints: [
       { kind: 'required-node', node: 'client' },
       { kind: 'required-node', node: 'api-server' },
-      { kind: 'any-of', nodes: ['sql-db', 'nosql-db'] },
+      { kind: 'any-of', nodes: ['sql-db', 'nosql-db'],
+        explain: { ru: 'Постам и комментариям нужно постоянное хранилище — SQL или NoSQL.', en: 'Posts and comments need durable storage — SQL or NoSQL.' } },
     ],
     reference: {
       nodes: [n('client'), n('load-balancer'), n('api-server'), n('sql-db')],
@@ -81,9 +82,12 @@ export const scenarios: Scenario[] = [
     constraints: [
       { kind: 'required-node', node: 'client' },
       { kind: 'required-node', node: 'api-server' },
-      { kind: 'any-of', nodes: ['sql-db', 'nosql-db'] },
-      { kind: 'required-edge', from: 'api-server', to: 'cache' },
-      { kind: 'forbidden-node', node: 'message-queue', severity: 'warn' },
+      { kind: 'any-of', nodes: ['sql-db', 'nosql-db'],
+        explain: { ru: 'Короткие коды нужно где-то хранить постоянно — SQL или NoSQL.', en: 'Short codes need durable storage — SQL or NoSQL.' } },
+      { kind: 'required-edge', from: 'api-server', to: 'cache',
+        explain: { ru: 'Чтение >> запись: кэш перед БД держит latency < 50 мс на популярных ссылках.', en: 'Read-heavy: a cache in front of the DB keeps latency < 50ms on hot links.' } },
+      { kind: 'forbidden-node', node: 'message-queue', severity: 'warn',
+        explain: { ru: 'Редирект синхронный и простой — очередь сообщений тут избыточна.', en: 'A redirect is synchronous and simple — a message queue is overkill here.' } },
     ],
     reference: {
       nodes: [n('client'), n('load-balancer'), n('api-server'), n('cache'), n('sql-db')],
@@ -109,8 +113,10 @@ export const scenarios: Scenario[] = [
       { kind: 'required-node', node: 'client' },
       { kind: 'required-node', node: 'rate-limiter' },
       { kind: 'required-node', node: 'api-server' },
-      { kind: 'between', middle: 'rate-limiter', from: 'client', to: 'api-server' },
-      { kind: 'required-edge', from: 'rate-limiter', to: 'cache' },
+      { kind: 'between', middle: 'rate-limiter', from: 'client', to: 'api-server',
+        explain: { ru: 'Rate limiter стоит ПЕРЕД API, чтобы отсекать лишние запросы до бизнес-логики.', en: 'The rate limiter sits BEFORE the API to reject excess requests before business logic.' } },
+      { kind: 'required-edge', from: 'rate-limiter', to: 'cache',
+        explain: { ru: 'Счётчики лимитов в общем кэше (Redis) переживают рестарт инстанса и общие для всех нод.', en: 'Limit counters in a shared cache (Redis) survive instance restarts and are shared across nodes.' } },
     ],
     reference: {
       nodes: [n('client'), n('rate-limiter'), n('api-server'), n('cache'), n('sql-db')],
@@ -134,9 +140,11 @@ export const scenarios: Scenario[] = [
     constraints: [
       { kind: 'required-node', node: 'client' },
       { kind: 'required-node', node: 'api-server' },
-      { kind: 'required-node', node: 'object-store' },
+      { kind: 'required-node', node: 'object-store',
+        explain: { ru: 'Большие бинарники хранят в объектном хранилище, а не в БД.', en: 'Large binaries belong in object storage, not a database.' } },
       { kind: 'required-edge', from: 'api-server', to: 'object-store' },
-      { kind: 'required-edge', from: 'client', to: 'cdn' },
+      { kind: 'required-edge', from: 'client', to: 'cdn',
+        explain: { ru: 'Отдача файлов через CDN ближе к пользователю и разгружает origin.', en: 'Serving files via a CDN is closer to users and offloads the origin.' } },
     ],
     reference: {
       nodes: [n('client'), n('load-balancer'), n('api-server'), n('object-store'), n('cdn'), n('sql-db')],
@@ -164,8 +172,10 @@ export const scenarios: Scenario[] = [
       { kind: 'required-node', node: 'client' },
       { kind: 'required-node', node: 'api-server' },
       { kind: 'any-of', nodes: ['sql-db', 'nosql-db'] },
-      { kind: 'required-edge', from: 'api-server', to: 'cache' },
-      { kind: 'required-edge', from: 'client', to: 'cdn' },
+      { kind: 'required-edge', from: 'api-server', to: 'cache',
+        explain: { ru: 'Лента очень read-heavy — кэш горячих лент снижает нагрузку на БД.', en: 'A feed is very read-heavy — caching hot feeds cuts DB load.' } },
+      { kind: 'required-edge', from: 'client', to: 'cdn',
+        explain: { ru: 'Картинки и медиа отдаём через CDN для низкой latency.', en: 'Serve images and media via a CDN for low latency.' } },
     ],
     reference: {
       nodes: [n('client'), n('load-balancer'), n('api-server'), n('cache'), n('nosql-db'), n('cdn'), n('object-store')],
@@ -193,8 +203,10 @@ export const scenarios: Scenario[] = [
       { kind: 'required-node', node: 'api-server' },
       { kind: 'required-node', node: 'message-queue' },
       { kind: 'any-of', nodes: ['nosql-db', 'sql-db'] },
-      { kind: 'required-edge', from: 'api-server', to: 'message-queue' },
-      { kind: 'required-edge', from: 'api-server', to: 'cache' },
+      { kind: 'required-edge', from: 'api-server', to: 'message-queue',
+        explain: { ru: 'Очередь развязывает отправку и доставку — сообщения не теряются при пиках и офлайн-получателях.', en: 'A queue decouples send from delivery — messages survive spikes and offline recipients.' } },
+      { kind: 'required-edge', from: 'api-server', to: 'cache',
+        explain: { ru: 'Presence (кто онлайн) держат в кэше — быстрое чтение эфемерных данных.', en: 'Presence (who is online) lives in a cache — fast reads of ephemeral data.' } },
     ],
     reference: {
       nodes: [n('client'), n('load-balancer'), n('api-server'), n('message-queue'), n('cache'), n('nosql-db')],
@@ -221,7 +233,8 @@ export const scenarios: Scenario[] = [
       { kind: 'required-node', node: 'api-server' },
       { kind: 'required-node', node: 'message-queue' },
       { kind: 'required-node', node: 'worker' },
-      { kind: 'between', middle: 'message-queue', from: 'api-server', to: 'worker' },
+      { kind: 'between', middle: 'message-queue', from: 'api-server', to: 'worker',
+        explain: { ru: 'Очередь между API и воркерами даёт фан-аут: отправители не блокируются доставкой, воркеры масштабируются отдельно.', en: 'A queue between the API and workers enables fan-out: senders do not block on delivery and workers scale independently.' } },
       { kind: 'any-of', nodes: ['sql-db', 'nosql-db'] },
     ],
     reference: {
@@ -249,8 +262,10 @@ export const scenarios: Scenario[] = [
       { kind: 'required-node', node: 'object-store' },
       { kind: 'required-node', node: 'message-queue' },
       { kind: 'required-node', node: 'worker' },
-      { kind: 'between', middle: 'message-queue', from: 'api-server', to: 'worker' },
-      { kind: 'required-edge', from: 'client', to: 'cdn' },
+      { kind: 'between', middle: 'message-queue', from: 'api-server', to: 'worker',
+        explain: { ru: 'Транскодинг тяжёлый и асинхронный — очередь между загрузкой и воркерами-транскодерами.', en: 'Transcoding is heavy and async — a queue sits between upload and transcoder workers.' } },
+      { kind: 'required-edge', from: 'client', to: 'cdn',
+        explain: { ru: 'Глобальная отдача видео с низкой задержкой немыслима без CDN.', en: 'Low-latency global video delivery is unthinkable without a CDN.' } },
     ],
     reference: {
       nodes: [n('client'), n('load-balancer'), n('api-server'), n('object-store'), n('message-queue'), n('worker'), n('cdn'), n('sql-db')],
