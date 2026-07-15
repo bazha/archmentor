@@ -3,71 +3,72 @@
 @tailwind utilities;
 
 /* ============================================================
-   ArchMentor — clean modern design tokens
-   Onest (UI) + JetBrains Mono (code). Warm amber accent.
+   ArchMentor — n8n-inspired "workflow canvas" theme
+   Onest (UI) + JetBrains Mono (code). Coral accent (#EA4B71),
+   navy-black canvas, faint node-editor dot grid as signature.
    Space-separated RGB so Tailwind `rgb(var(--x) / <alpha>)` works.
-   :root = light (clean near-white) · .dark = cool near-black
+   :root = light (near-white) · .dark = navy near-black
    ============================================================ */
 
 :root {
-  --surface: 252 251 249;        /* #FCFBF9 warm paper page   */
-  --surface-raised: 255 255 255; /* #FFFFFF floating cards    */
-  --surface-muted: 245 244 241;  /* #F5F4F1 warm inset bg     */
-  --surface-code: 247 246 243;   /* #F7F6F3 code panel        */
-  --content: 42 44 52;           /* #2A2C34 softer body ink   */
-  --bright: 27 29 38;            /* #1B1D26 softer headings   */
-  --muted: 92 95 107;            /* #5C5F6B secondary text    */
-  --faint: 111 113 120;          /* #6F7178 de-emphasised (AA) */
-  --line: 237 236 232;           /* #EDECE8 whisper hairline  */
-  --line-strong: 225 223 218;    /* #E1DFDA stronger border   */
-  --accent: 154 83 18;           /* #9A5312 burnt amber       */
-  --accent-soft: 154 83 18;      /* legible accent-as-text    */
-  --accent-strong: 126 67 13;    /* #7E430D darker hover      */
-  --on-accent: 255 255 255;      /* text on accent fill       */
-  --good: 58 102 28;             /* #3A661C                   */
-  --bad: 192 57 43;              /* #C0392B                   */
-  --info: 29 107 97;             /* #1D6B61                   */
-  --cat-solid: 154 83 18;
+  --surface: 252 252 253;        /* #FCFCFD n8n near-white     */
+  --surface-raised: 255 255 255; /* #FFFFFF floating cards     */
+  --surface-muted: 244 245 249;  /* #F4F5F9 inset bg           */
+  --surface-code: 246 247 250;   /* #F6F7FA code panel         */
+  --content: 45 48 66;           /* #2D3042 navy-grey body ink */
+  --bright: 16 19 48;            /* #101330 n8n ink headings   */
+  --muted: 90 94 116;            /* #5A5E74 secondary text     */
+  --faint: 104 108 128;          /* #686C80 de-emphasised (AA) */
+  --line: 233 234 240;           /* #E9EAF0 hairline border    */
+  --line-strong: 219 221 230;    /* #DBDDE6 stronger border    */
+  --accent: 196 42 87;           /* #C42A57 deep coral (fills, AA w/ white) */
+  --accent-soft: 191 40 78;      /* #BF284E deep coral as text */
+  --accent-strong: 168 30 69;    /* #A81E45 darker hover       */
+  --on-accent: 255 255 255;      /* white text on coral fill   */
+  --good: 58 102 28;             /* #3A661C                    */
+  --bad: 192 57 43;              /* #C0392B                    */
+  --info: 29 107 97;             /* #1D6B61                    */
+  --cat-solid: 196 42 87;        /* follows coral accent       */
   --cat-creational: 29 107 97;
   --cat-structural: 176 58 110;
   --cat-behavioral: 58 102 28;
   --cat-architecture: 91 62 174;
   --cat-tradeoff: 46 90 140;
-  /* Soft, warm-tinted, lifted shadows — cards float rather than sit boxed. */
-  --shadow-sm: 0 1px 2px rgb(66 54 38 / .03), 0 10px 26px -10px rgb(66 54 38 / .10);
-  --shadow-md: 0 4px 14px rgb(66 54 38 / .05), 0 30px 64px -26px rgb(66 54 38 / .18);
-  /* Barely-there amber daylight from the top of the page. */
-  --app-glow: radial-gradient(120% 60% at 50% -12%, rgb(255 180 84 / 0.06), transparent 60%);
+  --dot: 16 19 48;               /* canvas dot-grid colour     */
+  --shadow-sm: 0 1px 2px rgb(16 19 48 / .04), 0 10px 26px -10px rgb(16 19 48 / .10);
+  --shadow-md: 0 4px 14px rgb(16 19 48 / .06), 0 30px 64px -26px rgb(16 19 48 / .18);
+  --app-glow: radial-gradient(120% 60% at 50% -12%, rgb(234 75 113 / 0.06), transparent 60%);
   color-scheme: light;
 }
 
 .dark {
-  --surface: 13 14 18;           /* #0D0E12 cool near-black   */
-  --surface-raised: 23 25 34;    /* #171922 cards             */
-  --surface-muted: 30 33 44;     /* #1E212C hover / inset bg  */
-  --surface-code: 15 16 21;      /* #0F1015 code panel        */
-  --content: 233 234 240;        /* #E9EAF0 body text         */
-  --bright: 247 248 251;         /* #F7F8FB headings          */
-  --muted: 156 160 173;          /* #9CA0AD secondary text    */
-  --faint: 134 138 156;          /* #868A9C de-emphasised (AA) */
-  --line: 36 39 52;              /* #242734 hairline border   */
-  --line-strong: 49 53 69;       /* #313545 stronger border   */
-  --accent: 255 180 84;          /* #FFB454 amber             */
-  --accent-soft: 255 180 84;     /* legible accent-as-text    */
-  --accent-strong: 255 201 122;  /* #FFC97A brighter hover    */
-  --on-accent: 13 14 18;         /* dark text on amber fill   */
-  --good: 143 201 107;           /* #8FC96B                   */
-  --bad: 242 114 94;             /* #F2725E                   */
-  --info: 111 211 201;           /* #6FD3C9                   */
-  --cat-solid: 255 180 84;
+  --surface: 13 15 33;           /* #0D0F21 deep navy-black    */
+  --surface-raised: 21 24 51;    /* #151833 navy cards         */
+  --surface-muted: 30 34 68;     /* #1E2244 inset bg           */
+  --surface-code: 10 12 26;      /* #0A0C1A code panel         */
+  --content: 223 226 240;        /* #DFE2F0 cool light body    */
+  --bright: 245 246 252;         /* #F5F6FC headings           */
+  --muted: 152 157 184;          /* #989DB8 secondary text     */
+  --faint: 140 145 172;          /* #8C91AC de-emphasised (AA) */
+  --line: 40 44 82;              /* #282C52 navy border        */
+  --line-strong: 55 60 104;      /* #373C68 stronger border    */
+  --accent: 234 75 113;          /* #EA4B71 bright n8n coral    */
+  --accent-soft: 255 122 156;    /* #FF7A9C light coral as text*/
+  --accent-strong: 255 109 143;  /* #FF6D8F brighter hover     */
+  --on-accent: 11 12 26;         /* #0B0C1A dark text on coral */
+  --good: 143 201 107;           /* #8FC96B                    */
+  --bad: 242 114 94;             /* #F2725E                    */
+  --info: 111 211 201;           /* #6FD3C9                    */
+  --cat-solid: 234 75 113;       /* follows coral accent       */
   --cat-creational: 111 211 201;
   --cat-structural: 232 138 176;
   --cat-behavioral: 143 201 107;
   --cat-architecture: 179 157 255;
   --cat-tradeoff: 127 180 232;
-  --shadow-sm: 0 1px 2px rgb(0 0 0 / .35), 0 10px 26px -10px rgb(0 0 0 / .5);
-  --shadow-md: 0 4px 14px rgb(0 0 0 / .38), 0 30px 64px -26px rgb(0 0 0 / .62);
-  --app-glow: radial-gradient(110% 58% at 50% -10%, rgb(255 180 84 / 0.10), transparent 58%);
+  --dot: 150 160 220;            /* canvas dot-grid colour     */
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / .38), 0 10px 26px -10px rgb(0 0 0 / .55);
+  --shadow-md: 0 4px 14px rgb(0 0 0 / .42), 0 30px 64px -26px rgb(0 0 0 / .66);
+  --app-glow: radial-gradient(110% 58% at 50% -10%, rgb(234 75 113 / 0.13), transparent 58%);
   color-scheme: dark;
 }
 
@@ -75,9 +76,14 @@ body {
   @apply bg-surface text-content antialiased font-sans;
   letter-spacing: -0.002em;
   line-height: 1.6;
-  background-image: var(--app-glow);
-  background-attachment: fixed;
-  background-repeat: no-repeat;
+  /* Signature: a faint node-editor dot grid under a coral canvas glow. */
+  background-image:
+    var(--app-glow),
+    radial-gradient(rgb(var(--dot) / 0.05) 1.1px, transparent 1.1px);
+  background-size: auto, 24px 24px;
+  background-position: center top, -1px -1px;
+  background-attachment: fixed, fixed;
+  background-repeat: no-repeat, repeat;
 }
 
 @media (prefers-reduced-motion: reduce) {
