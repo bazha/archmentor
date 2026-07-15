@@ -16,6 +16,7 @@ const router = createBrowserRouter([
       { path: 'daily', lazy: () => import('@/features/daily/Daily').then((m) => ({ Component: m.Daily })) },
       { path: 'diagram/:scenarioId?', lazy: () => import('@/features/diagram/Diagram').then((m) => ({ Component: m.Diagram })) },
       { path: 'compare/:a?/:b?', lazy: () => import('@/features/compare/Compare').then((m) => ({ Component: m.Compare })) },
+      { path: 'map', lazy: () => import('@/features/map/Map').then((m) => ({ Component: m.Map })) },
       { path: 'library', lazy: () => import('@/features/library/Library').then((m) => ({ Component: m.Library })) },
       { path: 'library/:conceptId', lazy: () => import('@/features/library/ConceptPage').then((m) => ({ Component: m.ConceptPage })) },
       { path: 'progress', lazy: () => import('@/features/progress/Progress').then((m) => ({ Component: m.Progress })) },

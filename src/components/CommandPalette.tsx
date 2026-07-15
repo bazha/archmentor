@@ -17,6 +17,7 @@ const SCREENS: { key: MessageKey; to: string; icon: IconName }[] = [
   { key: 'nav.interview', to: '/interview', icon: 'interview' },
   { key: 'daily.title', to: '/daily', icon: 'bolt' },
   { key: 'nav.compare', to: '/compare', icon: 'compare' },
+  { key: 'nav.map', to: '/map', icon: 'map' },
   { key: 'nav.diagram', to: '/diagram', icon: 'diagram' },
   { key: 'nav.library', to: '/library', icon: 'library' },
   { key: 'nav.progress', to: '/progress', icon: 'progress' },

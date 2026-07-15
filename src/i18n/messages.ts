@@ -178,6 +178,11 @@ const ru = {
   'course.inProgress': 'В процессе',
   'course.notStarted': 'Не начато',
   'course.done': 'Курс пройден! 🎓',
+  'nav.map': 'Карта',
+  'map.title': 'Карта концептов',
+  'map.pickHint': 'Выбери концепт на карте, чтобы увидеть его связи.',
+  'map.related': 'Связанные',
+  'map.openLibrary': 'В библиотеке',
 } as const;
 
 export type MessageKey = keyof typeof ru;
@@ -360,6 +365,11 @@ const en: Record<MessageKey, string> = {
   'course.inProgress': 'In progress',
   'course.notStarted': 'Not started',
   'course.done': 'Course complete! 🎓',
+  'nav.map': 'Map',
+  'map.title': 'Concept map',
+  'map.pickHint': 'Select a concept on the map to see its connections.',
+  'map.related': 'Related',
+  'map.openLibrary': 'Open in Library',
 };
 
 export const messages: Record<Lang, Record<MessageKey, string>> = { ru, en };
