@@ -101,11 +101,11 @@ function ScenarioBuilder({ scenario }: { scenario: Scenario }) {
       </header>
 
       <div className="flex gap-2" role="group" aria-label={t('diagram.title')}>
-        <button type="button" onClick={() => setView('list')}
+        <button type="button" onClick={() => setView('list')} aria-pressed={view === 'list'}
           className={`rounded-lg px-3 py-1.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${view === 'list' ? 'bg-accent/10 text-accent' : 'text-muted hover:text-content'}`}>
           {t('diagram.viewList')}
         </button>
-        <button type="button" onClick={() => setView('canvas')}
+        <button type="button" onClick={() => setView('canvas')} aria-pressed={view === 'canvas'}
           className={`rounded-lg px-3 py-1.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${view === 'canvas' ? 'bg-accent/10 text-accent' : 'text-muted hover:text-content'}`}>
           {t('diagram.viewCanvas')}
         </button>
