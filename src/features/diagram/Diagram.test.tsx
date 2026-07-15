@@ -48,4 +48,13 @@ describe('Diagram screen', () => {
     expect(screen.getByText('Some notes')).toBeInTheDocument();
     expect(useStore.getState().diagram.completed['url-shortener'].passed).toBe(false);
   });
+
+  it('groups the picker by grade with headings and badges', () => {
+    renderAt('/diagram');
+    // grade section headings (also used as badges → appear more than once)
+    expect(screen.getAllByText('Junior').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Lead').length).toBeGreaterThan(0);
+    // a known lead scenario renders under its group
+    expect(screen.getByText('Video streaming')).toBeInTheDocument();
+  });
 });
