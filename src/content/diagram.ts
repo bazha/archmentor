@@ -5,11 +5,11 @@ import { COMPONENT_TYPES, type ComponentType } from '@/domain/diagram/types';
 const ComponentTypeSchema = z.enum(COMPONENT_TYPES);
 
 const ConstraintSchema = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('required-node'), node: ComponentTypeSchema }),
-  z.object({ kind: z.literal('any-of'), nodes: z.array(ComponentTypeSchema).min(2) }),
-  z.object({ kind: z.literal('forbidden-node'), node: ComponentTypeSchema, severity: z.enum(['warn', 'fail']) }),
-  z.object({ kind: z.literal('required-edge'), from: ComponentTypeSchema, to: ComponentTypeSchema }),
-  z.object({ kind: z.literal('between'), middle: ComponentTypeSchema, from: ComponentTypeSchema, to: ComponentTypeSchema }),
+  z.object({ kind: z.literal('required-node'), node: ComponentTypeSchema, explain: LocalizedSchema.optional() }),
+  z.object({ kind: z.literal('any-of'), nodes: z.array(ComponentTypeSchema).min(2), explain: LocalizedSchema.optional() }),
+  z.object({ kind: z.literal('forbidden-node'), node: ComponentTypeSchema, severity: z.enum(['warn', 'fail']), explain: LocalizedSchema.optional() }),
+  z.object({ kind: z.literal('required-edge'), from: ComponentTypeSchema, to: ComponentTypeSchema, explain: LocalizedSchema.optional() }),
+  z.object({ kind: z.literal('between'), middle: ComponentTypeSchema, from: ComponentTypeSchema, to: ComponentTypeSchema, explain: LocalizedSchema.optional() }),
 ]);
 
 const DiagramNodeSchema = z.object({ id: z.string().min(1), type: ComponentTypeSchema });
@@ -81,9 +81,12 @@ export const scenarios: Scenario[] = [
     constraints: [
       { kind: 'required-node', node: 'client' },
       { kind: 'required-node', node: 'api-server' },
-      { kind: 'any-of', nodes: ['sql-db', 'nosql-db'] },
-      { kind: 'required-edge', from: 'api-server', to: 'cache' },
-      { kind: 'forbidden-node', node: 'message-queue', severity: 'warn' },
+      { kind: 'any-of', nodes: ['sql-db', 'nosql-db'],
+        explain: { ru: 'Короткие коды нужно где-то хранить постоянно — SQL или NoSQL.', en: 'Short codes need durable storage — SQL or NoSQL.' } },
+      { kind: 'required-edge', from: 'api-server', to: 'cache',
+        explain: { ru: 'Чтение >> запись: кэш перед БД держит latency < 50 мс на популярных ссылках.', en: 'Read-heavy: a cache in front of the DB keeps latency < 50ms on hot links.' } },
+      { kind: 'forbidden-node', node: 'message-queue', severity: 'warn',
+        explain: { ru: 'Редирект синхронный и простой — очередь сообщений тут избыточна.', en: 'A redirect is synchronous and simple — a message queue is overkill here.' } },
     ],
     reference: {
       nodes: [n('client'), n('load-balancer'), n('api-server'), n('cache'), n('sql-db')],

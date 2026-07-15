@@ -211,7 +211,10 @@ function ScenarioBuilder({ scenario }: { scenario: Scenario }) {
             <Icon name={passed ? 'check' : 'bolt'} className="h-5 w-5" />
             {passed ? t('diagram.passed') : t('diagram.hasIssues')}
           </h2>
-          <Report results={results} />
+          <Report
+            results={results}
+            explanations={scenario.constraints.map((c) => c.explain?.[lang])}
+          />
           {diff && (
             <div className="space-y-3 border-t border-line pt-4">
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1">

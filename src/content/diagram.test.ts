@@ -58,4 +58,18 @@ describe('diagram content', () => {
       expect(isPassed(validate(noCache, sc.constraints))).toBe(true);
     }
   });
+
+  it('constraint explanations, where present, are valid bilingual', () => {
+    let withExplain = 0;
+    for (const sc of scenarios) {
+      for (const c of sc.constraints) {
+        if ('explain' in c && c.explain) {
+          expect(c.explain.ru.length).toBeGreaterThan(0);
+          expect(c.explain.en.length).toBeGreaterThan(0);
+          withExplain++;
+        }
+      }
+    }
+    expect(withExplain).toBeGreaterThan(0); // url-shortener slice populated in Task 1
+  });
 });
