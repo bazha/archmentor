@@ -2,8 +2,9 @@ import { Link } from 'react-router-dom';
 import { concepts } from '@/content/index';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Icon } from '@/components/Icon';
-import { useStore, selectGradeProgress, selectReviewQueue, selectBestInterviewGrade, isDailyDone } from '@/store/useStore';
+import { useStore, selectGradeProgress, selectReviewQueue, selectBestInterviewGrade, isDailyDone, selectDiagramProgress } from '@/store/useStore';
 import { selectNextStep, selectCourseProgress } from '@/domain/course';
+import { scenarios } from '@/content/diagram';
 import { GRADE_ORDER, GRADE_LABEL } from '@/lib/labels';
 import { todayISO } from '@/lib/date';
 import { useT } from '@/i18n/useT';
@@ -18,6 +19,7 @@ export function Dashboard() {
   const bestInterview = selectBestInterviewGrade(state);
   const dailyDone = isDailyDone(state, today);
   const dailyStreak = state.daily.streak;
+  const diagramProgress = selectDiagramProgress(state, scenarios.map((s) => s.id));
 
   return (
     <div className="space-y-8">
@@ -40,6 +42,22 @@ export function Dashboard() {
           <span className="block text-sm font-medium text-accent">{dailyDone ? t('dashboard.dailyDone') : t('dashboard.dailyCta')}</span>
         </span>
         <span className="flex-none text-lg font-bold tabular-nums text-bright">{dailyStreak}🔥</span>
+      </Link>
+
+      <Link
+        to="/diagram"
+        className="flex items-center gap-4 rounded-2xl border border-line bg-surface-raised p-5 shadow-card transition hover:-translate-y-0.5 hover:border-line-strong hover:shadow-card-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      >
+        <span className="grid h-11 w-11 flex-none place-items-center rounded-xl bg-accent/10 text-accent">
+          <Icon name="diagram" className="h-6 w-6" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-base font-semibold text-bright">{t('dashboard.diagramTitle')}</span>
+          <span className="block text-sm font-medium text-accent">{t('dashboard.diagramCta')}</span>
+        </span>
+        <span className="flex-none text-sm font-bold tabular-nums text-muted">
+          {t('dashboard.diagramDone', { done: diagramProgress.done, total: diagramProgress.total })}
+        </span>
       </Link>
 
       {/* Continue learning */}
