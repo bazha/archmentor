@@ -50,7 +50,12 @@ function ScenarioPicker() {
                 <span className="block font-semibold text-bright">{sc.title[lang]}</span>
                 <span className="block truncate text-sm text-muted">{sc.brief[lang]}</span>
               </span>
-              {completed[sc.id] && <Icon name="check" className="h-5 w-5 flex-none text-good" />}
+              {completed[sc.id]?.passed && (
+                <span className="flex-none text-good">
+                  <Icon name="check" className="h-5 w-5" />
+                  <span className="sr-only">{t('diagram.done')}</span>
+                </span>
+              )}
             </Link>
           </li>
         ))}
