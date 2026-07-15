@@ -8,6 +8,7 @@ import { tradeoffs, tradeoffsQuestions } from './concepts/tradeoffs';
 import { questions as seedQuestions } from './questions';
 import { fillBlankQuestions } from './fillBlank';
 import { validateContent, type Concept, type Question } from './schema';
+import { scenarios, validateScenarios } from './diagram';
 
 export const concepts: Concept[] = [
   ...solid,
@@ -30,7 +31,10 @@ export const questions: Question[] = [
 ];
 
 // Fail fast in dev if content is inconsistent.
-if (import.meta.env?.DEV) validateContent(concepts, questions);
+if (import.meta.env?.DEV) {
+  validateContent(concepts, questions);
+  validateScenarios(scenarios);
+}
 
 export const conceptById = new Map(concepts.map((c) => [c.id, c]));
 
