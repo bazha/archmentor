@@ -68,6 +68,6 @@ describe('content catalog', () => {
         withDiagram++;
       }
     }
-    expect(withDiagram).toBeGreaterThan(0); // strategy in Task 1
+    expect(withDiagram).toBeGreaterThanOrEqual(8);
   });
 });
