@@ -15,6 +15,9 @@ import { ProgressBar } from '@/components/ProgressBar';
 import { EmptyState } from '@/components/EmptyState';
 import { Icon } from '@/components/Icon';
 import { useT } from '@/i18n/useT';
+import { scenarios, type Scenario } from '@/content/diagram';
+import { selectSdScenario } from '@/domain/interview/sdScenario';
+import { ScenarioWorkbench } from '@/features/diagram/ScenarioWorkbench';
 
 const PRIMARY_BTN =
   'inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-on-accent shadow-card transition hover:-translate-y-0.5 hover:bg-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
@@ -34,12 +37,17 @@ export function Interview() {
   const deck = useQuestions();
   const concepts = useConcepts();
   const recordInterview = useStore((s) => s.recordInterview);
+  const lang = useStore((s) => s.settings.lang);
 
   const [session, setSession] = useState<InterviewState | null>(null);
   // Store the id, not the localized view — the view is derived from the reactive
   // `deck` below so the displayed question re-localizes when the language changes.
   const [currentId, setCurrentId] = useState<string | null>(null);
   const recorded = useRef(false);
+  const [includeSd, setIncludeSd] = useState(false);
+  const [sdScenario, setSdScenario] = useState<Scenario | null>(null);
+  const [sdResult, setSdResult] = useState<{ scenarioId: string; passed: boolean } | null>(null);
+  const [finished, setFinished] = useState(false);
 
   const byId = useMemo(() => new Map(deck.map((q) => [q.id, q])), [deck]);
   const conceptName = useMemo(() => new Map(concepts.map((c) => [c.id, c.name])), [concepts]);
@@ -47,6 +55,9 @@ export function Interview() {
 
   function start() {
     recorded.current = false;
+    setSdScenario(null);
+    setSdResult(null);
+    setFinished(false);
     const { state, question } = drawNext(initInterview(), deck, shuffle);
     setSession(state);
     setCurrentId(question?.id ?? null);
@@ -59,6 +70,9 @@ export function Interview() {
     const { state, question } = drawNext(advanced, deck, shuffle);
     setSession(state);
     setCurrentId(question?.id ?? null);
+    if (state.status === 'done' && includeSd) {
+      setSdScenario(selectSdScenario(scenarios, state.verdict ?? 'junior', shuffle) ?? null);
+    }
   }
 
   // Persist the completed session exactly once.
@@ -93,6 +107,11 @@ export function Interview() {
           </span>
           <h1 className="text-2xl font-semibold tracking-tight text-bright">{t('interview.introTitle')}</h1>
           <p className="leading-relaxed text-content [text-wrap:pretty]">{t('interview.introBody')}</p>
+          <label className="flex items-center justify-center gap-2 text-sm text-muted">
+            <input type="checkbox" checked={includeSd} onChange={(e) => setIncludeSd(e.target.checked)}
+              className="h-4 w-4 rounded border-line-strong text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent" />
+            {t('interview.includeSdRound')}
+          </label>
           <div className="flex justify-center">
             <button onClick={start} className={PRIMARY_BTN}>{t('interview.start')}</button>
           </div>
@@ -102,7 +121,36 @@ export function Interview() {
   }
 
   // ---- Report ----
-  if (session.status === 'done') return <Report session={session} byId={byId} conceptName={conceptName} onRestart={start} />;
+  if (session.status === 'done') {
+    if (includeSd && sdScenario && !finished) {
+      return (
+        <div className="space-y-6">
+          <ScenarioWorkbench
+            scenario={sdScenario}
+            header={
+              <header className="space-y-2">
+                <h1 className="text-2xl font-semibold tracking-tight text-bright">{t('interview.systemDesignRound')}</h1>
+                <p className="text-content [text-wrap:pretty]">{sdScenario.brief[lang]}</p>
+              </header>
+            }
+            onSubmit={(_, passed) => setSdResult({ scenarioId: sdScenario.id, passed })}
+          />
+          {sdResult && (
+            <div className="mx-auto flex max-w-3xl justify-center">
+              <button onClick={() => setFinished(true)} className={PRIMARY_BTN}>{t('interview.finish')}</button>
+            </div>
+          )}
+        </div>
+      );
+    }
+    return (
+      <Report
+        session={session} byId={byId} conceptName={conceptName} onRestart={start}
+        sdResult={sdResult}
+        sdScenarioTitle={sdScenario ? sdScenario.title[lang] : null}
+      />
+    );
+  }
 
   // ---- Active question ----
   const q = current!;
@@ -151,12 +199,14 @@ export function Interview() {
 }
 
 function Report({
-  session, byId, conceptName, onRestart,
+  session, byId, conceptName, onRestart, sdResult, sdScenarioTitle,
 }: {
   session: InterviewState;
   byId: Map<string, QuestionView>;
   conceptName: Map<string, string>;
   onRestart: () => void;
+  sdResult?: { scenarioId: string; passed: boolean } | null;
+  sdScenarioTitle?: string | null;
 }) {
   const t = useT();
   const asked = session.askedIds.length;
@@ -202,6 +252,16 @@ function Report({
               </li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {sdResult && (
+        <section className="space-y-2 rounded-2xl border border-line bg-surface-raised p-6 shadow-card">
+          <h2 className="text-sm font-bold uppercase tracking-wide text-muted">{t('interview.systemDesign')}</h2>
+          <p className="flex items-center gap-2 text-content">
+            <Icon name={sdResult.passed ? 'check' : 'bolt'} className={`h-4 w-4 ${sdResult.passed ? 'text-good' : 'text-accent'}`} />
+            <span>{sdScenarioTitle}{sdScenarioTitle ? ' — ' : ''}{sdResult.passed ? t('interview.sdPassed') : t('interview.sdIssues')}</span>
+          </p>
         </section>
       )}
 

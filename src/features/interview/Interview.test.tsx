@@ -22,6 +22,13 @@ describe('Interview', () => {
     expect(findOption()).toBeTruthy();
   });
 
+  it('offers the system-design round toggle on the intro, unchecked by default', () => {
+    render(<MemoryRouter><Interview /></MemoryRouter>);
+    const cb = screen.getByRole('checkbox', { name: /system-design/i });
+    expect(cb).toBeInTheDocument();
+    expect(cb).not.toBeChecked();
+  });
+
   it('runs to a report (with per-grade breakdown) and records the session once under StrictMode', async () => {
     // StrictMode double-invokes effects on mount, so this genuinely exercises the
     // record-exactly-once guard rather than merely asserting the happy path.
