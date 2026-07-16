@@ -136,6 +136,16 @@ export const structural: Concept[] = [
       "proxy",
       "bridge",
     ],
+    diagram: `classDiagram
+  class Target {
+    <<interface>>
+    +request()
+  }
+  class Adaptee {
+    +specificRequest()
+  }
+  Target <|.. Adapter
+  Adapter o--> Adaptee`,
     tags: [
       "паттерны",
       "структурные",
@@ -413,6 +423,14 @@ export const structural: Concept[] = [
       "visitor",
       "flyweight",
     ],
+    diagram: `classDiagram
+  class Component {
+    <<interface>>
+    +operation()
+  }
+  Component <|.. Leaf
+  Component <|.. Composite
+  Composite o--> "children" Component`,
     tags: [
       "паттерны",
       "структурные",
@@ -561,6 +579,15 @@ export const structural: Concept[] = [
       "composite",
       "composition-vs-inheritance",
     ],
+    diagram: `classDiagram
+  class Component {
+    <<interface>>
+    +operation()
+  }
+  Component <|.. ConcreteComponent
+  Component <|.. Decorator
+  Decorator o--> Component : wraps
+  Decorator <|-- ConcreteDecorator`,
     tags: [
       "паттерны",
       "структурные",
@@ -1007,6 +1034,14 @@ export const structural: Concept[] = [
       "adapter",
       "facade",
     ],
+    diagram: `classDiagram
+  class Subject {
+    <<interface>>
+    +request()
+  }
+  Subject <|.. RealSubject
+  Subject <|.. Proxy
+  Proxy o--> RealSubject`,
     tags: [
       "паттерны",
       "структурные",

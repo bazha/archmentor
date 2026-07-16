@@ -109,6 +109,17 @@ export const patterns: Concept[] = [
     related: [
       "state",
     ],
+    diagram: `classDiagram
+  class Checkout {
+    +total(base)
+  }
+  class PricingStrategy {
+    <<interface>>
+    +price(base)
+  }
+  Checkout o--> PricingStrategy : delegates
+  PricingStrategy <|.. Regular
+  PricingStrategy <|.. Vip`,
     tags: [
       "паттерны",
       "поведенческие",
@@ -229,6 +240,17 @@ export const patterns: Concept[] = [
     related: [
       "strategy",
     ],
+    diagram: `classDiagram
+  class Subject {
+    +attach(o)
+    +notify()
+  }
+  class Observer {
+    <<interface>>
+    +update()
+  }
+  Subject o--> "many" Observer
+  Observer <|.. ConcreteObserver`,
     tags: [
       "паттерны",
       "поведенческие",
@@ -348,6 +370,17 @@ export const patterns: Concept[] = [
     related: [
       "abstract-factory",
     ],
+    diagram: `classDiagram
+  class Creator {
+    +factoryMethod()
+    +operation()
+  }
+  class Product {
+    <<interface>>
+  }
+  Creator <|-- ConcreteCreator
+  Product <|.. ConcreteProduct
+  ConcreteCreator ..> ConcreteProduct : creates`,
     tags: [
       "паттерны",
       "порождающие",
@@ -609,6 +642,16 @@ export const patterns: Concept[] = [
     related: [
       "factory-method",
     ],
+    diagram: `classDiagram
+  class AbstractFactory {
+    <<interface>>
+    +createA()
+    +createB()
+  }
+  AbstractFactory <|.. ConcreteFactory1
+  AbstractFactory <|.. ConcreteFactory2
+  AbstractFactory ..> ProductA : creates
+  AbstractFactory ..> ProductB : creates`,
     tags: [
       "паттерны",
       "порождающие",

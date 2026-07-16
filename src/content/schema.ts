@@ -33,6 +33,7 @@ export const ConceptSchema = z.object({
   whenNotToUse: LocalizedListSchema.optional(),
   related: z.array(z.string()),
   tags: z.array(z.string()).optional(),
+  diagram: z.string().min(1).optional(),
 });
 
 export const QuestionSchema = z.object({

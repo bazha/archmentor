@@ -157,6 +157,10 @@ export const architecture: Concept[] = [
       "mvc",
       "monolith",
     ],
+    diagram: `flowchart TD
+  P[Presentation] --> B[Business Logic]
+  B --> D[Data Access]
+  D --> DB[(Database)]`,
     tags: [
       "архитектура",
       "архитектурные стили",
@@ -769,6 +773,11 @@ export const architecture: Concept[] = [
       "layered",
       "adapter",
     ],
+    diagram: `flowchart LR
+  A[Adapters: UI / API] --> PIn((Ports))
+  PIn --> Core[Domain Core]
+  Core --> POut((Ports))
+  POut --> Inf[Adapters: DB / External]`,
     tags: [
       "архитектура",
       "архитектурные стили",

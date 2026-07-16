@@ -58,4 +58,16 @@ describe('content catalog', () => {
     }
     expect(bad, `Cyrillic left in en fields: ${bad.join(', ')}`).toEqual([]);
   });
+
+  it('concept diagrams, where present, are non-empty Mermaid strings', () => {
+    let withDiagram = 0;
+    for (const c of concepts) {
+      if (c.diagram !== undefined) {
+        expect(typeof c.diagram).toBe('string');
+        expect(c.diagram.trim().length).toBeGreaterThan(0);
+        withDiagram++;
+      }
+    }
+    expect(withDiagram).toBeGreaterThanOrEqual(8);
+  });
 });

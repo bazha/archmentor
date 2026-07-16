@@ -11,7 +11,7 @@ export interface ConceptView {
   tagline: string; definition: string; problem: string; solution: string;
   codeExample: { lang: 'typescript'; code: string; highlightLines?: number[] };
   pros: string[]; cons: string[]; tradeoffs: string[]; whenToUse: string[]; whenNotToUse?: string[];
-  related: string[]; tags?: string[];
+  related: string[]; tags?: string[]; diagram?: string;
 }
 
 export interface QuestionView {
@@ -28,7 +28,7 @@ export function localizeConcept(c: Concept, lang: Lang): ConceptView {
     codeExample: { lang: c.codeExample.lang, code: s(c.codeExample.code, lang), highlightLines: c.codeExample.highlightLines },
     pros: a(c.pros, lang), cons: a(c.cons, lang), tradeoffs: a(c.tradeoffs, lang),
     whenToUse: a(c.whenToUse, lang), whenNotToUse: c.whenNotToUse ? a(c.whenNotToUse, lang) : undefined,
-    related: c.related, tags: c.tags,
+    related: c.related, tags: c.tags, diagram: c.diagram,
   };
 }
 

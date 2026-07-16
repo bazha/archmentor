@@ -141,6 +141,15 @@ export const behavioral: Concept[] = [
       "decorator",
       "mediator",
     ],
+    diagram: `classDiagram
+  class Handler {
+    <<interface>>
+    +setNext(h)
+    +handle(req)
+  }
+  Handler o--> "next" Handler
+  Handler <|.. ConcreteHandlerA
+  Handler <|.. ConcreteHandlerB`,
     tags: [
       "паттерны",
       "поведенческие",

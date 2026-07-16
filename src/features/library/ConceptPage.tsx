@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { getConcept } from '@/content/index';
 import { useConcept } from '@/content/localize';
 import { CodeBlock } from '@/components/CodeBlock';
+import { ConceptDiagram } from './ConceptDiagram';
 import { Badge } from '@/components/Badge';
 import { EmptyState } from '@/components/EmptyState';
 import { GRADE_LABEL, CATEGORY_LABEL } from '@/lib/labels';
@@ -84,6 +85,13 @@ export function ConceptPage() {
         <SectionHeading>{t('concept.solution')}</SectionHeading>
         <p className="max-w-prose leading-relaxed text-content">{c.solution}</p>
       </section>
+
+      {c.diagram && (
+        <section className="space-y-4">
+          <SectionHeading>{t('concept.diagram')}</SectionHeading>
+          <ConceptDiagram source={c.diagram} label={t('concept.diagram')} />
+        </section>
+      )}
 
       <section className="space-y-4">
         <SectionHeading>{t('concept.codeExample')}</SectionHeading>
