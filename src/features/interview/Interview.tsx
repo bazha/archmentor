@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useConcepts, useQuestions } from '@/content/localize';
 import type { QuestionView } from '@/content/localize';
@@ -17,7 +17,7 @@ import { Icon } from '@/components/Icon';
 import { useT } from '@/i18n/useT';
 import { scenarios, type Scenario } from '@/content/diagram';
 import { selectSdScenario } from '@/domain/interview/sdScenario';
-import { ScenarioWorkbench } from '@/features/diagram/ScenarioWorkbench';
+const ScenarioWorkbench = lazy(() => import('@/features/diagram/ScenarioWorkbench').then((m) => ({ default: m.ScenarioWorkbench })));
 
 const PRIMARY_BTN =
   'inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-on-accent shadow-card transition hover:-translate-y-0.5 hover:bg-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
@@ -125,16 +125,18 @@ export function Interview() {
     if (includeSd && sdScenario && !finished) {
       return (
         <div className="space-y-6">
-          <ScenarioWorkbench
-            scenario={sdScenario}
-            header={
-              <header className="space-y-2">
-                <h1 className="text-2xl font-semibold tracking-tight text-bright">{t('interview.systemDesignRound')}</h1>
-                <p className="text-content [text-wrap:pretty]">{sdScenario.brief[lang]}</p>
-              </header>
-            }
-            onSubmit={(_, passed) => setSdResult({ scenarioId: sdScenario.id, passed })}
-          />
+          <Suspense fallback={<div className="mx-auto h-[420px] max-w-3xl animate-pulse rounded-xl bg-surface" />}>
+            <ScenarioWorkbench
+              scenario={sdScenario}
+              header={
+                <header className="space-y-2">
+                  <h1 className="text-2xl font-semibold tracking-tight text-bright">{t('interview.systemDesignRound')}</h1>
+                  <p className="text-content [text-wrap:pretty]">{sdScenario.brief[lang]}</p>
+                </header>
+              }
+              onSubmit={(_, passed) => setSdResult({ scenarioId: sdScenario.id, passed })}
+            />
+          </Suspense>
           {sdResult && (
             <div className="mx-auto flex max-w-3xl justify-center">
               <button onClick={() => setFinished(true)} className={PRIMARY_BTN}>{t('interview.finish')}</button>
