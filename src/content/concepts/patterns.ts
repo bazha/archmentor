@@ -109,6 +109,17 @@ export const patterns: Concept[] = [
     related: [
       "state",
     ],
+    diagram: `classDiagram
+  class Checkout {
+    +total(base)
+  }
+  class PricingStrategy {
+    <<interface>>
+    +price(base)
+  }
+  Checkout o--> PricingStrategy : delegates
+  PricingStrategy <|.. Regular
+  PricingStrategy <|.. Vip`,
     tags: [
       "паттерны",
       "поведенческие",
