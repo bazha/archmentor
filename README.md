@@ -18,7 +18,7 @@ A client-side SPA for learning software architecture — from Junior to Lead: **
 - **Diagram Builder** — assemble a system-design diagram for a scenario (add components from a palette, connect them), submit, and get a per-constraint ✓ / ⚠ / ✗ report plus a reference solution. Grading is constraint-based, not exact-match, so any correct architecture passes. 8 scenarios span four difficulty grades; a fully keyboard-accessible list builder is the core, with an optional React Flow canvas where you drag components from the palette, move and connect nodes, delete them (× button or Delete key), and annotate with sticky notes. After submitting, each report line carries a short "why it matters" explanation for the key decisions, and a visual diff shows your diagram beside the sample solution with matches / extra / missing highlighted.
 - **Map** — an interactive graph of all concepts wired by their `related` links, laid out in category clusters (React Flow). Click a concept to highlight its neighbours and open a panel linking into Learn and Library.
 - **Compare** — two concepts side by side, field by field (definition, problem, solution, pros/cons, trade-offs, when to use, code). Pick any pair or start from a "commonly confused" preset; shareable via `/compare/:a/:b`.
-- **Library** — a searchable, filterable catalog; each concept page shows definition, problem, solution, code, pros/cons, trade-offs, when (not) to use, and related concepts.
+- **Library** — a searchable, filterable catalog; each concept page shows definition, problem, solution, code, pros/cons, trade-offs, when (not) to use, related concepts, and — for key patterns and architectural styles — an explanatory Mermaid diagram.
 - **Progress** — quiz accuracy, mastered concepts, streak, best interview grade, and per-grade mastery. All progress persists in `localStorage`.
 
 ## Content
@@ -27,7 +27,7 @@ A client-side SPA for learning software architecture — from Junior to Lead: **
 
 ## Stack
 
-Vite · React 18 · TypeScript (strict) · React Router · Zustand (+persist) · Tailwind CSS · Vitest + Testing Library · zod · React Flow (`@xyflow/react`, lazy-loaded for the diagram canvas).
+Vite · React 18 · TypeScript (strict) · React Router · Zustand (+persist) · Tailwind CSS · Vitest + Testing Library · zod · React Flow (`@xyflow/react`, lazy-loaded for the diagram canvas) · Mermaid (lazy-loaded for concept diagrams).
 
 Layered architecture: `content` (typed, localized data + zod validation) → `domain` (pure logic: SM-2, quiz selection, guided course, interview state machine, compare pairs, diagram constraint validation, concept-graph edges + layout) → `store` (Zustand + persist, versioned migrations) → `features` / `components` (React UI). In-house i18n (`src/i18n`) with type-enforced RU/EN key parity.
 
