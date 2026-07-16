@@ -2,7 +2,7 @@ import { useEffect, useId, useState } from 'react';
 import { useStore } from '@/store/useStore';
 
 /** Lazily renders a Mermaid diagram (source is trusted app content), theme-aware. */
-export function ConceptDiagram({ source }: { source: string }) {
+export function ConceptDiagram({ source, label }: { source: string; label: string }) {
   const theme = useStore((s) => s.settings.theme);
   const rawId = useId().replace(/[^a-zA-Z0-9]/g, '');
   const [svg, setSvg] = useState<string | null>(null);
@@ -34,7 +34,7 @@ export function ConceptDiagram({ source }: { source: string }) {
   return (
     <div
       role="img"
-      aria-label="diagram"
+      aria-label={label}
       className="overflow-x-auto rounded-xl border border-line bg-surface-raised p-4 [&_svg]:mx-auto [&_svg]:h-auto [&_svg]:max-w-full"
       dangerouslySetInnerHTML={{ __html: svg }}
     />

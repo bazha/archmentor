@@ -89,7 +89,7 @@ export function ConceptPage() {
       {c.diagram && (
         <section className="space-y-4">
           <SectionHeading>{t('concept.diagram')}</SectionHeading>
-          <ConceptDiagram source={c.diagram} />
+          <ConceptDiagram source={c.diagram} label={t('concept.diagram')} />
         </section>
       )}
 
