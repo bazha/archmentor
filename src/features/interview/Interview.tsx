@@ -22,6 +22,8 @@ const ScenarioWorkbench = lazy(() => import('@/features/diagram/ScenarioWorkbenc
 const PRIMARY_BTN =
   'inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-on-accent shadow-card transition hover:-translate-y-0.5 hover:bg-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent';
 
+const QUESTION_SECONDS = 30;
+
 /** Fisher–Yates shuffle — real randomness in the app (tests inject a deterministic order). */
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -48,6 +50,8 @@ export function Interview() {
   const [sdScenario, setSdScenario] = useState<Scenario | null>(null);
   const [sdResult, setSdResult] = useState<{ scenarioId: string; passed: boolean } | null>(null);
   const [finished, setFinished] = useState(false);
+  const [timed, setTimed] = useState(false);
+  const [remaining, setRemaining] = useState(QUESTION_SECONDS);
 
   const byId = useMemo(() => new Map(deck.map((q) => [q.id, q])), [deck]);
   const conceptName = useMemo(() => new Map(concepts.map((c) => [c.id, c.name])), [concepts]);
@@ -61,19 +65,28 @@ export function Interview() {
     const { state, question } = drawNext(initInterview(), deck, shuffle);
     setSession(state);
     setCurrentId(question?.id ?? null);
+    setRemaining(QUESTION_SECONDS);
   }
 
-  function answer(index: number) {
+  function resolve(correct: boolean) {
     if (!session || session.status !== 'active' || !current) return;
-    const correct = isCorrect(current, index);
     const advanced = interviewReducer(session, { type: 'answer', correct, questionId: current.id });
     const { state, question } = drawNext(advanced, deck, shuffle);
     setSession(state);
     setCurrentId(question?.id ?? null);
+    setRemaining(QUESTION_SECONDS);
     if (state.status === 'done' && includeSd) {
       setSdScenario(selectSdScenario(scenarios, state.verdict ?? 'junior', shuffle) ?? null);
     }
   }
+  function answer(index: number) {
+    if (!current) return;
+    resolve(isCorrect(current, index));
+  }
+
+  // Latest resolve, so the timer's zero-watcher never captures a stale closure.
+  const onTimeoutRef = useRef<() => void>(() => {});
+  onTimeoutRef.current = () => resolve(false);
 
   // Persist the completed session exactly once.
   useEffect(() => {
@@ -93,6 +106,20 @@ export function Interview() {
     }
   }, [session, recordInterview]);
 
+  // Per-question countdown (timed mode only): reset to 30 and tick down.
+  useEffect(() => {
+    if (!timed || session?.status !== 'active' || !current) return;
+    setRemaining(QUESTION_SECONDS);
+    const iv = setInterval(() => setRemaining((r) => Math.max(0, r - 1)), 1000);
+    return () => clearInterval(iv);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timed, currentId, session?.status]);
+
+  // Fire the timeout exactly once when the countdown reaches zero.
+  useEffect(() => {
+    if (timed && remaining === 0 && session?.status === 'active') onTimeoutRef.current();
+  }, [remaining, timed, session?.status]);
+
   if (deck.length === 0) {
     return <EmptyState icon="🎤" title={t('quiz.emptyTitle')} hint={t('quiz.emptyHint')} />;
   }
@@ -111,6 +138,11 @@ export function Interview() {
             <input type="checkbox" checked={includeSd} onChange={(e) => setIncludeSd(e.target.checked)}
               className="h-4 w-4 rounded border-line-strong text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent" />
             {t('interview.includeSdRound')}
+          </label>
+          <label className="flex items-center justify-center gap-2 text-sm text-muted">
+            <input type="checkbox" checked={timed} onChange={(e) => setTimed(e.target.checked)}
+              className="h-4 w-4 rounded border-line-strong text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent" />
+            {t('interview.timedMode')}
           </label>
           <div className="flex justify-center">
             <button onClick={start} className={PRIMARY_BTN}>{t('interview.start')}</button>
@@ -169,6 +201,12 @@ export function Interview() {
           <span className="inline-flex items-center rounded-full border border-line bg-surface-raised px-3.5 py-1 text-sm font-bold tabular-nums text-muted shadow-card">
             {t('interview.asked', { n: session.askedIds.length + 1 })}
           </span>
+          {timed && (
+            <span role="timer" aria-label={t('interview.timeLeft')}
+              className={`inline-flex items-center rounded-full border border-line bg-surface-raised px-3.5 py-1 text-sm font-bold tabular-nums shadow-card ${remaining <= 5 ? 'text-bad' : 'text-muted'}`}>
+              <span aria-hidden="true">{remaining}s</span>
+            </span>
+          )}
         </div>
         <ProgressBar value={climb} />
       </div>
