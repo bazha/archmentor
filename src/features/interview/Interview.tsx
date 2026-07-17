@@ -65,6 +65,7 @@ export function Interview() {
     const { state, question } = drawNext(initInterview(), deck, shuffle);
     setSession(state);
     setCurrentId(question?.id ?? null);
+    setRemaining(QUESTION_SECONDS);
   }
 
   function resolve(correct: boolean) {
@@ -73,6 +74,7 @@ export function Interview() {
     const { state, question } = drawNext(advanced, deck, shuffle);
     setSession(state);
     setCurrentId(question?.id ?? null);
+    setRemaining(QUESTION_SECONDS);
     if (state.status === 'done' && includeSd) {
       setSdScenario(selectSdScenario(scenarios, state.verdict ?? 'junior', shuffle) ?? null);
     }
@@ -200,7 +202,7 @@ export function Interview() {
             {t('interview.asked', { n: session.askedIds.length + 1 })}
           </span>
           {timed && (
-            <span aria-label={t('interview.timeLeft')}
+            <span role="timer" aria-label={t('interview.timeLeft')}
               className={`inline-flex items-center rounded-full border border-line bg-surface-raised px-3.5 py-1 text-sm font-bold tabular-nums shadow-card ${remaining <= 5 ? 'text-bad' : 'text-muted'}`}>
               <span aria-hidden="true">{remaining}s</span>
             </span>
