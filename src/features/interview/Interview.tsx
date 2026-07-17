@@ -52,17 +52,22 @@ export function Interview() {
   const [finished, setFinished] = useState(false);
   const [timed, setTimed] = useState(false);
   const [remaining, setRemaining] = useState(QUESTION_SECONDS);
+  const [startTier, setStartTier] = useState<Grade>(GRADE_ORDER[0]);
 
   const byId = useMemo(() => new Map(deck.map((q) => [q.id, q])), [deck]);
   const conceptName = useMemo(() => new Map(concepts.map((c) => [c.id, c.name])), [concepts]);
   const current = currentId ? byId.get(currentId) ?? null : null;
+  const startableGrades = useMemo(
+    () => GRADE_ORDER.filter((g) => deck.some((q) => q.grade === g)),
+    [deck],
+  );
 
   function start() {
     recorded.current = false;
     setSdScenario(null);
     setSdResult(null);
     setFinished(false);
-    const { state, question } = drawNext(initInterview(), deck, shuffle);
+    const { state, question } = drawNext(initInterview(startTier), deck, shuffle);
     setSession(state);
     setCurrentId(question?.id ?? null);
     setRemaining(QUESTION_SECONDS);
@@ -134,6 +139,27 @@ export function Interview() {
           </span>
           <h1 className="text-2xl font-semibold tracking-tight text-bright">{t('interview.introTitle')}</h1>
           <p className="leading-relaxed text-content [text-wrap:pretty]">{t('interview.introBody')}</p>
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-muted">{t('interview.startGrade')}</p>
+            <div role="radiogroup" aria-label={t('interview.startGrade')} className="flex flex-wrap justify-center gap-2">
+              {startableGrades.map((g) => (
+                <button
+                  key={g}
+                  type="button"
+                  role="radio"
+                  aria-checked={startTier === g}
+                  onClick={() => setStartTier(g)}
+                  className={`rounded-full border px-4 py-1.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                    startTier === g
+                      ? 'border-accent bg-accent/10 text-accent'
+                      : 'border-line bg-surface text-muted hover:border-line-strong'
+                  }`}
+                >
+                  {GRADE_LABEL[g]}
+                </button>
+              ))}
+            </div>
+          </div>
           <label className="flex items-center justify-center gap-2 text-sm text-muted">
             <input type="checkbox" checked={includeSd} onChange={(e) => setIncludeSd(e.target.checked)}
               className="h-4 w-4 rounded border-line-strong text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent" />
@@ -275,8 +301,15 @@ function Report({
           <p className="text-2xl font-semibold tracking-tight text-accent">
             {t('interview.verdict', { grade: GRADE_LABEL[session.verdict as Grade] })}
           </p>
+        ) : session.startTier !== GRADE_ORDER[0] ? (
+          <p className="text-lg font-semibold text-content">
+            {t('interview.notConfirmed', { grade: GRADE_LABEL[session.startTier] })}
+          </p>
         ) : (
           <p className="text-lg font-semibold text-content">{t('interview.verdictNone')}</p>
+        )}
+        {session.startTier !== GRADE_ORDER[0] && (
+          <p className="text-sm text-muted">{t('interview.startedAt', { grade: GRADE_LABEL[session.startTier] })}</p>
         )}
         <p className="text-content">{t('interview.summary', { correct, asked })}</p>
       </div>
