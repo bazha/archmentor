@@ -19,21 +19,24 @@ export interface InterviewState {
   status: 'active' | 'done';
   /** Highest grade demonstrated; null means "not yet junior". Set when status is 'done'. */
   verdict: Grade | null;
+  /** Tier the session started at. A grade is credited only for tiers promoted past this. */
+  startTier: Grade;
 }
 
 export type InterviewEvent =
   | { type: 'answer'; correct: boolean; questionId: string }
   | { type: 'exhausted' };
 
-export function initInterview(): InterviewState {
+export function initInterview(startTier: Grade = GRADE_ORDER[0]): InterviewState {
   return {
-    tier: GRADE_ORDER[0],
+    tier: startTier,
     correctInTier: 0,
     mistakesInTier: 0,
     askedIds: [],
     missedIds: [],
     status: 'active',
     verdict: null,
+    startTier,
   };
 }
 
@@ -56,6 +59,16 @@ function promote(state: InterviewState): InterviewState {
 }
 
 /**
+ * Highest grade genuinely cleared: the tier below where we stopped, or null if the candidate
+ * never promoted past the starting tier (nothing demonstrated). You can only leave the start
+ * tier via promote(), so `tier > startTier` guarantees startTier and every tier up to
+ * `tier - 1` were passed — predecessorGrade(tier) never over-claims.
+ */
+function demonstratedVerdict(state: InterviewState): Grade | null {
+  return state.tier === state.startTier ? null : predecessorGrade(state.tier);
+}
+
+/**
  * The adaptive state machine. An `answer` updates the tier tallies then resolves:
  * STOP mistakes → stop (verdict = grade below), PROMOTE correct → climb.
  * `exhausted` (tier pool ran dry without stopping) counts as passing the tier.
@@ -70,7 +83,7 @@ export function interviewReducer(state: InterviewState, event: InterviewEvent): 
     // so an empty or filtered content set can never mint a phantom top-grade verdict.
     const answeredThisTier = state.correctInTier > 0 || state.mistakesInTier > 0;
     if (answeredThisTier) return promote(state);
-    return { ...state, status: 'done', verdict: predecessorGrade(state.tier) };
+    return { ...state, status: 'done', verdict: demonstratedVerdict(state) };
   }
 
   const next: InterviewState = {
@@ -81,7 +94,7 @@ export function interviewReducer(state: InterviewState, event: InterviewEvent): 
     mistakesInTier: state.mistakesInTier + (event.correct ? 0 : 1),
   };
 
-  if (next.mistakesInTier >= STOP) return { ...next, status: 'done', verdict: predecessorGrade(next.tier) };
+  if (next.mistakesInTier >= STOP) return { ...next, status: 'done', verdict: demonstratedVerdict(next) };
   if (next.correctInTier >= PROMOTE) return promote(next);
   return next;
 }

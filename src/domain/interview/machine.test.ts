@@ -167,4 +167,37 @@ describe('interview machine', () => {
     expect(s.status).toBe('done');
     expect(s.verdict).toBe('lead');
   });
+
+  it('initInterview accepts a starting tier; default is the lowest grade', () => {
+    expect(initInterview().startTier).toBe('junior');
+    expect(initInterview().tier).toBe('junior');
+    const s = initInterview('senior');
+    expect(s.startTier).toBe('senior');
+    expect(s.tier).toBe('senior');
+  });
+
+  it('honest verdict: stopping at the starting tier (never promoted) yields null', () => {
+    let s = initInterview('senior');
+    s = interviewReducer(s, { type: 'answer', correct: false, questionId: 's1' });
+    s = interviewReducer(s, { type: 'answer', correct: false, questionId: 's2' });
+    expect(s.status).toBe('done');
+    expect(s.verdict).toBeNull(); // Middle NOT credited — never demonstrated
+  });
+
+  it('honest verdict: passing the start tier then failing higher credits the passed tier', () => {
+    let s = initInterview('senior');
+    s = interviewReducer(s, { type: 'answer', correct: true, questionId: 's1' });
+    s = interviewReducer(s, { type: 'answer', correct: true, questionId: 's2' }); // → lead
+    expect(s.tier).toBe('lead');
+    s = interviewReducer(s, { type: 'answer', correct: false, questionId: 'l1' });
+    s = interviewReducer(s, { type: 'answer', correct: false, questionId: 'l2' });
+    expect(s.status).toBe('done');
+    expect(s.verdict).toBe('senior'); // predecessor(lead), genuinely demonstrated
+  });
+
+  it('exhausting the starting tier with no activity yields null (no phantom credit)', () => {
+    const s = interviewReducer(initInterview('senior'), { type: 'exhausted' });
+    expect(s.status).toBe('done');
+    expect(s.verdict).toBeNull();
+  });
 });
