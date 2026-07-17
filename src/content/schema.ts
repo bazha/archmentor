@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const GradeSchema = z.enum(['junior', 'middle', 'senior', 'lead']);
-export const CategorySchema = z.enum(['solid', 'creational', 'structural', 'behavioral', 'architecture', 'tradeoff']);
+export const CategorySchema = z.enum(['solid', 'creational', 'structural', 'behavioral', 'architecture', 'tradeoff', 'microservices']);
 export const QuestionTypeSchema = z.enum(['identify-pattern', 'concept', 'tradeoff', 'code-smell', 'fill-blank']);
 
 export const LocalizedSchema = z.object({ ru: z.string().min(1), en: z.string().min(1) });

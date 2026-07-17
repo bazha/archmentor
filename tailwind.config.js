@@ -36,6 +36,7 @@ export default {
           behavioral: c('cat-behavioral'),
           architecture: c('cat-architecture'),
           tradeoff: c('cat-tradeoff'),
+          microservices: c('cat-microservices'),
         },
       },
       fontFamily: {

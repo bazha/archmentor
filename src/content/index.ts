@@ -5,6 +5,7 @@ import { structural, structuralQuestions } from './concepts/structural';
 import { behavioral, behavioralQuestions } from './concepts/behavioral';
 import { architecture, architectureQuestions } from './concepts/architecture';
 import { tradeoffs, tradeoffsQuestions } from './concepts/tradeoffs';
+import { microservices, microservicesQuestions } from './concepts/microservices';
 import { questions as seedQuestions } from './questions';
 import { fillBlankQuestions } from './fillBlank';
 import { validateContent, type Concept, type Question } from './schema';
@@ -18,6 +19,7 @@ export const concepts: Concept[] = [
   ...behavioral,
   ...architecture,
   ...tradeoffs,
+  ...microservices,
 ];
 
 export const questions: Question[] = [
@@ -27,6 +29,7 @@ export const questions: Question[] = [
   ...behavioralQuestions,
   ...architectureQuestions,
   ...tradeoffsQuestions,
+  ...microservicesQuestions,
   ...fillBlankQuestions,
 ];
 
