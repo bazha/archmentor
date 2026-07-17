@@ -93,6 +93,11 @@ related, tags?, diagram`.
 2. `src/lib/labels.ts` — `CATEGORY_LABEL`: `ru: 'Микросервисы'`, `en: 'Microservices'`.
 3. `src/domain/graph/layout.ts` — добавить `'microservices'` в конец `CATEGORY_ORDER`;
    обновить точное сравнение в `src/domain/graph/layout.test.ts`.
+   **Важно:** `CategorySchema` — источник типа `Category`, поэтому добавление ключа
+   заставит `tsc` требовать ключ `microservices` во ВСЕХ `Record<Category, …>`. Их три:
+   `CATEGORY_LABEL` (п.2), `CAT_DOT` в `src/features/map/Map.tsx` и `CAT_DOT` в
+   `src/components/Badge.tsx` — в оба добавить цвет-точку категории (Tailwind-класс в
+   стиле соседних значений). Без этого сборка не пройдёт.
 4. `src/content/concepts/microservices.ts` — **новый файл**: `export const microservices:
    Concept[]` (11) и `export const microservicesQuestions: Question[]`.
 5. `src/content/index.ts` — импорт и вливание в массивы `concepts` и `questions`.
