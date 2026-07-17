@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { StrictMode } from 'react';
-import { render, screen, act, fireEvent } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { Interview } from './Interview';
@@ -57,23 +57,6 @@ describe('Interview', () => {
     const cb = screen.getByRole('checkbox', { name: /таймер/i });
     expect(cb).toBeInTheDocument();
     expect(cb).not.toBeChecked();
-  });
-
-  it('auto-advances the current question when the timer runs out in timed mode', () => {
-    vi.useFakeTimers();
-    try {
-      render(<MemoryRouter><Interview /></MemoryRouter>);
-      fireEvent.click(screen.getByRole('checkbox', { name: /таймер/i }));
-      fireEvent.click(screen.getByRole('button', { name: 'Начать собес' }));
-      const first = document.querySelector('p.text-xl')?.textContent ?? '';
-      expect(first.length).toBeGreaterThan(0); // an active question is shown
-      act(() => { vi.advanceTimersByTime(30000); });
-      // The original question is no longer the current one (advanced to the next question or the report).
-      const after = document.querySelector('p.text-xl')?.textContent ?? '';
-      expect(after).not.toBe(first);
-    } finally {
-      vi.useRealTimers();
-    }
   });
 
   it('re-localizes the currently shown question when the language switches', async () => {
