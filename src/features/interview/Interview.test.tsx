@@ -75,4 +75,11 @@ describe('Interview', () => {
     expect(en).not.toBe(ru);
     expect(hasCyrillic(en)).toBe(false); // now English, no leftover Cyrillic
   });
+
+  it('offers a starting-grade selector on the intro, defaulting to Junior', () => {
+    render(<MemoryRouter><Interview /></MemoryRouter>);
+    const radios = screen.getAllByRole('radio');
+    expect(radios.length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByRole('radio', { name: 'Junior' })).toHaveAttribute('aria-checked', 'true');
+  });
 });
