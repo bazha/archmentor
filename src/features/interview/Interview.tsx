@@ -139,37 +139,39 @@ export function Interview() {
           </span>
           <h1 className="text-2xl font-semibold tracking-tight text-bright">{t('interview.introTitle')}</h1>
           <p className="leading-relaxed text-content [text-wrap:pretty]">{t('interview.introBody')}</p>
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-muted">{t('interview.startGrade')}</p>
-            <div role="radiogroup" aria-label={t('interview.startGrade')} className="flex flex-wrap justify-center gap-2">
-              {startableGrades.map((g) => (
-                <button
-                  key={g}
-                  type="button"
-                  role="radio"
-                  aria-checked={startTier === g}
-                  onClick={() => setStartTier(g)}
-                  className={`rounded-full border px-4 py-1.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                    startTier === g
-                      ? 'border-accent bg-accent/10 text-accent'
-                      : 'border-line bg-surface text-muted hover:border-line-strong'
-                  }`}
-                >
-                  {GRADE_LABEL[g]}
-                </button>
-              ))}
+          <div className="mx-auto w-fit space-y-3 text-left">
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-muted">{t('interview.startGrade')}</p>
+              <div role="radiogroup" aria-label={t('interview.startGrade')} className="flex flex-wrap gap-2">
+                {startableGrades.map((g) => (
+                  <button
+                    key={g}
+                    type="button"
+                    role="radio"
+                    aria-checked={startTier === g}
+                    onClick={() => setStartTier(g)}
+                    className={`rounded-full border px-4 py-1.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                      startTier === g
+                        ? 'border-accent bg-accent/10 text-accent'
+                        : 'border-line bg-surface text-muted hover:border-line-strong'
+                    }`}
+                  >
+                    {GRADE_LABEL[g]}
+                  </button>
+                ))}
+              </div>
             </div>
+            <label className="flex items-center gap-2 text-sm text-muted">
+              <input type="checkbox" checked={includeSd} onChange={(e) => setIncludeSd(e.target.checked)}
+                className="h-4 w-4 rounded border-line-strong text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent" />
+              {t('interview.includeSdRound')}
+            </label>
+            <label className="flex items-center gap-2 text-sm text-muted">
+              <input type="checkbox" checked={timed} onChange={(e) => setTimed(e.target.checked)}
+                className="h-4 w-4 rounded border-line-strong text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent" />
+              {t('interview.timedMode')}
+            </label>
           </div>
-          <label className="flex items-center justify-center gap-2 text-sm text-muted">
-            <input type="checkbox" checked={includeSd} onChange={(e) => setIncludeSd(e.target.checked)}
-              className="h-4 w-4 rounded border-line-strong text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent" />
-            {t('interview.includeSdRound')}
-          </label>
-          <label className="flex items-center justify-center gap-2 text-sm text-muted">
-            <input type="checkbox" checked={timed} onChange={(e) => setTimed(e.target.checked)}
-              className="h-4 w-4 rounded border-line-strong text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent" />
-            {t('interview.timedMode')}
-          </label>
           <div className="flex justify-center">
             <button onClick={start} className={PRIMARY_BTN}>{t('interview.start')}</button>
           </div>
