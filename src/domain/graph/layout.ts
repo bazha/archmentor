@@ -5,7 +5,7 @@ export interface NodePos { x: number; y: number }
 
 /** Fixed cluster order (mirrors CategorySchema enum order). */
 export const CATEGORY_ORDER: Category[] = [
-  'solid', 'creational', 'structural', 'behavioral', 'architecture', 'tradeoff',
+  'solid', 'creational', 'structural', 'behavioral', 'architecture', 'tradeoff', 'microservices',
 ];
 
 const CLUSTER_RADIUS = 560; // distance of each category cluster centre from origin

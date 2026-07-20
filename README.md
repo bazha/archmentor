@@ -1,6 +1,6 @@
 # ArchMentor
 
-A client-side SPA for learning software architecture — from Junior to Lead: **SOLID**, the **23 GoF design patterns**, **architectural styles**, and cross-cutting **trade-offs**. Flashcards, spaced repetition (SM-2), quizzes, an adaptive mock interview, side-by-side pattern comparison, a daily challenge, a hands-on system-design diagram builder, and an interactive concept map.
+A client-side SPA for learning software architecture — from Junior to Lead: **SOLID**, the **23 GoF design patterns**, **architectural styles**, **microservices patterns**, and cross-cutting **trade-offs**. Flashcards, spaced repetition (SM-2), quizzes, an adaptive mock interview, side-by-side pattern comparison, a daily challenge, a hands-on system-design diagram builder, and an interactive concept map.
 
 **Live:** https://bazha.github.io/archmentor/
 
@@ -18,12 +18,12 @@ A client-side SPA for learning software architecture — from Junior to Lead: **
 - **Diagram Builder** — assemble a system-design diagram for a scenario (add components from a palette, connect them), submit, and get a per-constraint ✓ / ⚠ / ✗ report plus a reference solution. Grading is constraint-based, not exact-match, so any correct architecture passes. 8 scenarios span four difficulty grades; a fully keyboard-accessible list builder is the core, with an optional React Flow canvas where you drag components from the palette, move and connect nodes, delete them (× button or Delete key), and annotate with sticky notes. After submitting, each report line carries a short "why it matters" explanation for the key decisions, and a visual diff shows your diagram beside the sample solution with matches / extra / missing highlighted.
 - **Map** — an interactive graph of all concepts wired by their `related` links, laid out in category clusters (React Flow). Click a concept to highlight its neighbours and open a panel linking into Learn and Library.
 - **Compare** — two concepts side by side, field by field (definition, problem, solution, pros/cons, trade-offs, when to use, code). Pick any pair or start from a "commonly confused" preset; shareable via `/compare/:a/:b`.
-- **Library** — a searchable, filterable catalog; each concept page shows definition, problem, solution, code, pros/cons, trade-offs, when (not) to use, related concepts, and — for key patterns and architectural styles — an explanatory Mermaid diagram.
+- **Library** — a searchable, filterable catalog; each concept page shows definition, problem, solution, code, pros/cons, trade-offs, when (not) to use, related concepts, and — for key patterns, architectural styles, and microservices patterns — an explanatory Mermaid diagram.
 - **Progress** — quiz accuracy, mastered concepts, streak, best interview grade, and per-grade mastery. All progress persists in `localStorage`.
 
 ## Content
 
-**42 concepts** (5 SOLID + all 23 GoF patterns + 8 architectural styles + 6 cross-cutting trade-offs) and **~119 questions** (77 multiple-choice + 42 fill-in-the-blank), plus **8 system-design scenarios** for the Diagram Builder across four difficulty grades. Content is generated via a multi-agent workflow with adversarial verification (checked against the GoF / Fowler / Martin canon, single defensible answer per quiz question) and validated with zod at import time; each diagram scenario's reference solution is tested to pass its own constraints.
+**53 concepts** (5 SOLID + all 23 GoF patterns + 8 architectural styles + 6 cross-cutting trade-offs + 11 microservices patterns) and **~152 questions** (110 multiple-choice + 42 fill-in-the-blank), plus **8 system-design scenarios** for the Diagram Builder across four difficulty grades. Content is generated via a multi-agent workflow with adversarial verification (checked against the GoF / Fowler / Martin canon, single defensible answer per quiz question) and validated with zod at import time; each diagram scenario's reference solution is tested to pass its own constraints.
 
 ## Stack
 
@@ -45,6 +45,6 @@ Pushing to `master` deploys to GitHub Pages via GitHub Actions (`.github/workflo
 
 ## Status
 
-Feature-complete and deployed. Eleven sidebar modes plus a daily challenge, fully bilingual (RU/EN) with light/dark themes, WCAG AA-guarded accessibility (skip link, visible focus rings, ARIA, `prefers-reduced-motion`, a contrast test), and 214 passing tests.
+Feature-complete and deployed. Eleven sidebar modes plus a daily challenge, fully bilingual (RU/EN) with light/dark themes, WCAG AA-guarded accessibility (skip link, visible focus rings, ARIA, `prefers-reduced-motion`, a contrast test), and 226 passing tests.
 
 Design and implementation docs live in `docs/superpowers/specs/` and `docs/superpowers/plans/`.

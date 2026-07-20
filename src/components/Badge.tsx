@@ -15,6 +15,7 @@ const CAT_DOT: Record<Category, string> = {
   behavioral: 'bg-cat-behavioral',
   architecture: 'bg-cat-architecture',
   tradeoff: 'bg-cat-tradeoff',
+  microservices: 'bg-cat-microservices',
 };
 
 export function Badge({

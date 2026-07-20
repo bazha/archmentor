@@ -135,6 +135,7 @@ export const structural: Concept[] = [
       "decorator",
       "proxy",
       "bridge",
+      "anti-corruption-layer",
     ],
     diagram: `classDiagram
   class Target {
