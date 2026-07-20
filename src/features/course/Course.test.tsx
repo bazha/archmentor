@@ -15,8 +15,8 @@ describe('Course screen', () => {
       expect(screen.getByRole('heading', { name: g })).toBeInTheDocument();
     // first step highlighted with its concept name (srp = "Single Responsibility Principle")
     expect(screen.getByText('Single Responsibility Principle')).toBeInTheDocument();
-    // progress summary: fresh store → 0 of 42 mastered, interpolated
-    expect(screen.getByText('Освоено 0/42')).toBeInTheDocument();
+    // progress summary: fresh store → 0 of 53 mastered, interpolated
+    expect(screen.getByText('Освоено 0/53')).toBeInTheDocument();
   });
 
   it('renders in English', () => {
