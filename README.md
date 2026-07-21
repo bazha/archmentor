@@ -23,7 +23,7 @@ A client-side SPA for learning software architecture — from Junior to Lead: **
 
 ## Content
 
-**53 concepts** (5 SOLID + all 23 GoF patterns + 8 architectural styles + 6 cross-cutting trade-offs + 11 microservices patterns) and **~152 questions** (110 multiple-choice + 42 fill-in-the-blank), plus **8 system-design scenarios** for the Diagram Builder across four difficulty grades. Content is generated via a multi-agent workflow with adversarial verification (checked against the GoF / Fowler / Martin canon, single defensible answer per quiz question) and validated with zod at import time; each diagram scenario's reference solution is tested to pass its own constraints.
+**53 concepts** (5 SOLID + all 23 GoF patterns + 8 architectural styles + 6 cross-cutting trade-offs + 11 microservices patterns) and **~152 questions** (110 multiple-choice + 42 fill-in-the-blank), plus **8 system-design scenarios** for the Diagram Builder across four difficulty grades. Content is generated via a multi-agent workflow with adversarial verification (checked against the GoF / Fowler / Martin canon, single defensible answer per quiz question) and validated with zod at import time; each diagram scenario's reference solution is tested to pass its own constraints. Every concept is written to a consistent depth (definition, problem, solution, code, pros/cons, trade-offs, when-to-use, related links, and an explanatory diagram), guarded by a depth-floor test.
 
 ## Stack
 

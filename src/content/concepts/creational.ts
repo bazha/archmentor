@@ -11,16 +11,16 @@ export const creational: Concept[] = [
       en: "A single instance of a class and a global point of access to it",
     },
     definition: {
-      ru: "Гарантирует, что у класса есть только один экземпляр, и предоставляет глобальную точку доступа к нему.",
-      en: "Ensures that a class has only one instance and provides a global point of access to it.",
+      ru: "Гарантирует, что у класса есть только один экземпляр, и предоставляет глобальную точку доступа к нему. Класс сам управляет собственным жизненным циклом: приватный конструктор запрещает создание через new снаружи, а статический метод-аксессор либо лениво создаёт единственный экземпляр при первом обращении, либо возвращает уже существующий. Важная оговорка: многие инженеры сегодня считают классический Singleton скорее анти-паттерном по сравнению с DI-скоуп-синглтоном — сервисом, который создаётся один раз в контейнере зависимостей и явно передаётся туда, где нужен, вместо скрытого глобального доступа.",
+      en: "Ensures that a class has only one instance and provides a global point of access to it. The class manages its own lifecycle: a private constructor forbids instantiation via new from the outside, and a static accessor method either lazily creates the single instance on first access or returns the one that already exists. An important caveat: many engineers today consider the classic Singleton more of an anti-pattern compared to a DI-scoped singleton — a service created once inside a dependency-injection container and passed explicitly to wherever it's needed, instead of relying on hidden global access.",
     },
     problem: {
-      ru: "Некоторые объекты должны существовать в системе ровно в одном экземпляре (конфигурация, логгер, пул соединений). Обычный класс не мешает создать несколько экземпляров через new, а хранение единственного экземпляра в глобальной переменной не защищает от повторного создания и засоряет глобальное пространство имён.",
-      en: "Some objects should exist in exactly one instance across the system (configuration, a logger, a connection pool). An ordinary class does nothing to stop you from creating several instances with new, and keeping the single instance in a global variable neither prevents it from being created again nor keeps the global namespace clean.",
+      ru: "Некоторые объекты должны существовать в системе ровно в одном экземпляре — конфигурация, логгер, пул соединений с базой данных. Обычный класс никак не мешает создать несколько его экземпляров через new: ничто не запрещает второй, третий и так далее вызов конструктора, и в системе появляются рассинхронизированные копии состояния. Наивная альтернатива — хранить единственный экземпляр в глобальной переменной модуля — тоже не решает проблему: ничто не мешает создать ещё один экземпляр и присвоить его той же переменной, глобальное пространство имён засоряется, а порядок инициализации между модулями не гарантирован. Нужен способ, при котором сам класс контролирует своё создание и гарантирует единственность независимо от того, как и когда к нему обращается клиентский код.",
+      en: "Some objects should exist in the system in exactly one instance — configuration, a logger, a database connection pool. An ordinary class does nothing to stop several instances from being created via new: nothing forbids a second, third, or further call to the constructor, and the system ends up with out-of-sync copies of state. A naive alternative — keeping the single instance in a module-level global variable — doesn't solve the problem either: nothing prevents creating another instance and reassigning it to that same variable, the global namespace gets cluttered, and initialization order across modules isn't guaranteed. What's needed is a way for the class itself to control its own creation and guarantee uniqueness no matter how or when client code reaches for it.",
     },
     solution: {
-      ru: "Класс сам контролирует своё создание: конструктор объявляется приватным, чтобы запретить new извне, а статический метод getInstance() лениво создаёт экземпляр при первом обращении и при всех последующих возвращает один и тот же объект.",
-      en: "The class controls its own creation: the constructor is made private to forbid new from the outside, and a static getInstance() method lazily creates the instance on first access and returns that same object on every subsequent call.",
+      ru: "Класс сам контролирует своё создание: конструктор объявляется приватным, чтобы запретить new извне, а статический метод getInstance() лениво создаёт экземпляр при первом обращении и при всех последующих вызовах возвращает один и тот же объект, хранящийся в приватном статическом поле. Такая ленивая инициализация экономит ресурсы, если экземпляр может и не понадобиться. В многопоточной среде наивная реализация уязвима к состоянию гонки: два потока могут одновременно пройти проверку instance === null и создать два разных экземпляра, поэтому промышленные реализации используют блокировку, double-checked locking или заранее созданный (eager) статический экземпляр, инициализируемый до старта потоков. В JavaScript/TypeScript в браузере и Node.js однопоточная модель выполнения снимает эту проблему для синхронного кода, но она возвращается при работе с воркерами или несколькими процессами. Современная альтернатива — не делать класс ответственным за собственную единственность, а создать один экземпляр в композиционном корне приложения и передавать его через конструктор (dependency injection); DI-контейнер тогда играет роль явного, тестируемого «синглтона в рамках scope», а не скрытого глобального состояния.",
+      en: "The class controls its own creation: the constructor is made private to forbid new from the outside, and a static getInstance() method lazily creates the instance on first access, returning that same object — held in a private static field — on every subsequent call. This lazy initialization saves resources when the instance might never be needed. In a multithreaded environment, a naive implementation is vulnerable to a race condition: two threads can simultaneously pass the instance === null check and create two different instances, so production implementations use locking, double-checked locking, or an eager static instance created before any threads start. In JavaScript/TypeScript, the single-threaded execution model in the browser and Node.js removes this problem for synchronous code, but it reappears when working with workers or multiple processes. A more modern alternative is to stop making the class responsible for its own uniqueness at all: create one instance in the application's composition root and pass it in via the constructor (dependency injection); a DI container then plays the role of an explicit, testable \"scoped singleton\" instead of hidden global state.",
     },
     codeExample: {
       lang: "typescript",
@@ -76,11 +76,13 @@ export const creational: Concept[] = [
         "Гарантированно один экземпляр класса",
         "Единая точка доступа вместо разбросанных глобальных переменных",
         "Ленивая инициализация: экземпляр создаётся только при первом обращении",
+        "Экономит ресурсы по сравнению с eager-созданием на старте приложения, если тяжёлый экземпляр может вообще не понадобиться",
       ],
       en: [
         "Guarantees a single instance of the class",
         "A single point of access instead of scattered global variables",
         "Lazy initialization: the instance is created only on first access",
+        "Saves resources compared to eager creation at application startup, when an expensive instance might never be needed at all",
       ],
     },
     cons: {
@@ -101,30 +103,36 @@ export const creational: Concept[] = [
       ru: [
         "Удобство глобального доступа против скрытых зависимостей и роста связанности",
         "Гарантия единственности против тестируемости: подменить экземпляр в тестах трудно",
+        "Ленивая инициализация экономит ресурсы, но в многопоточной среде требует дополнительной синхронизации (блокировок), которая усложняет код и может стать узким местом",
       ],
       en: [
         "The convenience of global access versus hidden dependencies and growing coupling",
         "Guaranteed uniqueness versus testability: replacing the instance in tests is hard",
+        "Lazy initialization saves resources, but in a multithreaded environment it requires extra synchronization (locking), which complicates the code and can become a bottleneck",
       ],
     },
     whenToUse: {
       ru: [
         "В системе должен быть ровно один экземпляр объекта, доступный из разных мест (конфигурация, логгер, пул соединений)",
         "Нужен контролируемый ленивый доступ к разделяемому ресурсу",
+        "Создание экземпляра дорого, а само наличие экземпляра нужно не всегда — выгодна ленивая инициализация вместо создания на старте приложения",
       ],
       en: [
         "The system must have exactly one instance of an object, accessible from many places (configuration, a logger, a connection pool)",
         "You need controlled, lazy access to a shared resource",
+        "Creating the instance is expensive and it isn't always needed — lazy initialization pays off compared to creating it eagerly at startup",
       ],
     },
     whenNotToUse: {
       ru: [
         "Единственность не является реальным требованием — достаточно создать один экземпляр и передать его через конструктор (внедрение зависимостей)",
         "Код должен легко тестироваться с подменой зависимости моками",
+        "Приложение многопоточное или многопроцессное, а наивный ленивый Singleton без синхронизации создаёт риск состояния гонки — надёжнее eager-инициализация или DI-контейнер со своим управлением жизненным циклом",
       ],
       en: [
         "Uniqueness is not a genuine requirement — it is enough to create one instance and pass it in through the constructor (dependency injection)",
         "The code needs to be easily testable by substituting the dependency with mocks",
+        "The application is multithreaded or multi-process, and a naive lazy Singleton without synchronization risks a race condition — eager initialization or a DI container with its own lifecycle management is safer",
       ],
     },
     related: [
@@ -137,6 +145,14 @@ export const creational: Concept[] = [
       "паттерны",
       "порождающие",
     ],
+    diagram: `classDiagram
+  class Singleton {
+    -static instance: Singleton
+    -Singleton()
+    +static getInstance() Singleton
+    +operation()
+  }
+  Singleton --> Singleton : getInstance() returns the same instance`,
   },
   {
     id: "builder",
@@ -148,16 +164,16 @@ export const creational: Concept[] = [
       en: "Step-by-step construction of a complex object, decoupled from its representation",
     },
     definition: {
-      ru: "Отделяет конструирование сложного объекта от его представления, так что один и тот же процесс конструирования может создавать разные представления.",
-      en: "Separates the construction of a complex object from its representation, so that the same construction process can create different representations.",
+      ru: "Отделяет конструирование сложного объекта от его представления, так что один и тот же процесс пошаговой сборки может создавать разные представления. Вместо того чтобы передавать все параметры сразу в конструктор, клиент запрашивает у отдельного объекта-строителя выполнение шагов конфигурирования в удобном порядке, а готовый продукт получает только вызовом финального метода build(). Часто процесс сборки дополнительно инкапсулируют в объекте Director, который знает конкретные последовательности шагов для типовых конфигураций продукта.",
+      en: "Separates the construction of a complex object from its representation, so that the same step-by-step construction process can create different representations. Instead of passing every parameter into a constructor at once, the client asks a separate builder object to perform configuration steps in whatever order is convenient, and only obtains the finished product by calling a final build() method. The construction process is often further encapsulated in a Director object, which knows the specific sequences of steps for common product configurations.",
     },
     problem: {
-      ru: "Конструктор сложного объекта разрастается: множество параметров, часть из них необязательна, и появляются «телескопические» перегрузки конструктора. Клиентский код вынужден передавать длинные списки аргументов и знать порядок всех частей объекта, а процесс сборки нельзя переиспользовать для других представлений.",
-      en: "A complex object's constructor grows out of control: many parameters, some of them optional, and \"telescoping\" constructor overloads start to appear. Client code is forced to pass long argument lists and know the order of every part of the object, and the construction process can't be reused for other representations.",
+      ru: "Конструктор сложного объекта разрастается: множество параметров, часть из них необязательна, и появляются «телескопические» перегрузки конструктора — одна с двумя аргументами, другая с пятью, третья с десятью, отличающиеся только тем, какие необязательные части заданы. Клиентский код вынужден передавать длинные списки аргументов, часть из которых — заглушки вроде null или undefined, и помнить точный порядок всех частей объекта. Кроме того, один и тот же набор шагов сборки нельзя переиспользовать для получения разных представлений продукта (например, HTML- и PDF-версии одного документа) — под каждое представление пришлось бы писать отдельный конструктор или фабричный метод.",
+      en: "A complex object's constructor grows out of control: many parameters, some of them optional, and \"telescoping\" constructor overloads start to appear — one with two arguments, another with five, a third with ten, differing only in which optional parts are supplied. Client code is forced to pass long argument lists, some of them placeholder nulls or undefined values, and to remember the exact order of every part of the object. Moreover, the same sequence of construction steps can't be reused to produce different representations of the product (say, an HTML and a PDF version of the same document) — each representation would need its own constructor or factory method.",
     },
     solution: {
-      ru: "Выносим процесс сборки в отдельный объект Builder: он предоставляет методы для пошаговой настройки частей продукта и метод build(), возвращающий готовый объект. Клиент вызывает только нужные шаги в удобном порядке; один и тот же процесс сборки может давать разные представления, а продукт можно сделать неизменяемым — он появляется только целиком в момент build().",
-      en: "Move the construction process into a separate Builder object: it exposes methods for configuring the product's parts step by step, plus a build() method that returns the finished object. The client calls only the steps it needs, in whatever order is convenient; the same construction process can yield different representations, and the product can be made immutable — it comes into existence only as a whole, at the moment build() is called.",
+      ru: "Выносим процесс сборки в отдельный объект Builder: он предоставляет методы для пошаговой настройки частей продукта и метод build(), возвращающий готовый объект. Клиент вызывает только нужные шаги в удобном порядке; один и тот же процесс сборки может давать разные представления, а продукт можно сделать неизменяемым — он появляется только целиком в момент build(). Для типовых конфигураций поверх строителя можно завести отдельный класс Director, который знает готовые последовательности шагов (например, buildMinimalRequest() или buildFullRequest()) и избавляет клиента от необходимости помнить порядок вызовов самостоятельно; сам строитель при этом остаётся переиспользуемым для нестандартных сценариев, где Director не подходит. В отличие от Factory Method, который одним вызовом решает, какой класс продукта создать, Builder решает другую задачу — пошагово собрать части одного сложного продукта, и оба паттерна нередко комбинируют: фабрика может возвращать нужный строитель.",
+      en: "Move the construction process into a separate Builder object: it exposes methods for configuring the product's parts step by step, plus a build() method that returns the finished object. The client calls only the steps it needs, in whatever order is convenient; the same construction process can yield different representations, and the product can be made immutable — it comes into existence only as a whole, at the moment build() is called. For common configurations, a separate Director class can sit on top of the builder, knowing ready-made sequences of steps (e.g. buildMinimalRequest() or buildFullRequest()) so the client doesn't have to remember the call order itself; the builder remains reusable on its own for non-standard scenarios where the Director doesn't fit. Unlike Factory Method, which decides in a single call which product class to create, Builder solves a different problem — assembling the parts of one complex product step by step — and the two patterns are often combined: a factory can return the right builder.",
     },
     codeExample: {
       lang: "typescript",
@@ -242,10 +258,12 @@ export const creational: Concept[] = [
       ru: [
         "Читаемость и гибкость сборки против дополнительного класса и объёма кода",
         "Контроль над этапами конструирования против риска забыть обязательный шаг до build()",
+        "Fluent-интерфейс с возвратом this улучшает читаемость цепочки вызовов, но в языках со строгой типизацией усложняет типы при наследовании строителей (self-returning type в подклассах)",
       ],
       en: [
         "Readability and flexibility of construction versus an extra class and more code",
         "Control over the construction steps versus the risk of forgetting a required step before build()",
+        "A fluent interface that returns this improves the readability of chained calls, but in strictly typed languages it complicates the types when builders are subclassed (the self-returning-type problem)",
       ],
     },
     whenToUse: {
@@ -264,10 +282,12 @@ export const creational: Concept[] = [
       ru: [
         "Объект простой, параметров мало — достаточно конструктора или объектного литерала",
         "В TypeScript хватает объектного литерала с опциональными полями и значениями по умолчанию",
+        "Нужно лишь выбрать один из готовых вариантов продукта по типу, без пошаговой настройки его частей — тогда достаточно Factory Method или Abstract Factory",
       ],
       en: [
         "The object is simple with few parameters — a constructor or object literal is enough",
         "In TypeScript, an object literal with optional fields and default values is sufficient",
+        "You only need to pick one of the ready-made product variants by type, without step-by-step configuration of its parts — Factory Method or Abstract Factory is enough",
       ],
     },
     related: [
@@ -280,6 +300,23 @@ export const creational: Concept[] = [
       "паттерны",
       "порождающие",
     ],
+    diagram: `classDiagram
+  class Director {
+    +construct(builder)
+  }
+  class HttpRequestBuilder {
+    +setHeader(name, value) this
+    +setBody(body) this
+    +build() HttpRequest
+  }
+  class HttpRequest {
+    +method
+    +url
+    +headers
+    +body
+  }
+  Director --> HttpRequestBuilder : directs
+  HttpRequestBuilder ..> HttpRequest : creates`,
   },
   {
     id: "prototype",
@@ -294,16 +331,16 @@ export const creational: Concept[] = [
       en: "New objects are created by copying a prototypical instance",
     },
     definition: {
-      ru: "Задаёт виды создаваемых объектов с помощью прототипического экземпляра и создаёт новые объекты путём копирования этого прототипа.",
-      en: "Specify the kinds of objects to create using a prototypical instance, and create new objects by copying this prototype.",
+      ru: "Задаёт виды создаваемых объектов с помощью прототипического экземпляра и создаёт новые объекты путём копирования этого прототипа, а не повторного прохождения инициализации через конструктор. Копирование может быть поверхностным (shallow) — когда вложенные объекты остаются общими для оригинала и копии — или глубоким (deep), когда рекурсивно клонируется весь граф вложенных объектов; выбор глубины копирования — ключевое архитектурное решение паттерна. Набор преднастроенных прототипов часто хранят в реестре (prototype registry), из которого клиент запрашивает нужный образец по ключу.",
+      en: "Specify the kinds of objects to create using a prototypical instance, and create new objects by copying this prototype rather than re-running initialization through a constructor. The copy can be shallow — where nested objects remain shared between the original and the copy — or deep, where the entire graph of nested objects is recursively cloned; choosing the copy depth is the pattern's key architectural decision. A set of pre-configured prototypes is often kept in a prototype registry, from which the client requests the needed sample by key.",
     },
     problem: {
-      ru: "Нужно создавать копии объектов, но клиент не должен зависеть от их конкретных классов. Собрать точную копию снаружи невозможно или дорого: часть состояния скрыта в приватных полях, а инициализация (запросы к БД, сети, тяжёлые вычисления) слишком затратна, чтобы повторять её для каждого экземпляра.",
-      en: "You need to produce copies of objects, but the client shouldn't depend on their concrete classes. Reconstructing an exact copy from the outside is impossible or expensive: some of the state is hidden in private fields, and initialization (database or network requests, heavy computation) is too costly to repeat for every instance.",
+      ru: "Нужно создавать копии объектов, но клиент не должен зависеть от их конкретных классов. Собрать точную копию снаружи невозможно или дорого: часть состояния скрыта в приватных полях, а инициализация (запросы к БД, сети, тяжёлые вычисления) слишком затратна, чтобы повторять её для каждого экземпляра. В отличие от Factory, которая создаёт объект «с нуля» по описанию класса, здесь нужен именно готовый образец с уже накопленным состоянием — сама постановка задачи предполагает, что где-то в системе есть подходящий экземпляр, который дешевле скопировать, чем воссоздать заново с той же конфигурацией.",
+      en: "You need to produce copies of objects, but the client shouldn't depend on their concrete classes. Reconstructing an exact copy from the outside is impossible or expensive: some of the state is hidden in private fields, and initialization (database or network requests, heavy computation) is too costly to repeat for every instance. Unlike a Factory, which builds an object \"from scratch\" from a class description, here what's needed is precisely a ready-made sample with already-accumulated state — the problem itself presumes that somewhere in the system there's a suitable instance that's cheaper to copy than to recreate with the same configuration.",
     },
     solution: {
-      ru: "Делегируем копирование самому объекту: объявляем общий интерфейс с методом clone(), и каждый класс сам создаёт свою копию — у него есть доступ к собственным приватным полям. Клиент работает только с интерфейсом и получает копию, не зная конкретного класса; преднастроенные экземпляры-прототипы служат образцами для тиражирования.",
-      en: "Delegate the copying to the object itself: declare a common interface with a clone() method, and let each class create its own copy — it has access to its own private fields. The client works only with the interface and gets a copy without knowing the concrete class; pre-configured prototype instances serve as templates for mass-producing new objects.",
+      ru: "Делегируем копирование самому объекту: объявляем общий интерфейс с методом clone(), и каждый класс сам создаёт свою копию — у него есть доступ к собственным приватным полям. Клиент работает только с интерфейсом и получает копию, не зная конкретного класса; преднастроенные экземпляры-прототипы служат образцами для тиражирования. Набор именованных прототипов удобно хранить в реестре (например, Map<string, Shape>), откуда клиент получает нужный образец по ключу и клонирует его — это заменяет разрастание фабричных методов под каждую конфигурацию продукта. В отличие от Factory Method, где новый объект строится с нуля по классу, здесь новый объект получается из уже существующего состояния, что оправдано, когда инициализация (сетевые запросы, чтение файлов, тяжёлые вычисления) дороже самого копирования.",
+      en: "Delegate the copying to the object itself: declare a common interface with a clone() method, and let each class create its own copy — it has access to its own private fields. The client works only with the interface and gets a copy without knowing the concrete class; pre-configured prototype instances serve as templates for mass-producing new objects. A set of named prototypes is conveniently kept in a registry (e.g. Map<string, Shape>), from which the client fetches the needed sample by key and clones it — this replaces a proliferation of factory methods for every product configuration. Unlike Factory Method, where a new object is built from scratch from a class, here a new object is obtained from already-existing state, which pays off when initialization (network requests, file reads, heavy computation) is more expensive than the copy itself.",
     },
     codeExample: {
       lang: "typescript",
@@ -382,20 +419,24 @@ export const creational: Concept[] = [
       ru: [
         "Корректно клонировать объекты с циклическими ссылками и сложным графом зависимостей трудно",
         "Каждый класс обязан реализовать clone(), и ошибка в выборе глубины копирования (shallow против deep) даёт разделяемое мутабельное состояние",
+        "В TypeScript/JavaScript нет встроенной поддержки клонирования — clone() приходится писать и поддерживать вручную в каждом классе, и легко забыть обновить его при добавлении нового поля",
       ],
       en: [
         "Correctly cloning objects with circular references and a complex dependency graph is hard",
         "Every class is obligated to implement clone(), and getting the copy depth wrong (shallow vs. deep) leaves you with shared mutable state",
+        "TypeScript/JavaScript has no built-in cloning support — clone() must be written and maintained by hand in every class, and it's easy to forget to update it when a new field is added",
       ],
     },
     tradeoffs: {
       ru: [
         "Поверхностная копия быстрее, но копии делят вложенные объекты; глубокая — независима, но дороже и сложнее в реализации",
         "Гибкость конфигурирования объектов в рантайме против обязанности поддерживать корректный clone() в каждом классе",
+        "Prototype дёшево копирует уже существующее состояние, но требует поддерживать clone() в каждом классе; Factory Method строит объект с нуля по классу — не даёт выигрыша на инициализации, зато не несёт риска случайно расшаренного состояния",
       ],
       en: [
         "A shallow copy is faster, but the copies share their nested objects; a deep copy is independent, but more expensive and harder to implement",
         "Flexibility to configure objects at runtime vs. the obligation to maintain a correct clone() in every class",
+        "Prototype cheaply copies already-existing state but requires maintaining clone() in every class; Factory Method builds the object from scratch from a class — no win on initialization cost, but no risk of accidentally shared state either",
       ],
     },
     whenToUse: {
@@ -414,10 +455,12 @@ export const creational: Concept[] = [
       ru: [
         "Объектов мало и создание тривиально — достаточно прямого new",
         "Состояние объекта содержит сложные внешние ссылки (соединения, дескрипторы), которые нельзя осмысленно скопировать",
+        "Инициализация объекта дешева и не требует внешних ресурсов — тогда обычная фабрика или прямой new проще, чем писать и поддерживать clone()",
       ],
       en: [
         "There are few objects and creating them is trivial — a direct new is enough",
         "The object's state holds complex external references (connections, handles) that can't be meaningfully copied",
+        "Initializing the object is cheap and needs no external resources — a plain factory or direct new is simpler than writing and maintaining clone()",
       ],
     },
     related: [
@@ -429,6 +472,28 @@ export const creational: Concept[] = [
       "паттерны",
       "порождающие",
     ],
+    diagram: `classDiagram
+  class Shape {
+    <<interface>>
+    +clone() Shape
+  }
+  class Circle {
+    +radius
+    +clone() Circle
+  }
+  class Rectangle {
+    +width
+    +height
+    +clone() Rectangle
+  }
+  class PrototypeRegistry {
+    -prototypes: Map~string, Shape~
+    +register(key, prototype)
+    +create(key) Shape
+  }
+  Shape <|.. Circle
+  Shape <|.. Rectangle
+  PrototypeRegistry o--> Shape : stores`,
   },
 ];
 

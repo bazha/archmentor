@@ -14,16 +14,16 @@ export const behavioral: Concept[] = [
       en: "A request travels along a chain of handlers until one of them handles it",
     },
     definition: {
-      ru: "Избавляет отправителя запроса от жёсткой привязки к получателю, давая возможность обработать запрос более чем одному объекту. Получатели связываются в цепочку, и запрос передаётся по ней, пока какой-нибудь объект его не обработает.",
-      en: "Avoid coupling the sender of a request to its receiver by giving more than one object a chance to handle the request. Chain the receiving objects and pass the request along the chain until an object handles it.",
+      ru: "Избавляет отправителя запроса от жёсткой привязки к получателю, давая возможность обработать запрос более чем одному объекту. Получатели связываются в цепочку, и запрос передаётся по ней, пока какой-нибудь объект его не обработает. Отправитель знает только первое звено цепочки и не обязан знать, какой конкретно обработчик (и откликнется ли вообще хоть один) в итоге ответит на запрос; состав и порядок звеньев можно менять независимо от кода, который этот запрос порождает.",
+      en: "Avoid coupling the sender of a request to its receiver by giving more than one object a chance to handle the request. Chain the receiving objects and pass the request along the chain until an object handles it. The sender knows only the head of the chain and need not know which handler — if any — will ultimately respond; the chain's membership and order can be composed and rearranged independently of the code that issues the request.",
     },
     problem: {
-      ru: "Запрос могут обработать несколько объектов, но какой именно — заранее неизвестно, а их набор и порядок могут меняться. Жёсткая привязка отправителя к конкретному получателю или каскад условных операторов «кто отвечает за этот случай» делают код негибким и трудным для расширения.",
-      en: "Several objects may be able to handle a request, but which one should is not known in advance, and the set of handlers and their order can change. Hard-wiring the sender to a specific receiver — or a cascade of conditionals deciding \"who is responsible for this case\" — makes the code rigid and hard to extend.",
+      ru: "Запрос могут обработать несколько объектов, но какой именно — заранее неизвестно, а их набор и порядок могут меняться. Жёсткая привязка отправителя к конкретному получателю или каскад условных операторов «кто отвечает за этот случай» делают код негибким и трудным для расширения. Типичный пример — конвейер middleware в веб-фреймворке: запрос должен пройти проверку авторизации, валидацию и логирование, но заранее неясно, сколько шагов нужно конкретному маршруту и в каком порядке. Decorator здесь не подходит: декоратор всегда передаёт управление дальше и добавляет своё поведение вокруг вызова, а в этой задаче ровно один участник должен забрать запрос себе и остановить его дальнейшее движение.",
+      en: "Several objects may be able to handle a request, but which one should is not known in advance, and the set of handlers and their order can change. Hard-wiring the sender to a specific receiver — or a cascade of conditionals deciding \"who is responsible for this case\" — makes the code rigid and hard to extend. A typical example is a middleware pipeline in a web framework: a request must pass through authentication, validation, and logging, but it isn't clear in advance how many steps a given route needs or in what order. Decorator doesn't fit here: a decorator always forwards control and layers its own behavior around the call, whereas this problem needs exactly one participant to claim the request and stop it from propagating further.",
     },
     solution: {
-      ru: "Каждый обработчик реализует общий интерфейс и хранит ссылку на следующее звено. Получив запрос, обработчик либо обрабатывает его сам, либо передаёт дальше по цепочке. Клиент отправляет запрос первому звену и не знает, кто в итоге ответит; состав и порядок цепочки собираются динамически.",
-      en: "Each handler implements a common interface and holds a reference to the next link. On receiving a request, a handler either handles it itself or passes it further down the chain. The client sends the request to the first link and does not know who will ultimately respond; the composition and order of the chain are assembled dynamically.",
+      ru: "Каждый обработчик реализует общий интерфейс и хранит ссылку на следующее звено. Получив запрос, обработчик сначала решает, относится ли он к его компетенции: если да — формирует ответ и обработка останавливается, если нет — передаёт запрос дальше по цепочке (обычно вызовом handle() у next или через super.handle() в базовом классе). Клиент отправляет запрос первому звену и не знает, кто в итоге ответит; состав и порядок цепочки собираются динамически, например через setNext(). Эта структура — точный аналог middleware: каждый слой либо перехватывает запрос и завершает конвейер, либо прозрачно пропускает его дальше без изменений. Если ни одно звено не откликнулось, запрос доходит до конца цепочки необработанным — это стоит предусмотреть явно (например, обработчиком по умолчанию в хвосте цепочки), а не считать невозможным случаем.",
+      en: "Each handler implements a common interface and holds a reference to the next link. On receiving a request, a handler first decides whether the request falls within its competence: if so, it produces a response and processing stops; if not, it passes the request further down the chain (typically by calling handle() on next, or via super.handle() in a base class). The client sends the request to the first link and does not know who will ultimately respond; the composition and order of the chain are assembled dynamically, for example through setNext(). This structure is a direct analogue of middleware: each layer either intercepts the request and terminates the pipeline, or transparently passes it on unchanged. If no link responds, the request reaches the end of the chain unhandled — that outcome should be planned for explicitly (say, with a default handler at the tail), not assumed away as impossible.",
     },
     codeExample: {
       lang: "typescript",
@@ -85,11 +85,13 @@ export const behavioral: Concept[] = [
         "Отправитель развязан с конкретным получателем запроса",
         "Обработчики добавляются и переставляются без правки клиента (соответствует OCP)",
         "Каждый обработчик отвечает только за свой случай (в духе SRP)",
+        "Каждое звено тестируется в изоляции: оно ничего не знает о внутреннем устройстве соседей",
       ],
       en: [
         "The sender is decoupled from the concrete receiver of the request",
         "Handlers can be added or reordered without changing the client (satisfies the Open/Closed Principle)",
         "Each handler is responsible for only its own case (in the spirit of the Single Responsibility Principle)",
+        "Each link can be tested in isolation, since it knows nothing about its neighbors' internals",
       ],
     },
     cons: {
@@ -108,10 +110,12 @@ export const behavioral: Concept[] = [
       ru: [
         "Гибкость состава и порядка обработчиков против отсутствия гарантии, что запрос вообще будет обработан",
         "Развязка отправителя и получателя против прозрачности потока управления",
+        "В отличие от Decorator, где каждый слой обязательно передаёт управление дальше и добавляет своё поведение, здесь ровно одно звено может забрать запрос и остановить цепочку — иное распределение ответственности за завершение обработки",
       ],
       en: [
         "Flexibility in the composition and order of handlers versus no guarantee that the request will be handled at all",
         "Decoupling the sender from the receiver versus transparency of the control flow",
+        "Unlike Decorator, where every layer always forwards control and adds its own behavior, here exactly one link can claim the request and halt the chain — a different allocation of responsibility for terminating processing",
       ],
     },
     whenToUse: {
@@ -169,16 +173,16 @@ export const behavioral: Concept[] = [
       en: "A request as an object: queuing, logging, and undoable operations",
     },
     definition: {
-      ru: "Инкапсулирует запрос в виде объекта, позволяя параметризовать клиентов разными запросами, ставить запросы в очередь, протоколировать их и поддерживать отмену операций.",
-      en: "Encapsulates a request as an object, letting you parameterize clients with different requests, queue or log requests, and support undoable operations.",
+      ru: "Инкапсулирует запрос в виде объекта, позволяя параметризовать клиентов разными запросами, ставить запросы в очередь, протоколировать их и поддерживать отмену операций. Команда отделяет то, что нужно выполнить, от того, кто и когда это выполнит: инициатор (invoker) хранит и запускает объекты-команды, а получатель (receiver), которому в итоге делегируется реальная работа, о существовании команды вообще не подозревает.",
+      en: "Encapsulates a request as an object, letting you parameterize clients with different requests, queue or log requests, and support undoable operations. Command separates what needs to be done from who performs it and when: the invoker holds and triggers command objects, while the receiver — to which the actual work is ultimately delegated — isn't even aware that a command exists.",
     },
     problem: {
-      ru: "Инициатор действия (кнопка, пункт меню, планировщик) не должен знать, кто и как выполнит операцию. Прямой вызов метода получателя жёстко связывает их между собой и не позволяет откладывать выполнение, ставить запросы в очередь, вести журнал операций или отменять уже выполненные действия.",
-      en: "The initiator of an action (a button, a menu item, a scheduler) shouldn't need to know who performs the operation or how. Calling a receiver's method directly couples the two tightly and makes it impossible to defer execution, queue requests, keep an operation log, or undo actions that have already run.",
+      ru: "Инициатор действия (кнопка, пункт меню, планировщик) не должен знать, кто и как выполнит операцию. Прямой вызов метода получателя жёстко связывает их между собой и не позволяет откладывать выполнение, ставить запросы в очередь, вести журнал операций или отменять уже выполненные действия. Если операцию нужно логировать для аудита, повторить после сбоя или собрать в составной сценарий (макрос), обычный вызов метода для этого не годится: сам вызов исчезает сразу после выполнения и не оставляет после себя объекта, с которым можно было бы работать дальше.",
+      en: "The initiator of an action (a button, a menu item, a scheduler) shouldn't need to know who performs the operation or how. Calling a receiver's method directly couples the two tightly and makes it impossible to defer execution, queue requests, keep an operation log, or undo actions that have already run. If an operation needs to be logged for auditing, retried after a failure, or composed into a larger scenario (a macro), a plain method call isn't suited for that — the call itself vanishes the instant it executes and leaves behind no object you could keep working with.",
     },
     solution: {
-      ru: "Запрос оформляется отдельным объектом-командой с единым методом execute(). Команда хранит ссылку на получателя (receiver) и параметры вызова, а инициатор (invoker) работает только с интерфейсом Command: выполняет команды, накапливает историю и вызывает undo() для отмены. Так вызов операции отделяется от её выполнения.",
-      en: "The request is packaged as a separate command object with a single execute() method. The command holds a reference to the receiver along with the call parameters, while the invoker works only against the Command interface: it executes commands, accumulates a history, and calls undo() to reverse them. This decouples invoking an operation from performing it.",
+      ru: "Запрос оформляется отдельным объектом-командой с единым методом execute(). Команда хранит ссылку на получателя (receiver) и параметры вызова, а инициатор (invoker) работает только с интерфейсом Command: выполняет команды, накапливает историю и вызывает undo() для отмены. Так вызов операции отделяется от её выполнения. Такое разделение открывает путь к составным командам (макрокомандам), которые сами реализуют интерфейс Command и последовательно прогоняют вложенные команды, а также к отложенным командам, которые кладутся в очередь и обрабатываются воркером позже. Команду обычно проектируют неизменяемой: все параметры вызова фиксируются в конструкторе, а execute() и undo() лишь используют уже готовые данные, не принимая новых аргументов извне.",
+      en: "The request is packaged as a separate command object with a single execute() method. The command holds a reference to the receiver along with the call parameters, while the invoker works only against the Command interface: it executes commands, accumulates a history, and calls undo() to reverse them. This decouples invoking an operation from performing it. That separation opens the door to composite commands (macro-commands) that themselves implement the Command interface and run their nested commands in sequence, as well as to deferred commands that are placed on a queue and processed later by a worker. A command is usually designed to be immutable: all of the call's parameters are fixed in the constructor, and execute() and undo() simply operate on that already-prepared data rather than accepting new arguments from outside.",
     },
     codeExample: {
       lang: "typescript",
@@ -251,20 +255,24 @@ export const behavioral: Concept[] = [
       ru: [
         "Отдельный класс на каждую операцию — растёт объём кода",
         "Дополнительный слой косвенности между вызовом и действием",
+        "Undo часто требует хранить достаточно данных для обратной операции, что усложняет команды с необратимыми побочными эффектами (отправка письма, списание платежа)",
       ],
       en: [
         "A separate class for every operation inflates the amount of code",
         "An extra layer of indirection between the call and the action",
+        "Undo often requires storing enough data to perform the inverse operation, which complicates commands with irreversible side effects (sending an email, charging a payment)",
       ],
     },
     tradeoffs: {
       ru: [
         "Гибкость управления запросами (очереди, история, отмена) против роста числа классов",
         "Единообразный интерфейс всех операций против размазывания простой логики по объектам-обёрткам",
+        "В отличие от Strategy, где клиент выбирает один из взаимозаменяемых алгоритмов для решения одной и той же задачи, Command оборачивает разнородные запросы как самостоятельные объекты ради очереди, истории и отмены — акцент на действии и его жизненном цикле, а не на выборе алгоритма",
       ],
       en: [
         "Flexible control over requests (queuing, history, undo) versus a growing number of classes",
         "A uniform interface across all operations versus scattering simple logic across wrapper objects",
+        "Unlike Strategy, where the client picks one of several interchangeable algorithms for the same task, Command wraps disparate requests as standalone objects for the sake of queuing, history, and undo — the emphasis is on the action and its lifecycle, not on choosing an algorithm",
       ],
     },
     whenToUse: {
@@ -282,9 +290,11 @@ export const behavioral: Concept[] = [
     whenNotToUse: {
       ru: [
         "Операция вызывается сразу и напрямую, без очередей, истории и отмены — объект-обёртка не окупается",
+        "Действия взаимозаменяемы и решают одну и ту же задачу разными способами — это выбор алгоритма (Strategy), а не инкапсуляция отдельного запроса",
       ],
       en: [
         "The operation is invoked immediately and directly, with no queuing, history, or undo — the wrapper object doesn't pay for itself",
+        "The actions are interchangeable ways of solving the same task — that's a matter of choosing an algorithm (Strategy), not of encapsulating a single request",
       ],
     },
     related: [
@@ -292,6 +302,28 @@ export const behavioral: Concept[] = [
       "memento",
       "chain-of-responsibility",
     ],
+    diagram: `classDiagram
+  class Command {
+    <<interface>>
+    +execute()
+    +undo()
+  }
+  class Invoker {
+    +history
+    +run(cmd)
+    +undoLast()
+  }
+  class Receiver {
+    +action()
+  }
+  class ConcreteCommand {
+    -receiver
+    +execute()
+    +undo()
+  }
+  Invoker o--> Command
+  Command <|.. ConcreteCommand
+  ConcreteCommand --> Receiver`,
     tags: [
       "паттерны",
       "поведенческие",
@@ -307,16 +339,16 @@ export const behavioral: Concept[] = [
       en: "A mini-language's grammar as a tree of classes that can evaluate its own sentences",
     },
     definition: {
-      ru: "Для заданного языка определяет представление его грамматики, а также интерпретатор, который использует это представление для интерпретации предложений языка.",
-      en: "Given a language, defines a representation for its grammar along with an interpreter that uses that representation to interpret sentences in the language.",
+      ru: "Для заданного языка определяет представление его грамматики, а также интерпретатор, который использует это представление для интерпретации предложений языка. Каждому правилу грамматики соответствует свой класс, а предложение языка представляется деревом таких объектов, вычисление которого сводится к рекурсивному обходу. На практике паттерн применяется редко и только для действительно маленьких, стабильных грамматик — для языков посерьёзнее почти всегда выгоднее взять парсер-генератор или готовый движок правил.",
+      en: "Given a language, defines a representation for its grammar along with an interpreter that uses that representation to interpret sentences in the language. Each grammar rule corresponds to its own class, and a sentence in the language is represented as a tree of such objects whose evaluation reduces to a recursive traversal. In practice the pattern is applied rarely, and only for genuinely small, stable grammars — for anything more serious, reaching for a parser generator or an off-the-shelf rules engine is almost always the better call.",
     },
     problem: {
       ru: "В системе регулярно возникают однотипные задачи, которые естественно выражаются предложениями простого языка (правила доступа, фильтры, формулы, условия поиска). Зашивать разбор и вычисление таких выражений в один монолитный парсер с условными операторами тяжело: каждое новое правило грамматики требует правки общего кода, а сами выражения нельзя строить и комбинировать динамически.",
       en: "A system keeps running into the same kind of task, one that is naturally expressed as sentences in a simple language (access rules, filters, formulas, search conditions). Baking the parsing and evaluation of such expressions into a single monolithic parser full of conditionals is painful: every new grammar rule forces edits to shared code, and the expressions themselves can't be built and combined dynamically.",
     },
     solution: {
-      ru: "Каждому правилу грамматики сопоставляем класс с общим интерфейсом и методом interpret(context). Терминальные выражения (числа, переменные) вычисляют себя сами, нетерминальные (сложение, И/ИЛИ) хранят подвыражения и рекурсивно делегируют им интерпретацию. Предложение языка представляется деревом таких объектов (абстрактным синтаксическим деревом), а его вычисление — рекурсивным обходом с передачей контекста.",
-      en: "Map each grammar rule to a class that implements a common interface with an interpret(context) method. Terminal expressions (numbers, variables) evaluate themselves; nonterminal expressions (addition, AND/OR) hold subexpressions and recursively delegate interpretation to them. A sentence in the language is represented as a tree of such objects (an abstract syntax tree), and evaluating it is a recursive traversal that threads a context through the nodes.",
+      ru: "Каждому правилу грамматики сопоставляем класс с общим интерфейсом и методом interpret(context). Терминальные выражения (числа, переменные) вычисляют себя сами, нетерминальные (сложение, И/ИЛИ) хранят подвыражения и рекурсивно делегируют им интерпретацию. Предложение языка представляется деревом таких объектов (абстрактным синтаксическим деревом), а его вычисление — рекурсивным обходом с передачей контекста. Само дерево обычно строится отдельным шагом — разбором исходной строки в объекты; этот этап (парсинг) остаётся за рамками паттерна, который лишь берёт уже готовое дерево и интерпретирует его.",
+      en: "Map each grammar rule to a class that implements a common interface with an interpret(context) method. Terminal expressions (numbers, variables) evaluate themselves; nonterminal expressions (addition, AND/OR) hold subexpressions and recursively delegate interpretation to them. A sentence in the language is represented as a tree of such objects (an abstract syntax tree), and evaluating it is a recursive traversal that threads a context through the nodes. The tree itself is usually built by a separate step — parsing the source string into objects; that parsing step is outside the pattern's scope, which only takes an already-built tree and interprets it.",
     },
     codeExample: {
       lang: "typescript",
@@ -378,11 +410,13 @@ export const behavioral: Concept[] = [
         "Грамматику легко менять и расширять: новое правило — новый класс, существующие не трогаются",
         "Каждое правило локализовано в своём классе — простая грамматика реализуется прямолинейно",
         "Выражения строятся и комбинируются динамически в рантайме из готовых узлов",
+        "Позволяет представлять сложные условия и правила декларативно, как данные (дерево объектов), а не как императивный код",
       ],
       en: [
         "The grammar is easy to change and extend: a new rule means a new class, and the existing ones are left untouched",
         "Each rule is localized in its own class, so a simple grammar is straightforward to implement",
         "Expressions are built and combined dynamically at runtime from ready-made nodes",
+        "Lets you represent complex conditions and rules declaratively, as data (a tree of objects), rather than as imperative code",
       ],
     },
     cons: {
@@ -438,6 +472,22 @@ export const behavioral: Concept[] = [
       "visitor",
       "flyweight",
     ],
+    diagram: `classDiagram
+  class Expression {
+    <<interface>>
+    +interpret(context)
+  }
+  class TerminalExpression {
+    +interpret(context)
+  }
+  class NonterminalExpression {
+    -left: Expression
+    -right: Expression
+    +interpret(context)
+  }
+  Expression <|.. TerminalExpression
+  Expression <|.. NonterminalExpression
+  NonterminalExpression o--> Expression`,
     tags: [
       "паттерны",
       "поведенческие",
@@ -456,16 +506,16 @@ export const behavioral: Concept[] = [
       en: "Traverse a collection sequentially without exposing its internal structure",
     },
     definition: {
-      ru: "Предоставляет способ последовательного доступа ко всем элементам составного объекта, не раскрывая его внутреннего представления.",
-      en: "Provides a way to access the elements of an aggregate object sequentially without exposing its underlying representation.",
+      ru: "Предоставляет способ последовательного доступа ко всем элементам составного объекта, не раскрывая его внутреннего представления. Различают внешний итератор, которым явно управляет клиент, вызывая hasNext()/next() в нужном ему темпе, и внутренний итератор, который сам обходит коллекцию и вызывает переданную клиентом функцию для каждого элемента (как forEach). Большинство современных языков воплощают эту идею во встроенных механизмах — протоколе Iterable/Iterator и генераторах (function*) в TypeScript, цикле for...of, — поэтому вручную реализовывать паттерн сегодня приходится редко.",
+      en: "Provides a way to access the elements of an aggregate object sequentially without exposing its underlying representation. A distinction is drawn between an external iterator, which the client drives explicitly by calling hasNext()/next() at its own pace, and an internal iterator, which walks the collection itself and invokes a client-supplied callback for every element (as with forEach). Most modern languages bake this idea into built-in facilities — the Iterable/Iterator protocol and generators (function*) in TypeScript, the for...of loop — so implementing the pattern by hand is rarely necessary today.",
     },
     problem: {
-      ru: "Клиенту нужно обходить элементы коллекции, но её внутренняя структура (массив, дерево, хэш-таблица) не должна торчать наружу. Если зашить обход в саму коллекцию, её интерфейс раздувается, клиент привязывается к конкретной структуре, а несколько независимых обходов одновременно становятся невозможны.",
-      en: "A client needs to traverse the elements of a collection, but its internal structure (array, tree, hash table) must not leak out. If you hardwire traversal into the collection itself, its interface bloats, the client becomes coupled to the concrete structure, and running several independent traversals at once becomes impossible.",
+      ru: "Клиенту нужно обходить элементы коллекции, но её внутренняя структура (массив, дерево, хэш-таблица) не должна торчать наружу. Если зашить обход в саму коллекцию, её интерфейс раздувается, клиент привязывается к конкретной структуре, а несколько независимых обходов одновременно становятся невозможны. Если вдобавок обход должен работать одинаково для массива, дерева и связанного списка, а клиентский код не должен переписываться под каждую структуру заново, задача усложняется ещё сильнее.",
+      en: "A client needs to traverse the elements of a collection, but its internal structure (array, tree, hash table) must not leak out. If you hardwire traversal into the collection itself, its interface bloats, the client becomes coupled to the concrete structure, and running several independent traversals at once becomes impossible. If, on top of that, the traversal has to behave the same way for an array, a tree, and a linked list without the client code being rewritten for each structure, the problem becomes even harder.",
     },
     solution: {
-      ru: "Выносим логику обхода в отдельный объект-итератор с узким интерфейсом вида hasNext()/next(). Итератор хранит текущую позицию обхода, а коллекция лишь предоставляет метод создания итератора. Клиент работает с элементами только через итератор и ничего не знает о том, как коллекция устроена внутри.",
-      en: "Extract the traversal logic into a separate iterator object with a narrow interface such as hasNext()/next(). The iterator keeps track of the current traversal position, while the collection merely exposes a method to create an iterator. The client works with the elements only through the iterator and knows nothing about how the collection is organized internally.",
+      ru: "Выносим логику обхода в отдельный объект-итератор с узким интерфейсом вида hasNext()/next(). Итератор хранит текущую позицию обхода, а коллекция лишь предоставляет метод создания итератора. Клиент работает с элементами только через итератор и ничего не знает о том, как коллекция устроена внутри. Так получается внешний итератор — клиент сам решает, когда запросить следующий элемент. В языках с генераторами ту же идею можно выразить внутренним итератором: функция-генератор сама управляет обходом и отдаёт элементы клиенту через yield, а клиент лишь потребляет их в for...of, не заботясь о состоянии обхода. Если исходная коллекция меняется во время активного обхода (элементы добавляются или удаляются), позиция итератора может стать невалидной — надёжная реализация либо запрещает такие изменения (fail-fast), либо явно документирует своё поведение в этом случае.",
+      en: "Extract the traversal logic into a separate iterator object with a narrow interface such as hasNext()/next(). The iterator keeps track of the current traversal position, while the collection merely exposes a method to create an iterator. The client works with the elements only through the iterator and knows nothing about how the collection is organized internally. This yields an external iterator — the client itself decides when to request the next element. In languages with generators, the same idea can be expressed as an internal iterator: a generator function drives the traversal itself and hands elements to the client via yield, while the client merely consumes them with for...of without tracking any traversal state. If the underlying collection is mutated while a traversal is in progress (elements added or removed), the iterator's position can become invalid — a robust implementation either forbids such mutations (fail-fast) or explicitly documents its behavior in that case.",
     },
     codeExample: {
       lang: "typescript",
@@ -527,11 +577,13 @@ export const behavioral: Concept[] = [
         "Единый интерфейс обхода для коллекций с разной внутренней структурой",
         "Несколько независимых обходов одной коллекции одновременно — у каждого итератора своя позиция",
         "Коллекция не раскрывает внутреннее представление и не раздувает свой интерфейс логикой обхода",
+        "В языках с поддержкой генераторов паттерн реализуется почти без церемоний — через function* и yield",
       ],
       en: [
         "A single traversal interface for collections with different internal structures",
         "Several independent traversals of the same collection at once — each iterator keeps its own position",
         "The collection neither exposes its internal representation nor bloats its interface with traversal logic",
+        "In languages with generator support, the pattern is implemented almost ceremony-free, via function* and yield",
       ],
     },
     cons: {
@@ -550,10 +602,12 @@ export const behavioral: Concept[] = [
       ru: [
         "Инкапсуляция структуры коллекции против прямого доступа по индексу, который иногда проще и быстрее",
         "Универсальный интерфейс обхода против накладных расходов на дополнительные объекты-итераторы",
+        "Внешний итератор даёт клиенту точный контроль над темпом обхода (можно приостановить, вставить логику между шагами), тогда как внутренний итератор компактнее, но урезает этот контроль",
       ],
       en: [
         "Encapsulating the collection's structure vs. direct index access, which is sometimes simpler and faster",
         "A uniform traversal interface vs. the overhead of extra iterator objects",
+        "An external iterator gives the client precise control over the pace of traversal (pausing it, interleaving logic between steps), whereas an internal iterator is more compact but takes that control away",
       ],
     },
     whenToUse: {
@@ -584,6 +638,27 @@ export const behavioral: Concept[] = [
       "factory-method",
       "memento",
     ],
+    diagram: `classDiagram
+  class Iterator {
+    <<interface>>
+    +hasNext()
+    +next()
+  }
+  class Aggregate {
+    <<interface>>
+    +createIterator()
+  }
+  class ConcreteIterator {
+    -position
+    +hasNext()
+    +next()
+  }
+  class ConcreteAggregate {
+    +createIterator()
+  }
+  Iterator <|.. ConcreteIterator
+  Aggregate <|.. ConcreteAggregate
+  ConcreteAggregate ..> ConcreteIterator : creates`,
     tags: [
       "паттерны",
       "поведенческие",
@@ -603,16 +678,16 @@ export const behavioral: Concept[] = [
       en: "A tangled web of connections between objects is reduced to a single mediator",
     },
     definition: {
-      ru: "Определяет объект, инкапсулирующий способ взаимодействия множества объектов. Mediator обеспечивает слабую связанность, избавляя объекты от необходимости явно ссылаться друг на друга, и позволяет независимо изменять схему их взаимодействия.",
-      en: "Defines an object that encapsulates how a set of objects interact. Mediator promotes loose coupling by keeping objects from referring to each other explicitly, and it lets you vary their interaction independently.",
+      ru: "Определяет объект, инкапсулирующий способ взаимодействия множества объектов. Mediator обеспечивает слабую связанность, избавляя объекты от необходимости явно ссылаться друг на друга, и позволяет независимо изменять схему их взаимодействия. В отличие от Observer, где источник лишь рассылает уведомления подписчикам по схеме «один ко многим» и не ждёт ответа, посредник в Mediator активно координирует равноправных коллег в обе стороны, зачастую реализуя нетривиальную логику согласования их действий.",
+      en: "Defines an object that encapsulates how a set of objects interact. Mediator promotes loose coupling by keeping objects from referring to each other explicitly, and it lets you vary their interaction independently. Unlike Observer, where a subject merely broadcasts notifications to its subscribers in a one-to-many fashion and expects no response, a Mediator actively coordinates peer colleagues in both directions, often embodying non-trivial logic for reconciling their actions.",
     },
     problem: {
-      ru: "Группа объектов (например, элементы диалогового окна) общается напрямую: каждый знает многих других, связи образуют «многие ко многим». Такую сеть трудно понять, изменить и переиспользовать — объект нельзя взять отдельно, потому что он ссылается на соседей, а любое изменение протокола взаимодействия расползается по всем участникам.",
-      en: "A group of objects (for example, the controls in a dialog box) communicate directly: each one knows many others, and the connections form a many-to-many web. Such a network is hard to understand, change, and reuse — you can't lift an object out on its own because it references its neighbors, and any change to the interaction protocol ripples across every participant.",
+      ru: "Группа объектов (например, элементы диалогового окна) общается напрямую: каждый знает многих других, связи образуют «многие ко многим». Такую сеть трудно понять, изменить и переиспользовать — объект нельзя взять отдельно, потому что он ссылается на соседей, а любое изменение протокола взаимодействия расползается сразу по всем участникам системы, вынуждая переписывать код в каждом из них.",
+      en: "A group of objects (for example, the controls in a dialog box) communicate directly: each one knows many others, and the connections form a many-to-many web. Such a network is hard to understand, change, and reuse — you can't lift an object out on its own because it references its neighbors, and any change to the interaction protocol ripples across every participant at once.",
     },
     solution: {
-      ru: "Вводим объект-посредник (mediator), который знает всех коллег (colleagues) и координирует их. Коллеги не ссылаются друг на друга: о любом событии они сообщают только посреднику, а тот решает, кого и как задействовать. Сеть «многие ко многим» превращается в «звезду»: каждый коллега связан лишь с посредником, и вся логика взаимодействия сосредоточена в одном месте.",
-      en: "Introduce a mediator object that knows all the colleagues and coordinates them. Colleagues no longer reference one another: they report every event only to the mediator, which decides whom to involve and how. The many-to-many web turns into a star — each colleague is connected only to the mediator, and all the interaction logic is concentrated in one place.",
+      ru: "Вводим объект-посредник (mediator), который знает всех коллег (colleagues) и координирует их. Коллеги не ссылаются друг на друга: о любом событии они сообщают только посреднику, а тот решает, кого и как задействовать. Сеть «многие ко многим» превращается в «звезду»: каждый коллега связан лишь с посредником, и вся логика взаимодействия сосредоточена в одном месте. Чтобы посредник не превратился в непроницаемый god object, его часто ограничивают одним конкретным сценарием взаимодействия (например, отдельный посредник на каждую форму или экран), а не пытаются свести в нём координацию всего приложения целиком.",
+      en: "Introduce a mediator object that knows all the colleagues and coordinates them. Colleagues no longer reference one another: they report every event only to the mediator, which decides whom to involve and how. The many-to-many web turns into a star — each colleague is connected only to the mediator, and all the interaction logic is concentrated in one place. To keep the mediator from turning into an impenetrable god object, it is often scoped to one specific interaction scenario (say, a separate mediator per form or screen) rather than trying to fold the coordination of the entire application into it.",
     },
     codeExample: {
       lang: "typescript",
@@ -737,6 +812,25 @@ export const behavioral: Concept[] = [
       "command",
       "chain-of-responsibility",
     ],
+    diagram: `classDiagram
+  class Mediator {
+    <<interface>>
+    +notify(sender, event)
+  }
+  class ConcreteMediator {
+    +notify(sender, event)
+  }
+  class Colleague {
+    -mediator: Mediator
+  }
+  class ColleagueA
+  class ColleagueB
+  Mediator <|.. ConcreteMediator
+  Colleague <|-- ColleagueA
+  Colleague <|-- ColleagueB
+  Colleague --> Mediator
+  ConcreteMediator o--> ColleagueA
+  ConcreteMediator o--> ColleagueB`,
     tags: [
       "паттерны",
       "поведенческие",
@@ -756,16 +850,16 @@ export const behavioral: Concept[] = [
       en: "A snapshot of an object's state without breaking its encapsulation",
     },
     definition: {
-      ru: "Не нарушая инкапсуляции, фиксирует и выносит за пределы объекта его внутреннее состояние так, чтобы позднее объект можно было восстановить в этом состоянии.",
-      en: "Without violating encapsulation, captures and externalizes an object's internal state so that the object can later be restored to that state.",
+      ru: "Не нарушая инкапсуляции, фиксирует и выносит за пределы объекта его внутреннее состояние так, чтобы позднее объект можно было восстановить в этом состоянии. Автор снимка (originator) — единственный, кто умеет читать и записывать состояние внутрь memento; хранитель (caretaker) обращается со снимком как с непрозрачным токеном, отвечая лишь за то, когда его сохранить и когда вернуть обратно, не заглядывая внутрь. В отличие от обычной сериализации, которая превращает состояние в универсальный переносимый формат (JSON, бинарный поток) для передачи между процессами или системами, Memento — внутрипроцессный механизм: снимок остаётся объектом языка и создаётся ради отмены и отката, а не ради обмена данными.",
+      en: "Without violating encapsulation, captures and externalizes an object's internal state so that the object can later be restored to that state. The originator is the only party that knows how to read and write the state inside a memento; the caretaker treats a memento as an opaque token, responsible only for deciding when to save one and when to hand it back, without ever looking inside. Unlike plain serialization, which typically turns state into a universal portable format (JSON, a binary stream) meant for transfer between processes or systems, Memento is an in-process mechanism: the snapshot remains a language-level object created for undo and rollback, not for data exchange.",
     },
     problem: {
-      ru: "Нужно сохранять снимки состояния объекта (undo, откат транзакции, чекпоинты), но раскрытие его внутренних полей наружу сломало бы инкапсуляцию, а хранение всей истории внутри самого объекта раздувает его и смешивает ответственности.",
-      en: "You need to save snapshots of an object's state (undo, transaction rollback, checkpoints), but exposing its internal fields to the outside would break encapsulation, while keeping the entire history inside the object itself bloats it and mixes responsibilities.",
+      ru: "Нужно сохранять снимки состояния объекта (undo, откат транзакции, чекпоинты), но раскрытие его внутренних полей наружу сломало бы инкапсуляцию, а хранение всей истории внутри самого объекта раздувает его и смешивает ответственности. Простая альтернатива — сериализовать объект целиком (например, в JSON) и хранить эту строку — решает задачу лишь частично: она заставляет объект поддерживать универсальный формат обмена, плохо подходит для состояния с приватными полями или ссылками на другие объекты рантайма и обычно намного дороже по CPU, чем создание обычного JS-объекта.",
+      en: "You need to save snapshots of an object's state (undo, transaction rollback, checkpoints), but exposing its internal fields to the outside would break encapsulation, while keeping the entire history inside the object itself bloats it and mixes responsibilities. A simple alternative — serializing the whole object (say, to JSON) and storing that string — solves only part of the problem: it forces the object to support a universal exchange format, works poorly for state with private fields or references to other runtime objects, and is usually far more expensive on CPU than creating a plain JS object.",
     },
     solution: {
-      ru: "Источник (originator) сам создаёт объект-снимок (memento) со своим состоянием и сам умеет восстанавливаться из него. Хранитель (caretaker) складирует снимки как непрозрачные токены: он решает, когда сохранить и когда откатить, но внутрь снимка не заглядывает.",
-      en: "The originator creates a snapshot object (the memento) holding its own state and knows how to restore itself from it. The caretaker stores these snapshots as opaque tokens: it decides when to save and when to roll back, but never looks inside the memento.",
+      ru: "Источник (originator) сам создаёт объект-снимок (memento) со своим состоянием и сам умеет восстанавливаться из него. Хранитель (caretaker) складирует снимки как непрозрачные токены: он решает, когда сохранить и когда откатить, но внутрь снимка не заглядывает. В TypeScript эта непрозрачность обычно достигается соглашением, а не языковым барьером: у memento — только приватное состояние и пара методов вроде getState()/restore(), предназначенных исключительно для источника, а хранитель работает со снимком как с чёрным ящиком (например, типа unknown) или через урезанный интерфейс без доступа к состоянию. По сравнению с сериализацией во внешний формат, memento остаётся лёгким объектом языка — это дешевле по CPU, но плохо подходит для долговременного хранения снимков между перезапусками процесса: для этого лучше подходит именно сериализация.",
+      en: "The originator creates a snapshot object (the memento) holding its own state and knows how to restore itself from it. The caretaker stores these snapshots as opaque tokens: it decides when to save and when to roll back, but never looks inside the memento. In TypeScript this opacity is usually achieved by convention rather than by a language-level barrier: the memento exposes only private state plus a pair of methods like getState()/restore() meant solely for the originator to use, while the caretaker treats the snapshot as a black box (say, of type unknown) or through a narrowed interface with no access to the state at all. Compared to serializing into an external format, a memento stays a lightweight language object — cheaper on CPU, but poorly suited to storing snapshots long-term across process restarts, where serialization is the better fit.",
     },
     codeExample: {
       lang: "typescript",
@@ -833,11 +927,13 @@ export const behavioral: Concept[] = [
         "Даёт undo/rollback, не раскрывая внутреннее устройство объекта",
         "Разгружает источник: историю снимков ведёт отдельный хранитель",
         "Снимки — непрозрачные объекты, клиенты не завязываются на детали состояния",
+        "Реализует undo без затрат на универсальный формат сериализации — снимок остаётся обычным объектом языка",
       ],
       en: [
         "Enables undo/rollback without exposing the object's internal structure",
         "Offloads the originator: a separate caretaker maintains the history of snapshots",
         "Snapshots are opaque objects, so clients don't become coupled to the details of the state",
+        "Implements undo without paying for a universal serialization format — the snapshot stays a plain language object",
       ],
     },
     cons: {
@@ -856,20 +952,24 @@ export const behavioral: Concept[] = [
       ru: [
         "Глубина истории откатов против расхода памяти на снимки",
         "Строгая инкапсуляция снимка против простоты реализации: широкий интерфейс memento проще, но подтачивает главную гарантию паттерна",
+        "Лёгкий снимок-объект в рамках одного процесса против переносимого, но более тяжёлого сериализованного формата, нужного для хранения между перезапусками или передачи по сети",
       ],
       en: [
         "Depth of the undo history versus the memory consumed by snapshots",
         "Strict encapsulation of the memento versus ease of implementation: a wide memento interface is simpler but undermines the pattern's main guarantee",
+        "A lightweight in-process snapshot object versus a portable but heavier serialized format needed for storage across restarts or transfer over the network",
       ],
     },
     whenToUse: {
       ru: [
         "Нужны undo, откат или чекпоинты состояния объекта",
         "Прямое чтение и запись внутренних полей извне нарушили бы инкапсуляцию объекта",
+        "Состояние богато приватными деталями и ссылками на другие объекты рантайма, поэтому сериализация в переносимый формат неудобна или невозможна",
       ],
       en: [
         "You need undo, rollback, or checkpoints of an object's state",
         "Reading and writing the internal fields directly from outside would break the object's encapsulation",
+        "The state is rich in private details and references to other runtime objects, so serializing it into a portable format is awkward or impossible",
       ],
     },
     whenNotToUse: {
@@ -887,6 +987,21 @@ export const behavioral: Concept[] = [
       "prototype",
       "state",
     ],
+    diagram: `classDiagram
+  class Originator {
+    -state
+    +save() Memento
+    +restore(m: Memento)
+  }
+  class Memento {
+    -state
+    +getState()
+  }
+  class Caretaker {
+    -history: Memento[]
+  }
+  Originator ..> Memento : creates
+  Caretaker o--> Memento : stores (opaque)`,
     tags: [
       "паттерны",
       "поведенческие",
@@ -902,16 +1017,16 @@ export const behavioral: Concept[] = [
       en: "The algorithm skeleton lives in the base class; the variable steps live in subclasses",
     },
     definition: {
-      ru: "Определяет скелет алгоритма в операции базового класса, откладывая реализацию некоторых шагов на подклассы. Template Method позволяет подклассам переопределять отдельные шаги алгоритма, не меняя его общую структуру.",
-      en: "Defines the skeleton of an algorithm in an operation of a base class, deferring some steps to subclasses. Template Method lets subclasses redefine certain steps of an algorithm without changing the algorithm's overall structure.",
+      ru: "Определяет скелет алгоритма в операции базового класса, откладывая реализацию некоторых шагов на подклассы. Template Method позволяет подклассам переопределять отдельные шаги алгоритма, не меняя его общую структуру. Изменяемые шаги делятся на обязательные — абстрактные методы, которые подкласс должен реализовать, — и необязательные хуки с реализацией по умолчанию, которые подкласс может переопределить, а может и оставить как есть.",
+      en: "Defines the skeleton of an algorithm in an operation of a base class, deferring some steps to subclasses. Template Method lets subclasses redefine certain steps of an algorithm without changing the algorithm's overall structure. The variable steps split into mandatory ones — abstract methods a subclass must implement — and optional hooks with a default implementation that a subclass may override or simply leave as is.",
     },
     problem: {
-      ru: "Несколько классов реализуют один и тот же алгоритм с одинаковой последовательностью шагов, различаясь лишь деталями отдельных шагов. Копирование всей последовательности в каждый класс дублирует инвариантную часть, и любое изменение порядка шагов приходится вносить во все копии.",
-      en: "Several classes implement the same algorithm with the same sequence of steps, differing only in the details of individual steps. Copying the whole sequence into each class duplicates the invariant part, and any change to the order of the steps has to be made in every copy.",
+      ru: "Несколько классов реализуют один и тот же алгоритм с одинаковой последовательностью шагов, различаясь лишь деталями отдельных шагов. Копирование всей последовательности в каждый класс дублирует инвариантную часть, и любое изменение порядка шагов приходится вносить во все копии. Более того, ничто не мешает одному из классов случайно нарушить порядок шагов или пропустить обязательный этап — при копипасте алгоритм и его вариации расходятся независимо друг от друга, и со временем классы, которые должны вести себя одинаково по структуре, заметно отличаются.",
+      en: "Several classes implement the same algorithm with the same sequence of steps, differing only in the details of individual steps. Copying the whole sequence into each class duplicates the invariant part, and any change to the order of the steps has to be made in every copy. Worse, nothing stops one of the classes from accidentally breaking the step order or skipping a mandatory stage — with copy-pasting, the algorithm and its variants drift apart independently, and over time classes that are supposed to share the same structural behavior start to diverge noticeably.",
     },
     solution: {
-      ru: "Инвариантную последовательность шагов фиксируем в одном методе базового класса — шаблонном методе. Изменяемые шаги объявляем абстрактными (или хуками с реализацией по умолчанию), а подклассы переопределяют только их. Базовый класс сам вызывает шаги в нужном порядке — «не звоните нам, мы позвоним вам».",
-      en: "Fix the invariant sequence of steps in a single method of the base class — the template method. Declare the variable steps as abstract (or as hooks with a default implementation), and let subclasses override only those. The base class calls the steps in the right order itself — \"don't call us, we'll call you.\"",
+      ru: "Инвариантную последовательность шагов фиксируем в одном методе базового класса — шаблонном методе. Изменяемые шаги объявляем абстрактными (или хуками с реализацией по умолчанию), а подклассы переопределяют только их. Базовый класс сам вызывает шаги в нужном порядке — «не звоните нам, мы позвоним вам». Абстрактные шаги подкласс обязан реализовать, иначе класс останется абстрактным; хуки же можно вовсе не трогать — они задают точку расширения, а не требование. Такая инверсия управления и называется принципом Голливуда: базовый класс диктует, когда и в каком порядке вызываются шаги, а подкласс лишь поставляет их реализацию, не имея права влиять на саму последовательность вызовов.",
+      en: "Fix the invariant sequence of steps in a single method of the base class — the template method. Declare the variable steps as abstract (or as hooks with a default implementation), and let subclasses override only those. The base class calls the steps in the right order itself — \"don't call us, we'll call you.\" Abstract steps must be implemented by the subclass, or the class stays abstract; hooks, on the other hand, can be left untouched entirely — they offer an extension point rather than a requirement. This inversion of control is exactly the Hollywood principle: the base class dictates when and in what order the steps are called, while the subclass merely supplies their implementation, with no say over the calling sequence itself.",
     },
     codeExample: {
       lang: "typescript",
@@ -969,11 +1084,13 @@ export const behavioral: Concept[] = [
         "Инвариантная часть алгоритма написана один раз — устраняет дублирование",
         "Базовый класс жёстко контролирует структуру алгоритма и точки расширения",
         "Инверсия управления: каркас сам вызывает шаги подкласса («принцип Голливуда»)",
+        "Хуки позволяют расширяться постепенно: начать с поведения по умолчанию и переопределить только то, что действительно нужно изменить",
       ],
       en: [
         "The invariant part of the algorithm is written once, eliminating duplication",
         "The base class tightly controls the algorithm's structure and its extension points",
         "Inversion of control: the framework calls the subclass's steps itself (the \"Hollywood principle\")",
+        "Hooks allow incremental extension: start from the default behavior and override only what genuinely needs to change",
       ],
     },
     cons: {
@@ -992,10 +1109,12 @@ export const behavioral: Concept[] = [
       ru: [
         "Переиспользование через наследование против гибкости композиции: Strategy решает ту же задачу делегированием и позволяет менять поведение в рантайме",
         "Жёсткий каркас упрощает контроль над алгоритмом, но затрудняет изменения самой последовательности шагов — она общая для всех подклассов",
+        "Хуки с поведением по умолчанию снижают порог входа для подклассов, но такое неявное поведение по умолчанию не всегда очевидно и может удивить того, кто не читал реализацию базового класса",
       ],
       en: [
         "Reuse through inheritance versus the flexibility of composition: Strategy solves the same problem through delegation and lets you change behavior at runtime",
         "A rigid skeleton makes the algorithm easy to control but hard to change the step sequence itself — it is shared by all subclasses",
+        "Hooks with default behavior lower the barrier to entry for subclasses, but that implicit default behavior isn't always obvious and can surprise anyone who hasn't read the base class's implementation",
       ],
     },
     whenToUse: {
@@ -1025,6 +1144,21 @@ export const behavioral: Concept[] = [
       "factory-method",
       "composition-vs-inheritance",
     ],
+    diagram: `classDiagram
+  class AbstractClass {
+    +templateMethod()
+    #step1()*
+    #hook()
+  }
+  class ConcreteClassA {
+    #step1()
+    #hook()
+  }
+  class ConcreteClassB {
+    #step1()
+  }
+  AbstractClass <|-- ConcreteClassA
+  AbstractClass <|-- ConcreteClassB`,
     tags: [
       "паттерны",
       "поведенческие",
@@ -1040,16 +1174,16 @@ export const behavioral: Concept[] = [
       en: "A new operation over an object structure without changing its classes",
     },
     definition: {
-      ru: "Представляет операцию, выполняемую над каждым объектом из некоторой структуры объектов. Visitor позволяет определить новую операцию, не изменяя классы объектов, над которыми она выполняется.",
-      en: "Represents an operation to be performed on each object in an object structure. Visitor lets you define a new operation without changing the classes of the elements on which it operates.",
+      ru: "Представляет операцию, выполняемую над каждым объектом из некоторой структуры объектов. Visitor позволяет определить новую операцию, не изменяя классы объектов, над которыми она выполняется. Механизм — двойная диспетчеризация: элемент в методе accept(visitor) вызывает конкретный метод посетителя (visitX), поэтому выполняемый код выбирается сразу по двум типам — типу элемента и типу посетителя, — а не по одному, как при обычном полиморфизме методов.",
+      en: "Represents an operation to be performed on each object in an object structure. Visitor lets you define a new operation without changing the classes of the elements on which it operates. The mechanism is double dispatch: an element's accept(visitor) method calls a specific method on the visitor (visitX), so the code that runs is selected by two types at once — the element's type and the visitor's type — rather than by one, as with ordinary method polymorphism.",
     },
     problem: {
-      ru: "Над устоявшейся иерархией классов (узлы AST, фигуры, элементы документа) нужно выполнять много разнородных операций: экспорт, подсчёт метрик, отрисовку. Добавлять каждую операцию методом в каждый класс — значит засорять классы несвязанной логикой и править всю иерархию при каждой новой операции; каскады instanceof в клиенте — хрупкая альтернатива.",
-      en: "You have a stable class hierarchy (AST nodes, shapes, document elements) on which you need to perform many disparate operations: export, metrics collection, rendering. Adding each operation as a method on every class means cluttering the classes with unrelated logic and editing the whole hierarchy for every new operation; cascades of instanceof checks in the client are a brittle alternative.",
+      ru: "Над устоявшейся иерархией классов (узлы AST, фигуры, элементы документа) нужно выполнять много разнородных операций: экспорт, подсчёт метрик, отрисовку. Добавлять каждую операцию методом в каждый класс — значит засорять классы несвязанной логикой и править всю иерархию при каждой новой операции; каскады instanceof в клиенте — хрупкая альтернатива. Это частный случай так называемой «проблемы выражения» (expression problem): трудно сделать одинаково дешёвым и добавление новых операций, и добавление новых типов данных.",
+      en: "You have a stable class hierarchy (AST nodes, shapes, document elements) on which you need to perform many disparate operations: export, metrics collection, rendering. Adding each operation as a method on every class means cluttering the classes with unrelated logic and editing the whole hierarchy for every new operation; cascades of instanceof checks in the client are a brittle alternative. This is a specific instance of the so-called expression problem: it's hard to make adding new operations and adding new data types equally cheap.",
     },
     solution: {
-      ru: "Операция выносится в отдельный объект-посетитель с методом visit для каждого конкретного класса элемента. Элементы объявляют единственный метод accept(visitor), в котором вызывают «свой» метод посетителя — двойная диспетчеризация (double dispatch): нужная операция выбирается и по типу элемента, и по типу посетителя. Новая операция — это новый класс посетителя, иерархия элементов не меняется.",
-      en: "The operation is extracted into a separate visitor object with a visit method for each concrete element class. Elements declare a single accept(visitor) method in which they call their own method on the visitor — double dispatch: the operation is selected by both the element type and the visitor type. A new operation is just a new visitor class, and the element hierarchy stays untouched.",
+      ru: "Операция выносится в отдельный объект-посетитель с методом visit для каждого конкретного класса элемента. Элементы объявляют единственный метод accept(visitor), в котором вызывают «свой» метод посетителя — двойная диспетчеризация (double dispatch): нужная операция выбирается и по типу элемента, и по типу посетителя. Новая операция — это новый класс посетителя, иерархия элементов не меняется. Сама двойная диспетчеризация — это ровно два обычных виртуальных вызова подряд (accept, затем visit), а не особый языковой механизм; в языках без диспетчеризации по нескольким аргументам сразу (как TypeScript) её реализуют именно так — вручную, парой методов.",
+      en: "The operation is extracted into a separate visitor object with a visit method for each concrete element class. Elements declare a single accept(visitor) method in which they call their own method on the visitor — double dispatch: the operation is selected by both the element type and the visitor type. A new operation is just a new visitor class, and the element hierarchy stays untouched. Double dispatch itself is simply two ordinary virtual calls in a row (accept, then visit), not some special language mechanism; in languages without dispatch on more than one argument at once (like TypeScript), it's implemented exactly this way — by hand, via a pair of methods.",
     },
     codeExample: {
       lang: "typescript",
@@ -1140,10 +1274,12 @@ export const behavioral: Concept[] = [
       ru: [
         "Легко добавлять операции, но тяжело добавлять типы элементов — ровно наоборот по сравнению с обычным полиморфизмом методов",
         "Чистота классов элементов против жёсткой связки интерфейса посетителя со всеми конкретными классами",
+        "Возможность вести общее состояние обхода в посетителе (например, суммарную метрику) против риска, что сам посетитель незаметно разрастётся в ещё один god object, дублирующий обязанности элементов",
       ],
       en: [
         "Easy to add operations but hard to add element types — exactly the opposite of ordinary method polymorphism",
         "Clean element classes versus a visitor interface tightly coupled to every concrete class",
+        "The ability to accumulate shared traversal state in the visitor (say, a running metric) versus the risk that the visitor itself quietly grows into another god object duplicating the elements' responsibilities",
       ],
     },
     whenToUse: {
@@ -1174,6 +1310,30 @@ export const behavioral: Concept[] = [
       "interpreter",
       "ocp",
     ],
+    diagram: `classDiagram
+  class Visitor {
+    <<interface>>
+    +visitConcreteElementA(e)
+    +visitConcreteElementB(e)
+  }
+  class Element {
+    <<interface>>
+    +accept(v: Visitor)
+  }
+  class ConcreteElementA {
+    +accept(v)
+  }
+  class ConcreteElementB {
+    +accept(v)
+  }
+  class ConcreteVisitor1
+  class ConcreteVisitor2
+  Element <|.. ConcreteElementA
+  Element <|.. ConcreteElementB
+  Visitor <|.. ConcreteVisitor1
+  Visitor <|.. ConcreteVisitor2
+  ConcreteElementA ..> Visitor : accept(v) calls visitConcreteElementA
+  ConcreteElementB ..> Visitor : accept(v) calls visitConcreteElementB`,
     tags: [
       "паттерны",
       "поведенческие",
