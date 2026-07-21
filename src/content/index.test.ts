@@ -19,6 +19,13 @@ describe('content catalog', () => {
     expect(byCat('microservices')).toBe(11);
   });
 
+  it('every concept meets the depth floor (>=2 tradeoffs, >=2 related)', () => {
+    // Regression floor guarding against thin concepts. Not the full authoring bar
+    // (>=3/>=3) — a few concepts legitimately sit at 2 in one dimension.
+    const thin = concepts.filter((c) => c.tradeoffs.en.length < 2 || c.related.length < 2);
+    expect(thin.map((c) => c.id)).toEqual([]);
+  });
+
   it('includes canonical concepts', () => {
     for (const id of ['srp', 'strategy', 'singleton', 'visitor', 'hexagonal', 'coupling-cohesion']) {
       expect(getConcept(id)).toBeDefined();
