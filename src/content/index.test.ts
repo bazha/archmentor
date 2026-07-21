@@ -1,10 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { concepts, questions, getConcept } from './index';
+import { conceptProse as ruConcepts, questionProse as ruQuestions } from './locales/ru';
+import { conceptProse as enConcepts, questionProse as enQuestions } from './locales/en';
 
-// Note: full structural validation (incl. duplicate ids) runs at import time via
-// `validateContent` in ./index (DEV/test), so importing this module already guards
-// it — those invariants aren't re-asserted here. `validateContent`'s own logic is
-// unit-tested against invalid fixtures in ./schema.test.ts.
+// Note: core shape/reference validation (schema-valid, unique ids, related/conceptId
+// resolve) runs at import time via `validateSplit` in ./index (DEV/test), so importing
+// this module already guards it — those invariants aren't re-asserted here.
 describe('content catalog', () => {
   it('is the complete catalog: 53 concepts across every category', () => {
     const byCat = (c: string) => concepts.filter((x) => x.category === c).length;
@@ -19,10 +20,10 @@ describe('content catalog', () => {
     expect(byCat('microservices')).toBe(11);
   });
 
-  it('every concept meets the depth floor (>=2 tradeoffs, >=2 related)', () => {
+  it('every concept meets the depth floor (>=2 tradeoffs via prose, >=2 related via core)', () => {
     // Regression floor guarding against thin concepts. Not the full authoring bar
     // (>=3/>=3) — a few concepts legitimately sit at 2 in one dimension.
-    const thin = concepts.filter((c) => c.tradeoffs.en.length < 2 || c.related.length < 2);
+    const thin = concepts.filter((c) => (enConcepts[c.id]?.tradeoffs.length ?? 0) < 2 || c.related.length < 2);
     expect(thin.map((c) => c.id)).toEqual([]);
   });
 
@@ -37,11 +38,51 @@ describe('content catalog', () => {
     expect(questions.filter((q) => q.type === 'identify-pattern').length).toBeGreaterThanOrEqual(4);
   });
 
+  it('every concept id has prose in both ru and en, with equal-length lists', () => {
+    for (const c of concepts) {
+      const ru = ruConcepts[c.id];
+      const en = enConcepts[c.id];
+      expect(ru, `${c.id} ru prose`).toBeDefined();
+      expect(en, `${c.id} en prose`).toBeDefined();
+      for (const f of ['pros', 'cons', 'tradeoffs', 'whenToUse'] as const) {
+        expect(ru[f].length, `${c.id}.${f} ru/en length parity`).toBe(en[f].length);
+      }
+      expect(ru.whenNotToUse?.length ?? 0).toBe(en.whenNotToUse?.length ?? 0);
+    }
+  });
+
+  it('every question id has prose in both ru and en, with equal-length option lists', () => {
+    for (const q of questions) {
+      const ru = ruQuestions[q.id];
+      const en = enQuestions[q.id];
+      expect(ru, `${q.id} ru prose`).toBeDefined();
+      expect(en, `${q.id} en prose`).toBeDefined();
+      expect(ru.options.length, `${q.id} options ru/en length parity`).toBe(en.options.length);
+      expect(q.correctIndex).toBeLessThan(ru.options.length);
+    }
+  });
+
+  it('ru and en prose cover exactly the same concept and question id sets', () => {
+    const conceptIds = new Set(concepts.map((c) => c.id));
+    const questionIds = new Set(questions.map((q) => q.id));
+    expect(new Set(Object.keys(ruConcepts))).toEqual(conceptIds);
+    expect(new Set(Object.keys(enConcepts))).toEqual(conceptIds);
+    expect(new Set(Object.keys(ruQuestions))).toEqual(questionIds);
+    expect(new Set(Object.keys(enQuestions))).toEqual(questionIds);
+  });
+
+  it('fill-blank prompts contain the blank marker in both languages', () => {
+    for (const q of questions.filter((q) => q.type === 'fill-blank')) {
+      expect(ruQuestions[q.id].prompt).toContain('___');
+      expect(enQuestions[q.id].prompt).toContain('___');
+    }
+  });
+
   it('identify-pattern distractors are real sibling concepts by name', () => {
     const names = new Set(concepts.map((c) => c.name));
     for (const q of questions.filter((q) => q.type === 'identify-pattern')) {
-      for (const opt of q.options.ru) expect(names.has(opt)).toBe(true);
-      for (const opt of q.options.en) expect(names.has(opt)).toBe(true);
+      for (const opt of ruQuestions[q.id].options) expect(names.has(opt)).toBe(true);
+      for (const opt of enQuestions[q.id].options) expect(names.has(opt)).toBe(true);
     }
   });
 
@@ -50,20 +91,22 @@ describe('content catalog', () => {
     const bad: string[] = [];
     const check = (where: string, v: string) => { if (cyr.test(v)) bad.push(where); };
     for (const c of concepts) {
-      check(`${c.id}.tagline`, c.tagline.en);
-      check(`${c.id}.definition`, c.definition.en);
-      check(`${c.id}.problem`, c.problem.en);
-      check(`${c.id}.solution`, c.solution.en);
-      check(`${c.id}.code`, c.codeExample.code.en);
+      const en = enConcepts[c.id];
+      check(`${c.id}.tagline`, en.tagline);
+      check(`${c.id}.definition`, en.definition);
+      check(`${c.id}.problem`, en.problem);
+      check(`${c.id}.solution`, en.solution);
+      check(`${c.id}.code`, en.code);
       if (c.diagram) check(`${c.id}.diagram`, c.diagram); // shared, non-localized — must be Latin-only
       for (const f of ['pros', 'cons', 'tradeoffs', 'whenToUse', 'whenNotToUse'] as const)
-        (c[f]?.en ?? []).forEach((x) => check(`${c.id}.${f}`, x));
+        (en[f] ?? []).forEach((x) => check(`${c.id}.${f}`, x));
     }
     for (const q of questions) {
-      check(`${q.id}.prompt`, q.prompt.en);
-      check(`${q.id}.explanation`, q.explanation.en);
-      q.options.en.forEach((o) => check(`${q.id}.option`, o));
-      if (q.code) check(`${q.id}.code`, q.code.code.en);
+      const en = enQuestions[q.id];
+      check(`${q.id}.prompt`, en.prompt);
+      check(`${q.id}.explanation`, en.explanation);
+      en.options.forEach((o) => check(`${q.id}.option`, o));
+      if (en.code) check(`${q.id}.code`, en.code);
     }
     expect(bad, `Cyrillic left in en fields: ${bad.join(', ')}`).toEqual([]);
   });

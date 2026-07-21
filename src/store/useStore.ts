@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { initSrs, review, type SrsState, type Quality } from '@/domain/srs/sm2';
 import { daysBetween, isDue } from '@/lib/date';
-import type { Concept, Grade, Category } from '@/content/schema';
+import type { Grade, Category } from '@/content/schema';
 import { GRADE_ORDER } from '@/lib/labels';
 import { detectLang, type Lang } from '@/i18n/lang';
 
@@ -139,13 +139,16 @@ export function migrate(persisted: unknown, version: number): PersistedState {
   return initialData();
 }
 
+/** Structural subset needed by the progress/review selectors below — satisfied by `ConceptCore` (and `ConceptView`). */
+interface ConceptLike { id: string; grade: Grade }
+
 // ---- Pure selectors (framework-agnostic, unit-tested) ----
 export function selectDueConceptIds(state: AppState, today: string): string[] {
   return Object.values(state.srs).filter((s) => isDue(s.due, today)).map((s) => s.conceptId);
 }
 
 /** The review queue: concepts with no SRS state yet (new cards) plus existing due cards. */
-export function selectReviewQueue(state: AppState, concepts: Concept[], today: string): string[] {
+export function selectReviewQueue(state: AppState, concepts: ConceptLike[], today: string): string[] {
   const due = new Set(selectDueConceptIds(state, today));
   const newOnes = concepts.filter((c) => !state.srs[c.id]).map((c) => c.id);
   return [...new Set([...newOnes, ...due])];
@@ -171,7 +174,7 @@ export function isDailyDone(state: AppState, today: string): boolean {
 }
 
 export function selectGradeProgress(
-  state: AppState, concepts: Concept[], grade: Grade,
+  state: AppState, concepts: ConceptLike[], grade: Grade,
 ): { total: number; seen: number; mastered: number; pct: number } {
   const inGrade = concepts.filter((c) => c.grade === grade);
   const seen = inGrade.filter((c) => state.conceptProgress[c.id]?.seen).length;
