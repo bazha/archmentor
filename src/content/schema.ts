@@ -56,6 +56,41 @@ export type CodeSample = z.infer<typeof CodeSampleSchema>;
 export type Concept = z.infer<typeof ConceptSchema>;
 export type Question = z.infer<typeof QuestionSchema>;
 
+export const ConceptCoreSchema = z.object({
+  id: z.string().regex(/^[a-z0-9-]+$/),
+  name: z.string().min(1),
+  aka: z.array(z.string()).optional(),
+  category: CategorySchema,
+  grade: GradeSchema,
+  related: z.array(z.string()),
+  tags: z.array(z.string()).optional(),
+  diagram: z.string().min(1).optional(),
+  codeLang: z.literal('typescript'),
+  highlightLines: z.array(z.number().int().nonnegative()).optional(),
+});
+export const ConceptProseSchema = z.object({
+  tagline: z.string().min(1), definition: z.string().min(1), problem: z.string().min(1),
+  solution: z.string().min(1), code: z.string().min(1),
+  pros: z.array(z.string().min(1)).min(1), cons: z.array(z.string().min(1)).min(1),
+  tradeoffs: z.array(z.string().min(1)).min(1), whenToUse: z.array(z.string().min(1)).min(1),
+  whenNotToUse: z.array(z.string().min(1)).min(1).optional(),
+});
+export const QuestionCoreSchema = z.object({
+  id: z.string().regex(/^[a-z0-9-]+$/), type: QuestionTypeSchema, category: CategorySchema,
+  grade: GradeSchema, correctIndex: z.number().int().nonnegative(),
+  conceptId: z.string().optional(),
+  codeLang: z.literal('typescript').optional(),
+  highlightLines: z.array(z.number().int().nonnegative()).optional(),
+});
+export const QuestionProseSchema = z.object({
+  prompt: z.string().min(1), code: z.string().min(1).optional(),
+  options: z.array(z.string().min(1)).min(1), explanation: z.string().min(1),
+});
+export type ConceptCore = z.infer<typeof ConceptCoreSchema>;
+export type ConceptProse = z.infer<typeof ConceptProseSchema>;
+export type QuestionCore = z.infer<typeof QuestionCoreSchema>;
+export type QuestionProse = z.infer<typeof QuestionProseSchema>;
+
 /** Validates shape + cross-references. Throws Error with a descriptive message on any violation. */
 export function validateContent(concepts: Concept[], questions: Question[]): void {
   concepts.forEach((c) => ConceptSchema.parse(c));

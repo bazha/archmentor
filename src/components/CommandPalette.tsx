@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useStore } from '@/store/useStore';
 import { useConcepts } from '@/content/localize';
 import { useT } from '@/i18n/useT';
+import { useLangSwitch } from '@/i18n/useLangSwitch';
 import type { MessageKey } from '@/i18n/messages';
 import { Icon, type IconName } from './Icon';
 
@@ -28,6 +29,7 @@ export function CommandPalette() {
   const navigate = useNavigate();
   const concepts = useConcepts();
   const setSettings = useStore((s) => s.setSettings);
+  const { switchLang } = useLangSwitch();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
@@ -47,10 +49,10 @@ export function CommandPalette() {
       { id: 'act:theme', label: t('theme.toggle'), meta: t('cmdk.action'), icon: 'sun',
         run: () => setSettings({ theme: useStore.getState().settings.theme === 'dark' ? 'light' : 'dark' }) },
       { id: 'act:lang', label: t('lang.toggle'), meta: t('cmdk.action'), icon: 'command',
-        run: () => setSettings({ lang: useStore.getState().settings.lang === 'ru' ? 'en' : 'ru' }) },
+        run: () => void switchLang(useStore.getState().settings.lang === 'ru' ? 'en' : 'ru') },
     ];
     return [...screens, ...conceptCmds, ...actions];
-  }, [t, navigate, concepts, setSettings]);
+  }, [t, navigate, concepts, setSettings, switchLang]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
