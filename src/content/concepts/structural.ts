@@ -417,13 +417,13 @@ export const structural: Concept[] = [
     tradeoffs: {
       ru: [
         "Прозрачность против безопасности (классический компромисс GoF): add/remove в общем интерфейсе дают единообразие, но позволяют бессмысленные вызовы на листе; add/remove только в Composite безопаснее, но клиенту приходится различать типы",
-        "Единообразие обработки против строгих типовых ограничений на состав дерева",
-        "Однородный интерфейс Component против типовой безопасности: чем шире общий контракт, тем проще перепутать легитимный вызов с бессмысленным на конкретном узле",
+        "Естественное моделирование part-whole против цены исполнения: дерево выражает иерархию чисто, но глубокая вложенность добавляет косвенность и накладные расходы рекурсии, а операции по всему дереву становятся O(n)",
+        "Легко добавлять новые типы листьев/композитов (открытость к расширению), но добавление новой операции затрагивает все типы узлов иерархии — обратный компромисс по сравнению с Visitor",
       ],
       en: [
         "Transparency vs. safety (the classic GoF trade-off): putting add/remove in the common interface gives uniformity but permits meaningless calls on a leaf; keeping add/remove only in Composite is safer but forces the client to distinguish types",
-        "Uniform handling vs. strict type constraints on what the tree may contain",
-        "A uniform Component interface versus type safety: the broader the shared contract, the easier it is to confuse a legitimate call with a meaningless one on a particular node",
+        "Natural part-whole modeling vs. runtime cost: the tree expresses hierarchy cleanly, but deep nesting adds indirection and recursion overhead, and whole-tree operations become O(n)",
+        "Easy to add new leaf/composite types (open to extension), but adding a new operation touches every node type in the hierarchy — the inverse trade-off of Visitor",
       ],
     },
     whenToUse: {
@@ -791,7 +791,6 @@ export const structural: Concept[] = [
     name: "Flyweight",
     aka: [
       "Приспособленец",
-      "Cache",
     ],
     category: "structural",
     grade: "senior",
