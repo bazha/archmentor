@@ -55,6 +55,7 @@ describe('content catalog', () => {
       check(`${c.id}.problem`, c.problem.en);
       check(`${c.id}.solution`, c.solution.en);
       check(`${c.id}.code`, c.codeExample.code.en);
+      if (c.diagram) check(`${c.id}.diagram`, c.diagram); // shared, non-localized — must be Latin-only
       for (const f of ['pros', 'cons', 'tradeoffs', 'whenToUse', 'whenNotToUse'] as const)
         (c[f]?.en ?? []).forEach((x) => check(`${c.id}.${f}`, x));
     }
