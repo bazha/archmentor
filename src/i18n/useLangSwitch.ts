@@ -16,7 +16,14 @@ export function useLangSwitch() {
   async function switchLang(target: Lang): Promise<void> {
     if (!isLoaded(target)) {
       setSwitching(true);
-      await loadLocale(target);
+      try {
+        await loadLocale(target);
+      } catch {
+        // Chunk load failed (e.g. stale hash after redeploy, offline) — abort the
+        // switch, stay on the current language, and re-enable the control.
+        setSwitching(false);
+        return;
+      }
       setSwitching(false);
     }
     setSettings({ lang: target });
