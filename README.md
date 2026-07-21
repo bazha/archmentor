@@ -29,7 +29,9 @@ A client-side SPA for learning software architecture — from Junior to Lead: **
 
 Vite · React 18 · TypeScript (strict) · React Router · Zustand (+persist) · Tailwind CSS · Vitest + Testing Library · zod · React Flow (`@xyflow/react`, lazy-loaded for the diagram canvas) · Mermaid (lazy-loaded for concept diagrams).
 
-Layered architecture: `content` (typed, localized data + zod validation) → `domain` (pure logic: SM-2, quiz selection, guided course, interview state machine, compare pairs, diagram constraint validation, concept-graph edges + layout) → `store` (Zustand + persist, versioned migrations) → `features` / `components` (React UI). In-house i18n (`src/i18n`) with type-enforced RU/EN key parity.
+Layered architecture: `content` (typed data + zod validation) → `domain` (pure logic: SM-2, quiz selection, guided course, interview state machine, compare pairs, diagram constraint validation, concept-graph edges + layout) → `store` (Zustand + persist, versioned migrations) → `features` / `components` (React UI). In-house i18n (`src/i18n`) with type-enforced RU/EN key parity.
+
+Content is split into a language-independent core (ids, grades, relations, diagrams) plus per-language prose packs; only the active language's pack loads at startup, and the other is prefetched during idle time — so switching languages is instant while the initial payload stays lean.
 
 ## Development
 
