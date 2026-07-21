@@ -180,16 +180,16 @@ export const architecture: Concept[] = [
       en: "Separating data, presentation, and input handling in the user interface",
     },
     definition: {
-      ru: "Архитектурный стиль пользовательского интерфейса, разделяющий приложение на три роли: Model хранит данные и бизнес-логику, View отображает состояние Model, а Controller интерпретирует ввод пользователя и преобразует его в операции над Model. Model ничего не знает о View и Controller.",
-      en: "A user-interface architectural style that splits an application into three roles: the Model holds data and business logic, the View renders the Model's state, and the Controller interprets user input and turns it into operations on the Model. The Model knows nothing about the View or the Controller.",
+      ru: "Архитектурный стиль пользовательского интерфейса, разделяющий приложение на три роли: Model хранит данные и бизнес-логику, View отображает состояние Model, а Controller интерпретирует ввод пользователя и преобразует его в операции над Model. Model ничего не знает о View и Controller. Controller отвечает узко: разобрать ввод, проверить права и вызвать нужную операцию Model — саму бизнес-логику и правила он не содержит, они остаются в Model.",
+      en: "A user-interface architectural style that splits an application into three roles: the Model holds data and business logic, the View renders the Model's state, and the Controller interprets user input and turns it into operations on the Model. The Model knows nothing about the View or the Controller. The Controller's job is narrow: parse the input, check authorization, and invoke the right Model operation — the business logic and rules themselves stay in the Model, not in the Controller.",
     },
     problem: {
-      ru: "В UI-коде данные, их отрисовка и реакция на действия пользователя сплетаются в одном месте: нельзя изменить внешний вид без риска сломать логику, нельзя протестировать логику без запуска интерфейса, нельзя показать одни и те же данные в нескольких представлениях без дублирования.",
-      en: "In UI code, the data, its rendering, and the response to user actions get tangled together in one place: you can't change the look without risking breaking the logic, you can't test the logic without launching the interface, and you can't show the same data in several views without duplication.",
+      ru: "В UI-коде данные, их отрисовка и реакция на действия пользователя сплетаются в одном месте: нельзя изменить внешний вид без риска сломать логику, нельзя протестировать логику без запуска интерфейса, нельзя показать одни и те же данные в нескольких представлениях без дублирования. Кроме того, без явного разделения ролей код, отвечающий за обработку запроса, постепенно вбирает в себя всё подряд: валидацию, преобразование данных, обращения к базе и формирование ответа — так рождается «толстый контроллер» (fat controller), который невозможно ни читать, ни тестировать по частям.",
+      en: "In UI code, the data, its rendering, and the response to user actions get tangled together in one place: you can't change the look without risking breaking the logic, you can't test the logic without launching the interface, and you can't show the same data in several views without duplication. Beyond that, without an explicit separation of roles, the code handling a request gradually absorbs everything at once — validation, data transformation, database access, and response formatting — which is how a \"fat controller\" is born: code that can't be read or tested piece by piece.",
     },
     solution: {
-      ru: "Обязанности разводятся по трём ролям. Controller принимает ввод пользователя и вызывает операции Model; Model изменяет состояние и оповещает об этом (классически — через Observer); View читает состояние Model и перерисовывается. Логика оказывается изолирована в Model, а отображение и ввод можно менять независимо.",
-      en: "The responsibilities are split across three roles. The Controller takes user input and invokes operations on the Model; the Model changes its state and announces the change (classically, via the Observer pattern); the View reads the Model's state and re-renders. The logic ends up isolated in the Model, while presentation and input can be changed independently.",
+      ru: "Обязанности разводятся по трём ролям. Controller принимает ввод пользователя, проверяет права и вызывает операции Model, но не содержит бизнес-правил; Model изменяет состояние, применяет бизнес-логику и оповещает об этом (классически — через Observer); View читает состояние Model и перерисовывается, ничего не меняя напрямую. Логика оказывается изолирована в Model, а отображение и ввод можно менять независимо. Исторически различают классический (Smalltalk) вариант, где Controller и View тесно связаны и вместе реагируют на ввод, и распространённый в вебе вариант «Model 2» (Rails, Spring MVC, ASP.NET MVC), где Controller — это обработчик запроса без состояния между вызовами, а View — шаблон, рендерящийся один раз на ответ. Чтобы контроллер не разрастался, тяжёлую логику выносят из него в отдельные сервисы предметной области, оставляя Controller тонким диспетчером.",
+      en: "The responsibilities are split across three roles. The Controller takes user input, checks authorization, and invokes operations on the Model, but holds no business rules itself; the Model changes its state, applies the business logic, and announces the change (classically, via the Observer pattern); the View reads the Model's state and re-renders, without changing anything directly. The logic ends up isolated in the Model, while presentation and input can be changed independently. Historically, there's the classic (Smalltalk) variant, where the Controller and View are tightly coupled and jointly react to input, and the web-common \"Model 2\" variant (Rails, Spring MVC, ASP.NET MVC), where the Controller is a stateless-between-requests handler and the View is a template rendered once per response. To keep the controller from growing unbounded, heavy logic is pushed out of it into separate domain services, leaving the Controller a thin dispatcher.",
     },
     codeExample: {
       lang: "typescript",
@@ -263,11 +263,13 @@ export const architecture: Concept[] = [
         "Model тестируется без интерфейса — логика изолирована от отрисовки и ввода",
         "Одну Model могут показывать несколько View без дублирования логики",
         "Отображение можно переделывать, не трогая бизнес-логику, и наоборот",
+        "Простая, широко известная ролевая модель — новый разработчик быстро понимает, где искать код",
       ],
       en: [
         "The Model can be tested without a UI — the logic is isolated from rendering and input",
         "A single Model can be presented by several Views without duplicating logic",
         "Presentation can be reworked without touching the business logic, and vice versa",
+        "A simple, widely understood set of roles — a new developer quickly learns where to look for code",
       ],
     },
     cons: {
@@ -286,10 +288,12 @@ export const architecture: Concept[] = [
       ru: [
         "Чистое разделение обязанностей против дополнительной структуры и церемоний на каждый экран",
         "Независимость Model от UI против необходимости отдельного механизма оповещения View об изменениях",
+        "Тонкий Controller и явные обязанности против риска: без дисциплины логика стекается в Controller, и получается «толстый контроллер»",
       ],
       en: [
         "Clean separation of responsibilities versus the extra structure and ceremony on every screen",
         "The Model's independence from the UI versus the need for a separate mechanism to notify the View of changes",
+        "A thin Controller with explicit responsibilities versus the risk that, without discipline, logic drifts into the Controller and produces a \"fat controller\"",
       ],
     },
     whenToUse: {
@@ -308,10 +312,12 @@ export const architecture: Concept[] = [
       ru: [
         "Простой статичный экран без логики — разделение не окупится",
         "Фреймворк уже навязывает другую организацию UI (например, однонаправленный поток данных) — не стоит натягивать MVC поверх",
+        "UI с богатым состоянием представления (режимы, флаги валидации, вычисляемые свойства для отображения) — здесь удобнее MVVM с его двусторонним биндингом View к ViewModel, чем ручная синхронизация View с Model в MVC",
       ],
       en: [
         "A simple, static screen with no logic — the separation won't pay for itself",
         "The framework already imposes a different UI organization (for example, a unidirectional data flow) — don't force MVC on top of it",
+        "A UI with rich presentation state (modes, validation flags, computed display properties) — MVVM's two-way binding between the View and a ViewModel fits better here than MVC's manual View-to-Model synchronization",
       ],
     },
     related: [
@@ -324,6 +330,7 @@ export const architecture: Concept[] = [
       "архитектура",
       "ui",
     ],
+    diagram: "flowchart LR\n  U[User] -->|input| C[Controller]\n  C -->|invoke operation| M[Model]\n  M -->|change state + notify| V[View]\n  V -->|read state| M\n  V -->|render| U\n  M -.->|knows nothing about| C\n  M -.->|knows nothing about| V",
   },
   {
     id: "mvvm",
@@ -483,16 +490,16 @@ export const architecture: Concept[] = [
       en: "The whole system is one codebase and one deployable unit",
     },
     definition: {
-      ru: "Архитектурный стиль, при котором вся функциональность приложения собирается и разворачивается как единое целое и выполняется в одном процессе. Модули взаимодействуют прямыми вызовами внутри процесса, а не по сети (Fowler: single deployable unit).",
-      en: "An architectural style in which all of an application's functionality is built and deployed as a single unit and runs in one process. Modules interact through direct in-process calls rather than over the network (Fowler: single deployable unit).",
+      ru: "Архитектурный стиль, при котором вся функциональность приложения собирается и разворачивается как единое целое и выполняется в одном процессе. Модули взаимодействуют прямыми вызовами внутри процесса, а не по сети (Fowler: single deployable unit). Это не синоним «плохо структурированного кода» — хорошо спроектированный монолит может иметь чёткие внутренние модули с явными границами; такой вариант называют модульным монолитом (modular monolith).",
+      en: "An architectural style in which all of an application's functionality is built and deployed as a single unit and runs in one process. Modules interact through direct in-process calls rather than over the network (Fowler: single deployable unit). It is not a synonym for \"badly structured code\" — a well-designed monolith can have clearly separated internal modules with explicit boundaries; that variant is called a modular monolith.",
     },
     problem: {
-      ru: "На старте продукта границы домена ещё не ясны, а распределённая система сразу приносит цену: сетевые вызовы, частичные отказы, распределённые транзакции, оркестрация деплоя множества сервисов. Платить эту цену до того, как она окупается, — преждевременная сложность (Fowler, «MonolithFirst»).",
-      en: "Early in a product's life the domain boundaries aren't clear yet, and a distributed system charges its price up front: network calls, partial failures, distributed transactions, and orchestrating the deployment of many services. Paying that price before it pays off is premature complexity (Fowler, 'MonolithFirst').",
+      ru: "На старте продукта границы домена ещё не ясны, а распределённая система сразу приносит цену: сетевые вызовы, частичные отказы, распределённые транзакции, оркестрация деплоя множества сервисов. Платить эту цену до того, как она окупается, — преждевременная сложность (Fowler, «MonolithFirst»). Команда, которая с первого дня режет систему на сервисы по догадкам о границах домена, обычно проводит границы неверно и затем платит за их перенос по сети дважды: один раз на исходное (ошибочное) разбиение, второй — на его исправление.",
+      en: "Early in a product's life the domain boundaries aren't clear yet, and a distributed system charges its price up front: network calls, partial failures, distributed transactions, and orchestrating the deployment of many services. Paying that price before it pays off is premature complexity (Fowler, 'MonolithFirst'). A team that slices the system into services from day one, based on guesses about domain boundaries, usually gets those boundaries wrong and then pays for moving them across the network twice: once for the original (mistaken) split, and again to fix it.",
     },
     solution: {
-      ru: "Держим всю функциональность в одной кодовой базе и одном деплой-юните. Границы проводим внутри — модулями и интерфейсами: вызовы остаются in-process, данные — в одной базе с ACID-транзакциями, а деплой и отладка сводятся к одному приложению. Дисциплина модульных границ сохраняет возможность позже выделить части в сервисы.",
-      en: "Keep all functionality in one codebase and one deployable unit. Draw the boundaries internally, with modules and interfaces: calls stay in-process, data lives in a single database with ACID transactions, and deployment and debugging come down to a single application. Discipline around module boundaries preserves the option to later extract parts into services.",
+      ru: "Держим всю функциональность в одной кодовой базе и одном деплой-юните. Границы проводим внутри — модулями и интерфейсами: вызовы остаются in-process, данные — в одной базе с ACID-транзакциями, а деплой и отладка сводятся к одному приложению. Если модули дисциплинированно скрывают внутренности за интерфейсами и не обращаются к чужим таблицам напрямую, получается модульный монолит: он даёт почти все организационные выгоды микросервисов (ясные границы, независимая разработка модулей) без сетевой цены распределённой системы. Дисциплина модульных границ также сохраняет возможность позже выделить перегруженный модуль в отдельный сервис, когда для этого появится измеримая причина — например, ему одному нужно масштабирование, недоступное остальному приложению.",
+      en: "Keep all functionality in one codebase and one deployable unit. Draw the boundaries internally, with modules and interfaces: calls stay in-process, data lives in a single database with ACID transactions, and deployment and debugging come down to a single application. When modules are disciplined enough to hide their internals behind interfaces and never reach into another module's tables directly, the result is a modular monolith: it delivers most of the organizational benefits of microservices (clear boundaries, independent module development) without a distributed system's network price. Discipline around module boundaries also preserves the option to later extract an overloaded module into its own service once there's a measurable reason to — for instance, it alone needs scaling the rest of the application doesn't.",
     },
     codeExample: {
       lang: "typescript",
@@ -583,10 +590,12 @@ export const architecture: Concept[] = [
       ru: [
         "Простота эксплуатации и сильная консистентность против независимого масштабирования и деплоя частей",
         "Высокая скорость разработки малой командой против роста стоимости координации и времени сборки с ростом команды и кодовой базы",
+        "Возможность отложить дорогое решение о границах сервисов против риска: без дисциплины модульные границы размываются, и «выделить сервис позже» становится дороже, чем сразу спроектировать его отдельно",
       ],
       en: [
         "Operational simplicity and strong consistency versus independent scaling and deployment of individual parts",
         "Fast development with a small team versus the rising cost of coordination and build times as the team and codebase grow",
+        "The ability to defer the expensive decision about service boundaries versus the risk that, without discipline, module boundaries blur, making \"extract it as a service later\" more expensive than designing it separately from the start",
       ],
     },
     whenToUse: {
@@ -594,11 +603,13 @@ export const architecture: Concept[] = [
         "Новый продукт или MVP: границы домена ещё не ясны, и резать их по сети преждевременно (MonolithFirst)",
         "Небольшая команда, которой один деплой-юнит проще поддерживать, чем распределённую систему",
         "Нужны строгие транзакции через несколько частей системы",
+        "Нужна часть организационных выгод микросервисов (ясные границы модулей, независимая разработка) без сетевой и эксплуатационной цены — тогда подойдёт модульный монолит",
       ],
       en: [
         "A new product or MVP: the domain boundaries aren't clear yet, and splitting them across the network is premature (MonolithFirst)",
         "A small team that finds a single deployable unit easier to maintain than a distributed system",
         "You need strict transactions spanning multiple parts of the system",
+        "You want some of the organizational benefits of microservices (clear module boundaries, independent module development) without the network and operational cost — a modular monolith fits here",
       ],
     },
     whenNotToUse: {
@@ -621,6 +632,7 @@ export const architecture: Concept[] = [
       "архитектура",
       "архитектурные стили",
     ],
+    diagram: "flowchart TB\n  subgraph App[Single Deployable Unit]\n    UI[Presentation]\n    Order[Order Module]\n    Inventory[Inventory Module]\n    Billing[Billing Module]\n    DB[(Shared Database)]\n    UI --> Order\n    Order -->|in-process call| Inventory\n    Order -->|in-process call| Billing\n    Inventory --> DB\n    Billing --> DB\n  end",
   },
   {
     id: "hexagonal",
@@ -944,12 +956,12 @@ export const architecture: Concept[] = [
       en: "An architectural style in which components interact by producing and consuming events—notifications that something has already happened. A producer publishes an event to an event bus or message broker without knowing the recipients; consumers subscribe to the events they care about and react independently and, as a rule, asynchronously.",
     },
     problem: {
-      ru: "Прямые синхронные вызовы жёстко связывают модули: отправитель обязан знать всех получателей и их API, добавление новой реакции требует правки отправителя, а отказ или медлительность одного получателя блокирует всю цепочку вызовов.",
-      en: "Direct synchronous calls tightly couple modules: the sender must know every recipient and its API, adding a new reaction requires modifying the sender, and the failure or slowness of a single recipient blocks the whole call chain.",
+      ru: "Прямые синхронные вызовы жёстко связывают модули по схеме запрос–ответ: отправитель обязан знать всех получателей и их API, добавление новой реакции требует правки отправителя, а отказ или медлительность одного получателя блокирует всю цепочку вызовов. Если для координации многошагового процесса завести отдельный оркестратор, который синхронно дёргает каждого участника, он сам становится узлом связанности: знает обо всех шагах и их порядке, и любое изменение процесса — это правка одного центрального модуля, от которого зависят все остальные.",
+      en: "Direct synchronous calls tightly couple modules in a request/response fashion: the sender must know every recipient and its API, adding a new reaction requires modifying the sender, and the failure or slowness of a single recipient blocks the whole call chain. If a multi-step process is coordinated by a dedicated orchestrator that synchronously calls each participant, the orchestrator itself becomes a hub of coupling: it knows about every step and their order, and any change to the process means editing one central module that everything else depends on.",
     },
     solution: {
-      ru: "Взаимодействие инвертируется: источник фиксирует факт («заказ оформлен») как событие и публикует его в брокер. Потребители подписываются на нужные типы событий и обрабатывают их независимо; нового потребителя добавляют без изменения издателя, а брокер буферизует поток и сглаживает пики нагрузки.",
-      en: "The interaction is inverted: the source records a fact (\"order placed\") as an event and publishes it to the broker. Consumers subscribe to the event types they care about and process them independently; a new consumer is added without changing the producer, while the broker buffers the stream and smooths out load spikes.",
+      ru: "Взаимодействие инвертируется: источник фиксирует факт («заказ оформлен») как событие и публикует его в брокер, не адресуя его конкретному получателю. Потребители подписываются на нужные типы событий и обрабатывают их независимо; нового потребителя добавляют без изменения издателя, а брокер буферизует поток, сглаживает пики нагрузки и разносит производителя и потребителей по времени. Для координации многошаговых процессов возможны два подхода: хореография (choreography), где каждый участник публикует своё событие и реагирует на чужие, а общая последовательность шагов нигде не описана централизованно, и оркестрация (orchestration), где отдельный координатор синхронно или асинхронно вызывает участников по явному сценарию. Хореография сохраняет слабую связанность, но её сквозной поток сложнее восстановить по коду; оркестрация делает процесс видимым в одном месте ценой центрального узла зависимости. Поскольку брокеры обычно дают доставку «не менее одного раза» (at-least-once), обработчики проектируют идемпотентными, чтобы повторная доставка того же события не приводила к двойному списанию или дублю заказа; относительный порядок событий из разных источников также не гарантирован, если брокер явно не поддерживает упорядоченность по ключу партиционирования.",
+      en: "The interaction is inverted: the source records a fact (\"order placed\") as an event and publishes it to the broker without addressing a specific recipient. Consumers subscribe to the event types they care about and process them independently; a new consumer is added without changing the producer, while the broker buffers the stream, smooths out load spikes, and decouples producer and consumers in time. Coordinating multi-step processes allows two approaches: choreography, where each participant publishes its own event and reacts to others', with the overall step sequence never written down centrally, and orchestration, where a dedicated coordinator calls the participants synchronously or asynchronously through an explicit script. Choreography preserves loose coupling, but its end-to-end flow is harder to reconstruct from the code; orchestration makes the process visible in one place at the cost of a central dependency hub. Because brokers typically offer only \"at-least-once\" delivery, handlers are designed to be idempotent so that redelivering the same event doesn't double-charge a payment or duplicate an order; the relative ordering of events from different sources also isn't guaranteed unless the broker explicitly preserves order per partitioning key.",
     },
     codeExample: {
       lang: "typescript",
@@ -1079,12 +1091,14 @@ export const architecture: Concept[] = [
       "mediator",
       "microservices",
       "coupling-cohesion",
+      "saga",
     ],
     tags: [
       "архитектура",
       "асинхронность",
       "интеграция",
     ],
+    diagram: "flowchart LR\n  P[Producer: Checkout Service] -->|publish OrderPlaced| B[[Event Broker]]\n  B -->|deliver| C1[Consumer: Notifications]\n  B -->|deliver| C2[Consumer: Analytics]\n  B -->|deliver| C3[Consumer: Shipping]\n  C1 -.->|no reply expected| B\n  C2 -.->|no reply expected| B",
   },
   {
     id: "microservices",
