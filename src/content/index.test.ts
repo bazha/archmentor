@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { concepts, questions, getConcept } from './index';
+import { ConceptProseSchema, QuestionProseSchema } from './schema';
 import { conceptProse as ruConcepts, questionProse as ruQuestions } from './locales/ru';
 import { conceptProse as enConcepts, questionProse as enQuestions } from './locales/en';
 
@@ -25,6 +26,24 @@ describe('content catalog', () => {
     // (>=3/>=3) — a few concepts legitimately sit at 2 in one dimension.
     const thin = concepts.filter((c) => (enConcepts[c.id]?.tradeoffs.length ?? 0) < 2 || c.related.length < 2);
     expect(thin.map((c) => c.id)).toEqual([]);
+  });
+
+  it('every prose entry is schema-valid in both languages (non-empty fields/lists)', () => {
+    // The in-app DEV guard only validates cores (to avoid eagerly importing both
+    // locales); prose shape is guarded here, where both locales are loaded.
+    for (const [lang, cProse, qProse] of [
+      ['ru', ruConcepts, ruQuestions],
+      ['en', enConcepts, enQuestions],
+    ] as const) {
+      for (const c of concepts) {
+        expect(() => ConceptProseSchema.parse(cProse[c.id]), `${lang} concept ${c.id}`).not.toThrow();
+      }
+      for (const q of questions) {
+        expect(() => QuestionProseSchema.parse(qProse[q.id]), `${lang} question ${q.id}`).not.toThrow();
+        // codeLang (core) must be present iff the prose carries a code sample.
+        expect(Boolean(q.codeLang), `${q.id} codeLang/code coupling (${lang})`).toBe(Boolean(qProse[q.id]?.code));
+      }
+    }
   });
 
   it('includes canonical concepts', () => {

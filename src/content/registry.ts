@@ -32,6 +32,10 @@ export function loadLocale(lang: Lang): Promise<Prose> {
       cache.set(lang, p);
       return p;
     });
+    // Drop a rejected load from `inflight` so a later retry re-attempts instead of
+    // replaying the cached failure (a transient prefetch blip would otherwise
+    // permanently break language switching). Success is covered by the cache hit above.
+    f.catch(() => inflight.delete(lang));
     inflight.set(lang, f);
   }
   return f;
