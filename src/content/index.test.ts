@@ -78,6 +78,13 @@ describe('content catalog', () => {
     }
   });
 
+  it('every fill-blank question maps to a real concept', () => {
+    for (const q of questions.filter((q) => q.type === 'fill-blank')) {
+      expect(q.conceptId, `${q.id} missing conceptId`).toBeTruthy();
+      expect(getConcept(q.conceptId!), `${q.id} conceptId does not resolve`).toBeDefined();
+    }
+  });
+
   it('identify-pattern distractors are real sibling concepts by name', () => {
     const names = new Set(concepts.map((c) => c.name));
     for (const q of questions.filter((q) => q.type === 'identify-pattern')) {
