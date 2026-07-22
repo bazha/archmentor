@@ -1,8 +1,9 @@
 name: Trello task agent
 
 on:
-  schedule:
-    - cron: "*/15 * * * *"   # every ~15 min (GitHub cron is best-effort; may lag)
+  # Enable the schedule only AFTER a successful manual (workflow_dispatch) test.
+  # schedule:
+  #   - cron: "*/15 * * * *"   # every ~15 min (GitHub cron is best-effort; may lag)
   workflow_dispatch: {}
 
 concurrency:
