@@ -19,6 +19,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT }}   # PR/push as a real user so CodeRabbit auto-reviews
 
       - uses: actions/setup-node@v4
         with:
@@ -50,7 +52,7 @@ jobs:
         if: steps.sel.outputs.card_id != ''
         uses: anthropics/claude-code-action@v1
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GH_PAT }}   # open the PR as a real user (CodeRabbit skips bot PRs)
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           claude_args: "--dangerously-skip-permissions"
