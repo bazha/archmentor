@@ -6,6 +6,7 @@ import { Dashboard } from '@/features/dashboard/Dashboard';
 import { Library } from '@/features/library/Library';
 import { useStore } from '@/store/useStore';
 import type { Lang } from '@/i18n/lang';
+import { translate } from '@/i18n/messages';
 
 function renderAt(path: string) {
   const router = createMemoryRouter(
@@ -33,6 +34,13 @@ describe.each(CASES)('app shell ($lang)', ({ lang, library, dashboard }) => {
     expect(screen.getByText('ArchMentor')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: library })).toBeInTheDocument();
     expect(screen.getByText(dashboard)).toBeInTheDocument();
+  });
+
+  it('links the brandmark to home with a localized title', () => {
+    renderAt('/library');
+    const brandLink = screen.getByText('ArchMentor').closest('a');
+    expect(brandLink).toHaveAttribute('href', '/');
+    expect(brandLink).toHaveAttribute('title', translate(lang, 'common.home'));
   });
 
   it('renders the library heading at /library', () => {
