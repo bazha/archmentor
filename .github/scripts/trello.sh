@@ -52,9 +52,9 @@ cmd_finalize() { # $1 = card id
   wip="$(ensure_label "claude:wip" "yellow")"
   info="$(ensure_label "needs-info" "orange")"
   if [[ ! -f "$RESULT_FILE" ]]; then
-    log "no $RESULT_FILE — error"
-    comment "$id" "⚠️ Прогон не дал результата (см. Actions-лог)."
-    add_label "$id" "$info"; remove_label "$id" "$wip"; return 0
+    log "no $RESULT_FILE — infra/agent failure; returning card to queue"
+    comment "$id" "⚠️ Прогон не дал результата (инфраструктура/агент). Карточка возвращена в очередь для повтора. См. Actions-лог."
+    remove_label "$id" "$wip"; return 0
   fi
   status="$(jq -r '.status' "$RESULT_FILE")"
   log "result: $status"
