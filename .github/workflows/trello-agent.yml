@@ -51,8 +51,6 @@ jobs:
       - name: Run Claude on the card
         if: steps.sel.outputs.card_id != ''
         uses: anthropics/claude-code-action@v1
-        env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}   # open the PR as a real user (CodeRabbit skips bot PRs)
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           claude_args: "--dangerously-skip-permissions"
@@ -71,13 +69,31 @@ jobs:
             2. Otherwise (light cycle): create a branch trello/<card-id>-<short-slug>. Write a SHORT
                spec + plan under docs/superpowers/. Implement via TDD. Keep scope to the card.
             3. Run `npm test` and `npx tsc --noEmit`; both MUST be green. If not, write
-               {"status":"error","note":"tests/tsc red: ..."} and stop (no PR).
-            4. Commit with NO Claude/Co-Authored-By/"Generated with" attribution. Push the branch.
-               Open a PR with `gh pr create --fill --base master`. Do NOT merge.
-            5. Write {"status":"pr","prUrl":"<url>","branch":"<branch>"}.
+               {"status":"error","note":"tests/tsc red: ..."} and stop.
+            4. Commit with NO Claude/Co-Authored-By/"Generated with" attribution. Do NOT push and do
+               NOT open a PR — a later CI step pushes the branch and opens the PR (so it is authored
+               by the repo owner, not a bot). Just commit locally on the branch. Do NOT merge/deploy.
+            5. Write {"status":"pr","branch":"<branch>"}  (leave prUrl empty — CI fills it).
 
             Constraints: no new dependencies unless the card requires them; follow CLAUDE.md and
             existing patterns; never print secrets. Always write ./.trello-result.json before exiting.
+
+      - name: Open PR (as repo owner via PAT)
+        if: steps.sel.outputs.card_id != ''
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          [ -f .trello-result.json ] || { echo "no result.json"; exit 0; }
+          status="$(jq -r '.status' .trello-result.json)"
+          [ "$status" = "pr" ] || { echo "status=$status — no PR to open"; exit 0; }
+          branch="$(jq -r '.branch' .trello-result.json)"
+          title="$(jq -r '.name' .trello-card.json)"
+          git push -u origin "$branch"
+          url="$(gh pr create --head "$branch" --base master --title "$title" \
+                   --body "Automated by the Trello task agent. Trello card: $title" )"
+          echo "opened PR: $url"
+          jq --arg u "$url" '.prUrl=$u' .trello-result.json > .trello-result.json.tmp \
+            && mv .trello-result.json.tmp .trello-result.json
 
       - name: Finalize the card
         if: always() && steps.sel.outputs.card_id != ''
