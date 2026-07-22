@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { getConcept } from '@/content/index';
 import { useConcept } from '@/content/localize';
@@ -9,6 +9,9 @@ import { EmptyState } from '@/components/EmptyState';
 import { GRADE_LABEL, CATEGORY_LABEL } from '@/lib/labels';
 import { useStore } from '@/store/useStore';
 import { useT } from '@/i18n/useT';
+import { AudioPlayer } from './AudioPlayer';
+import { useConceptSpeech, type ConceptSpeech } from './useConceptSpeech';
+import type { SpeechSectionId } from '@/domain/tts/script';
 
 function SectionHeading({ children }: { children: ReactNode }) {
   return (
@@ -24,9 +27,29 @@ const MARKERS = {
   bad: { cls: 'bg-bad/15 text-bad', sym: '−' },
 } as const;
 
-function List({ title, items, marker }: { title: string; items: string[]; marker?: 'good' | 'bad' }) {
+/** Highlight + anchor props for a readable section, derived from player state. */
+function speechProps(speech: ConceptSpeech, id: SpeechSectionId) {
+  const active = speech.activeId === id;
+  const clickable = speech.status === 'playing' || speech.status === 'paused';
+  return {
+    'data-speech': id,
+    onClick: clickable ? () => speech.jumpTo(id) : undefined,
+    className: [
+      'space-y-4 scroll-mt-24 rounded-lg transition',
+      active ? 'bg-accent/10 ring-1 ring-accent/30 -mx-3 px-3 py-2' : '',
+      clickable ? 'cursor-pointer' : '',
+    ].filter(Boolean).join(' '),
+  };
+}
+
+function List({
+  title, items, marker, sectionProps,
+}: {
+  title: string; items: string[]; marker?: 'good' | 'bad';
+  sectionProps?: ReturnType<typeof speechProps>;
+}) {
   return (
-    <section className="space-y-4">
+    <section {...(sectionProps ?? { className: 'space-y-4' })}>
       <SectionHeading>{title}</SectionHeading>
       <ul className="space-y-2.5">
         {items.map((i) => (
@@ -51,6 +74,22 @@ export function ConceptPage() {
   const lang = useStore((s) => s.settings.lang);
   const t = useT();
   const c = useConcept(conceptId ?? '');
+  const speech = useConceptSpeech(
+    c ?? {
+      id: '', name: '', category: 'architecture', grade: 'junior',
+      tagline: '', definition: '', problem: '', solution: '',
+      codeExample: { lang: 'typescript', code: '' },
+      pros: [], cons: [], tradeoffs: [], whenToUse: [], related: [],
+    },
+  );
+
+  // Auto-scroll to the section currently being read.
+  useEffect(() => {
+    if (!speech.activeId) return;
+    document.querySelector(`[data-speech="${speech.activeId}"]`)
+      ?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, [speech.activeId]);
+
   if (!c) return <EmptyState icon="🧭" title={t('concept.notFoundTitle')} cta={{ to: '/library', label: t('concept.backToLibrary') }} />;
 
   return (
@@ -68,20 +107,23 @@ export function ConceptPage() {
           <Badge tone="grade">{GRADE_LABEL[c.grade]}</Badge>
         </div>
         <h1 className="text-3xl font-semibold tracking-tight text-bright sm:text-4xl">{c.name}</h1>
-        <p className="max-w-prose text-lg leading-relaxed text-muted">{c.tagline}</p>
+        <p {...speechProps(speech, 'tagline')} className={`max-w-prose text-lg leading-relaxed text-muted ${speechProps(speech, 'tagline').className}`}>
+          {c.tagline}
+        </p>
+        <AudioPlayer speech={speech} />
       </header>
 
-      <section className="space-y-4">
+      <section {...speechProps(speech, 'definition')}>
         <SectionHeading>{t('concept.definition')}</SectionHeading>
         <p className="max-w-prose leading-relaxed text-content">{c.definition}</p>
       </section>
 
-      <section className="space-y-4">
+      <section {...speechProps(speech, 'problem')}>
         <SectionHeading>{t('concept.problem')}</SectionHeading>
         <p className="max-w-prose leading-relaxed text-content">{c.problem}</p>
       </section>
 
-      <section className="space-y-4">
+      <section {...speechProps(speech, 'solution')}>
         <SectionHeading>{t('concept.solution')}</SectionHeading>
         <p className="max-w-prose leading-relaxed text-content">{c.solution}</p>
       </section>
@@ -93,19 +135,19 @@ export function ConceptPage() {
         </section>
       )}
 
-      <section className="space-y-4">
+      <section {...speechProps(speech, 'code')}>
         <SectionHeading>{t('concept.codeExample')}</SectionHeading>
         <CodeBlock sample={c.codeExample} />
       </section>
 
       <div className="grid gap-8 sm:grid-cols-2">
-        <List title={t('concept.pros')} items={c.pros} marker="good" />
-        <List title={t('concept.cons')} items={c.cons} marker="bad" />
+        <List title={t('concept.pros')} items={c.pros} marker="good" sectionProps={speechProps(speech, 'pros')} />
+        <List title={t('concept.cons')} items={c.cons} marker="bad" sectionProps={speechProps(speech, 'cons')} />
       </div>
 
-      <List title={t('concept.tradeoffs')} items={c.tradeoffs} />
-      <List title={t('concept.whenToUse')} items={c.whenToUse} />
-      {c.whenNotToUse && <List title={t('concept.whenNotToUse')} items={c.whenNotToUse} />}
+      <List title={t('concept.tradeoffs')} items={c.tradeoffs} sectionProps={speechProps(speech, 'tradeoffs')} />
+      <List title={t('concept.whenToUse')} items={c.whenToUse} sectionProps={speechProps(speech, 'whenToUse')} />
+      {c.whenNotToUse && <List title={t('concept.whenNotToUse')} items={c.whenNotToUse} sectionProps={speechProps(speech, 'whenNotToUse')} />}
 
       {c.related.length > 0 && (
         <section className="space-y-4">
