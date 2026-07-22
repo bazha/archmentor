@@ -61,9 +61,15 @@ cmd_finalize() { # $1 = card id
   case "$status" in
     pr)
       pr="$(jq -r '.prUrl' "$RESULT_FILE")"
-      comment "$id" "✅ Готово. PR: $pr"
-      move_card "$id" "$TRELLO_INREVIEW_LIST_ID"
-      remove_label "$id" "$wip" ;;
+      if [[ -z "$pr" || "$pr" == "null" ]]; then
+        log "status=pr but prUrl empty (Open PR step failed) — returning card to queue"
+        comment "$id" "⚠️ Код готов, но PR открыть не удалось (см. Actions-лог). Карточка возвращена в очередь."
+        remove_label "$id" "$wip"
+      else
+        comment "$id" "✅ Готово. PR: $pr"
+        move_card "$id" "$TRELLO_INREVIEW_LIST_ID"
+        remove_label "$id" "$wip"
+      fi ;;
     needs-info)
       q="$(jq -r '.questions[]? | "• " + .' "$RESULT_FILE")"
       comment "$id" "❓ Нужны уточнения:

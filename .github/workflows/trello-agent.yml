@@ -88,6 +88,9 @@ jobs:
           [ "$status" = "pr" ] || { echo "status=$status — no PR to open"; exit 0; }
           branch="$(jq -r '.branch' .trello-result.json)"
           title="$(jq -r '.name' .trello-card.json)"
+          # Push with the PAT explicitly (the checkout-persisted credential may be
+          # overwritten by the Claude step; git push does not read GH_TOKEN).
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           git push -u origin "$branch"
           url="$(gh pr create --head "$branch" --base master --title "$title" \
                    --body "Automated by the Trello task agent. Trello card: $title" )"
