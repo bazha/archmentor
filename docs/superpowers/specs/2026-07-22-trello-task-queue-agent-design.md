@@ -130,6 +130,31 @@ Trello-мутациями; LLM владеет только кодом и PR; с�
 Только polling; один репозиторий (archmentor); одна карточка/прогон; ветка+PR (без авто-мержа/
 деплоя); без параллельности; авто-разлок залипших замков и авто-ретраи — отложено.
 
+## Ревизия 2026-07-22: раннер = GitHub Actions (заменяет локальный cron)
+
+Раннер перенесён с локального cron в **GitHub Actions** (облако — машину включать не нужно,
+нативный checkout репы, PR из коробки, секреты в GitHub Secrets). Остальные решения в силе:
+граница = только ветка+PR (агент не мержит/не деплоит; деплой висит на push в master, который
+делает человек мержем); bounce непонятных карточек; одна карточка/прогон.
+
+- **Файлы (в репе, ветка `feat/trello-agent-ci`):** `.github/workflows/trello-agent.yml`
+  (`on: schedule */15` + `workflow_dispatch`; `concurrency` без наложений; `permissions:
+  contents/pull-requests: write`) и `.github/scripts/trello.sh` (curl/jq: `select-and-claim`,
+  `finalize`).
+- **Авторизация Claude:** `CLAUDE_CODE_OAUTH_TOKEN` из `claude setup-token` — **подписка, без
+  API-биллинга**. НЕ ставить одновременно `ANTHROPIC_API_KEY` (перебивает по приоритету). НЕ
+  использовать `--bare` (игнорирует OAuth-токен).
+- **Экшен:** `anthropics/claude-code-action@v1`, `prompt` статичный (карточка читается из
+  `./.trello-card.json`, результат в `./.trello-result.json` — без интерполяции текста карточки
+  в YAML), `claude_args: --dangerously-skip-permissions` (runner не root — ок).
+- **Секреты (GitHub repo secrets):** `CLAUDE_CODE_OAUTH_TOKEN`, `TRELLO_KEY`, `TRELLO_TOKEN`,
+  `TRELLO_BOARD_ID`, `TRELLO_INPROGRESS_LIST_ID`, `TRELLO_INREVIEW_LIST_ID`.
+- **Нюанс GITHUB_TOKEN** (PR от него не триггерит downstream `pull_request`-workflow) — у нас
+  неважно: CI на `pull_request` нет, деплой на push в master.
+- **Каветы cron:** GitHub-cron лагает (5–30 мин), редко пропускает, и отключает scheduled-
+  workflow после 60 дней без активности репы (у нас пуши частые). Есть и ручной `workflow_dispatch`.
+- **Локальный cron-путь ниже (Компоненты §3/§5) — отменён;** остаётся как исторический контекст.
+
 ## Критерии готовности
 - `poll.sh --dry-run` корректно выбирает верхнюю необработанную карточку In Progress и печатает
   план, ничего не меняя.

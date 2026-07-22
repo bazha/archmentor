@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+# Trello helper for the CI task-runner. Subcommands: select-and-claim, finalize.
+# Requires env: TRELLO_KEY TRELLO_TOKEN TRELLO_BOARD_ID
+#               TRELLO_INPROGRESS_LIST_ID TRELLO_INREVIEW_LIST_ID
+# Writes .trello-card.json (select-and-claim) and reads .trello-result.json (finalize).
+# Logs go to stderr; select-and-claim prints ONLY the selected card id to stdout.
+set -euo pipefail
+
+API="https://api.trello.com/1"
+CARD_FILE=".trello-card.json"
+RESULT_FILE=".trello-result.json"
+log() { echo "[trello] $*" >&2; }
+_auth() { echo "key=${TRELLO_KEY}&token=${TRELLO_TOKEN}"; }
+
+api_get()   { local sep="?"; [[ "$1" == *\?* ]] && sep="&"; curl -fsS "${API}$1${sep}$(_auth)"; }
+board_labels() { api_get "/boards/${TRELLO_BOARD_ID}/labels?fields=name,color"; }
+list_cards()   { api_get "/lists/$1/cards?fields=name,desc,idLabels,pos"; }
+create_label() { curl -fsS -X POST "${API}/labels?$(_auth)" --data-urlencode "name=$1" --data-urlencode "color=$2" --data-urlencode "idBoard=${TRELLO_BOARD_ID}"; }
+add_label()    { curl -fsS -X POST   "${API}/cards/$1/idLabels?value=$2&$(_auth)" >/dev/null; }
+remove_label() { curl -fsS -X DELETE "${API}/cards/$1/idLabels/$2?$(_auth)" >/dev/null || true; }
+comment()      { curl -fsS -X POST "${API}/cards/$1/actions/comments?$(_auth)" --data-urlencode "text=$2" >/dev/null; }
+move_card()    { curl -fsS -X PUT  "${API}/cards/$1?idList=$2&$(_auth)" >/dev/null; }
+
+ensure_label() { # $1=name $2=color -> echoes id
+  local id
+  id="$(board_labels | jq -r --arg n "$1" '.[] | select(.name==$n) | .id' | head -1)"
+  [[ -z "$id" ]] && id="$(create_label "$1" "$2" | jq -r '.id')"
+  echo "$id"
+}
+
+cmd_select_and_claim() {
+  local wip info cards card id name desc
+  wip="$(ensure_label "claude:wip" "yellow")"
+  info="$(ensure_label "needs-info" "orange")"
+  log "labels: wip=$wip needs-info=$info"
+  cards="$(list_cards "$TRELLO_INPROGRESS_LIST_ID")"
+  card="$(echo "$cards" | jq -c --arg w "$wip" --arg i "$info" \
+    '[ .[] | select((.idLabels|index($w)|not) and (.idLabels|index($i)|not)) ] | sort_by(.pos) | .[0] // empty')"
+  if [[ -z "$card" || "$card" == "null" ]]; then log "no eligible card"; exit 0; fi
+  id="$(echo "$card" | jq -r '.id')"
+  name="$(echo "$card" | jq -r '.name')"
+  desc="$(echo "$card" | jq -r '.desc')"
+  log "selected: $name ($id)"
+  echo "$card" | jq '{id, name, desc}' > "$CARD_FILE"
+  add_label "$id" "$wip"
+  comment "$id" "🤖 Взял в работу. Ветка и PR появятся здесь."
+  echo "$id"   # stdout = card id only
+}
+
+cmd_finalize() { # $1 = card id
+  local id="$1" wip info status pr q note
+  wip="$(ensure_label "claude:wip" "yellow")"
+  info="$(ensure_label "needs-info" "orange")"
+  if [[ ! -f "$RESULT_FILE" ]]; then
+    log "no $RESULT_FILE — error"
+    comment "$id" "⚠️ Прогон не дал результата (см. Actions-лог)."
+    add_label "$id" "$info"; remove_label "$id" "$wip"; return 0
+  fi
+  status="$(jq -r '.status' "$RESULT_FILE")"
+  log "result: $status"
+  case "$status" in
+    pr)
+      pr="$(jq -r '.prUrl' "$RESULT_FILE")"
+      comment "$id" "✅ Готово. PR: $pr"
+      move_card "$id" "$TRELLO_INREVIEW_LIST_ID"
+      remove_label "$id" "$wip" ;;
+    needs-info)
+      q="$(jq -r '.questions[]? | "• " + .' "$RESULT_FILE")"
+      comment "$id" "❓ Нужны уточнения:
+$q"
+      add_label "$id" "$info"; remove_label "$id" "$wip" ;;
+    *)
+      note="$(jq -r '.note // "unknown error"' "$RESULT_FILE")"
+      comment "$id" "⚠️ Ошибка: $note (см. Actions-лог)."
+      add_label "$id" "$info"; remove_label "$id" "$wip" ;;
+  esac
+}
+
+case "${1:-}" in
+  select-and-claim) cmd_select_and_claim ;;
+  finalize) cmd_finalize "${2:?card id required}" ;;
+  *) echo "usage: $0 {select-and-claim|finalize <cardId>}" >&2; exit 2 ;;
+esac
