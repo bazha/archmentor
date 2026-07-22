@@ -48,12 +48,16 @@ describe('ConceptPage sticky dock', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Слушать' }));
     // playing, inline still in view (default) → dock hidden
     expect(screen.getByTestId('audio-dock')).toHaveAttribute('aria-hidden', 'true');
+    // inline player should not have invisible class while in view
+    expect(screen.getByTestId('inline-audio')).not.toHaveClass('invisible');
 
     // inline player scrolls out of view → dock shows
     act(() => ioCallback!([{ isIntersecting: false }]));
     expect(screen.getByTestId('audio-dock')).not.toHaveAttribute('aria-hidden');
     // inline player wrapper becomes aria-hidden so SRs see one control set
     expect(screen.getByTestId('inline-audio')).toHaveAttribute('aria-hidden', 'true');
+    // also remove from tab order with invisible
+    expect(screen.getByTestId('inline-audio')).toHaveClass('invisible');
 
     // scroll back into view → dock hides again
     act(() => ioCallback!([{ isIntersecting: true }]));

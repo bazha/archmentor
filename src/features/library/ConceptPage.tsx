@@ -115,7 +115,7 @@ export function ConceptPage() {
         <p {...speechProps(speech, 'tagline')} className={`max-w-prose text-lg leading-relaxed text-muted ${speechProps(speech, 'tagline').className}`}>
           {c.tagline}
         </p>
-        <div ref={playerRef} data-testid="inline-audio" aria-hidden={docked || undefined}>
+        <div ref={playerRef} data-testid="inline-audio" aria-hidden={docked || undefined} className={docked ? 'invisible' : undefined}>
           <AudioPlayer speech={speech} />
         </div>
       </header>
