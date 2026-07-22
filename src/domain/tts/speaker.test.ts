@@ -45,6 +45,27 @@ describe('getVoiceForLang', () => {
     expect(getVoiceForLang('ru')?.name).toBe('Milena');
     expect(getVoiceForLang('en')?.name).toBe('Alex');
   });
+
+  it('prefers a network voice over a local one for the same language', () => {
+    synth.getVoices = () => ([
+      { lang: 'ru-RU', name: 'Milena', localService: true },
+      { lang: 'ru-RU', name: 'Google русский', localService: false },
+    ] as any);
+    expect(getVoiceForLang('ru')?.name).toBe('Google русский');
+  });
+
+  it('prefers an enhanced local voice over a compact one', () => {
+    synth.getVoices = () => ([
+      { lang: 'en-US', name: 'Albert (compact)', localService: true },
+      { lang: 'en-US', name: 'Samantha (Enhanced)', localService: true },
+    ] as any);
+    expect(getVoiceForLang('en')?.name).toBe('Samantha (Enhanced)');
+  });
+
+  it('returns null when no voice matches the language', () => {
+    synth.getVoices = () => ([{ lang: 'de-DE', name: 'Anna', localService: true }] as any);
+    expect(getVoiceForLang('ru')).toBeNull();
+  });
 });
 
 describe('speak', () => {

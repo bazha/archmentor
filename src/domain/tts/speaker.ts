@@ -7,10 +7,27 @@ export function isSpeechSupported(): boolean {
     && 'SpeechSynthesisUtterance' in window;
 }
 
+// Higher score = more natural-sounding. Network voices (localService === false,
+// e.g. Chrome's "Google" voices) are markedly less robotic than the local
+// synthesizers; named "enhanced"/"premium"/"neural"/"siri" voices are the good
+// local ones (macOS), and "compact"/"eSpeak" are the robotic defaults to avoid.
+const GOOD_VOICE = /google|natural|premium|enhanced|neural|siri/i;
+const POOR_VOICE = /compact|espeak/i;
+
+function scoreVoice(v: SpeechSynthesisVoice): number {
+  let s = 0;
+  if (!v.localService) s += 100; // network voice — biggest quality win
+  if (GOOD_VOICE.test(v.name)) s += 10;
+  if (POOR_VOICE.test(v.name)) s -= 50;
+  return s;
+}
+
 export function getVoiceForLang(lang: Lang): SpeechSynthesisVoice | null {
   if (!isSpeechSupported()) return null;
-  const voices = window.speechSynthesis.getVoices();
-  return voices.find((v) => v.lang.toLowerCase().startsWith(lang)) ?? null;
+  const matches = window.speechSynthesis.getVoices().filter((v) => v.lang.toLowerCase().startsWith(lang));
+  if (matches.length === 0) return null;
+  // Pick the highest-scoring voice; ties keep the first (platform) order.
+  return matches.reduce((best, v) => (scoreVoice(v) > scoreVoice(best) ? v : best));
 }
 
 export interface SpeakOptions {
