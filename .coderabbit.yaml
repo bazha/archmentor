@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: "en-US"
+reviews:
+  profile: chill                  # less nitpicky (use "assertive" for stricter)
+  high_level_summary: true
+  poem: false
+  auto_review:
+    enabled: true
+    drafts: false
+  path_filters:
+    - "!docs/**"
+    - "!**/*.md"
+    - "!src/content/locales/**"   # huge bilingual prose, not code
+    - "!package-lock.json"
+  path_instructions:
+    - path: "src/**/*.{ts,tsx}"
+      instructions: >
+        React 18 + TS strict, Vite, Zustand, Tailwind. Bilingual RU/EN via
+        src/i18n/messages.ts (compile-time key parity — a missing key is a tsc error).
+        Keep WCAG AA contrast (guarded by src/styles/contrast.test.ts).
+        Avoid new dependencies unless necessary.
+chat:
+  auto_reply: true
