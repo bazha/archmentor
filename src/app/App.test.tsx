@@ -35,6 +35,13 @@ describe.each(CASES)('app shell ($lang)', ({ lang, library, dashboard }) => {
     expect(screen.getByText(dashboard)).toBeInTheDocument();
   });
 
+  it('links the sidebar brandmark home with a title', () => {
+    renderAt('/library');
+    const brandmark = screen.getByTitle('ArchMentor — home');
+    expect(brandmark).toBeInTheDocument();
+    expect(brandmark).toHaveAttribute('href', '/');
+  });
+
   it('renders the library heading at /library', () => {
     renderAt('/library');
     expect(screen.getByRole('heading', { name: library })).toBeInTheDocument();

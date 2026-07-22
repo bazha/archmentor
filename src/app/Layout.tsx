@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useStore, type AppState } from '@/store/useStore';
 import { selectCourseProgress } from '@/domain/course';
 import { applyTheme } from './theme';
@@ -56,14 +56,14 @@ export function Layout() {
 
       {/* Sidebar (horizontal strip on mobile, rail on md+) */}
       <aside className="flex items-center gap-1 overflow-x-auto border-b border-line px-3 py-2.5 md:sticky md:top-0 md:h-screen md:flex-col md:items-stretch md:gap-0.5 md:overflow-y-auto md:overflow-x-visible md:border-b-0 md:border-r md:px-3.5 md:py-5">
-        <div className="mr-3 flex flex-none items-center gap-2.5 md:mb-5 md:mr-0 md:px-2">
+        <Link to="/" title="ArchMentor — home" className="mr-3 flex flex-none items-center gap-2.5 md:mb-5 md:mr-0 md:px-2">
           <svg viewBox="0 0 24 24" className="h-7 w-7 flex-none text-accent" aria-hidden="true">
             <path d="m12 2.5 8.5 4.75L12 12 3.5 7.25 12 2.5Z" fill="currentColor" />
             <path d="m3.5 12 8.5 4.75L20.5 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" opacity="0.55" />
             <path d="m3.5 16.75 8.5 4.75 8.5-4.75" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" opacity="0.3" />
           </svg>
           <span className="text-[1.05rem] font-bold tracking-tight text-bright">ArchMentor</span>
-        </div>
+        </Link>
 
         <nav aria-label={t('common.mainNav')} className="flex flex-none items-center gap-1 md:flex-col md:items-stretch md:gap-0.5">
           {NAV.map((n) => (
