@@ -8,6 +8,24 @@
 
 **Tech Stack:** bash, `curl`, `jq` (all present), `gh` (authed as `bazha`), headless `claude`, macOS `cron` (no `flock` → `mkdir` lock).
 
+## Ревизия 2026-07-22: раннер перенесён на GitHub Actions
+
+Раннер = **GitHub Actions** (не локальный cron). Реализовано на ветке `feat/trello-agent-ci`:
+`.github/workflows/trello-agent.yml` + `.github/scripts/trello.sh`. Tasks 1–4 ниже (локальный
+cron, `~/.claude-work/trello-agent/`, `--dangerously-skip-permissions` в poll.sh) **заменены**
+этим воркфлоу. Оставшиеся РУЧНЫЕ шаги пользователя для запуска Actions-варианта:
+
+1. `claude setup-token` локально → скопировать токен.
+2. Завести GitHub repo secrets (значения вводятся интерактивно, в чат не попадают):
+   `gh secret set CLAUDE_CODE_OAUTH_TOKEN`, `gh secret set TRELLO_KEY`, `gh secret set TRELLO_TOKEN`,
+   `gh secret set TRELLO_BOARD_ID`, `gh secret set TRELLO_INPROGRESS_LIST_ID`,
+   `gh secret set TRELLO_INREVIEW_LIST_ID`.
+3. Trello key/token — `https://trello.com/power-ups/admin`; id доски/списков — `curl` к
+   `/1/members/me/boards` и `/1/boards/<id>/lists`.
+4. Смёржить ветку `feat/trello-agent-ci` (workflow активируется только на дефолтной ветке).
+5. Тест: `gh workflow run "Trello task agent"` с понятной карточкой в In Progress → проверить
+   Actions-лог, PR, перенос карточки в In Review. Только потом полагаться на `schedule`.
+
 ## Global Constraints
 
 - **Location:** `~/.claude-work/trello-agent/` (NOT the repo). Nothing here is committed to the archmentor repo. `REPO_DIR` (the archmentor checkout) is where code work happens: `/Users/arthur/Documents/work/learna`.
