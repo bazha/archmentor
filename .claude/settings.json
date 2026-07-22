@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__figma__get_figma_data",
+      "mcp__figma__download_figma_images"
+    ]
+  }
+}

@@ -11,6 +11,8 @@ import { useStore } from '@/store/useStore';
 import { useT } from '@/i18n/useT';
 import { AudioPlayer } from './AudioPlayer';
 import { useConceptSpeech, type ConceptSpeech } from './useConceptSpeech';
+import { AudioDock } from './AudioDock';
+import { useInView } from './useInView';
 import type { SpeechSectionId } from '@/domain/tts/script';
 
 function SectionHeading({ children }: { children: ReactNode }) {
@@ -82,6 +84,7 @@ export function ConceptPage() {
       pros: [], cons: [], tradeoffs: [], whenToUse: [], related: [],
     },
   );
+  const { ref: playerRef, inView } = useInView<HTMLDivElement>();
 
   // Auto-scroll to the section currently being read.
   useEffect(() => {
@@ -91,6 +94,8 @@ export function ConceptPage() {
   }, [speech.activeId]);
 
   if (!c) return <EmptyState icon="🧭" title={t('concept.notFoundTitle')} cta={{ to: '/library', label: t('concept.backToLibrary') }} />;
+
+  const docked = !inView && (speech.status === 'playing' || speech.status === 'paused');
 
   return (
     <article className="space-y-8">
@@ -110,7 +115,9 @@ export function ConceptPage() {
         <p {...speechProps(speech, 'tagline')} className={`max-w-prose text-lg leading-relaxed text-muted ${speechProps(speech, 'tagline').className}`}>
           {c.tagline}
         </p>
-        <AudioPlayer speech={speech} />
+        <div ref={playerRef} data-testid="inline-audio" aria-hidden={docked || undefined} className={docked ? 'invisible' : undefined}>
+          <AudioPlayer speech={speech} />
+        </div>
       </header>
 
       <section {...speechProps(speech, 'definition')}>
@@ -169,6 +176,8 @@ export function ConceptPage() {
           </div>
         </section>
       )}
+
+      <AudioDock speech={speech} visible={docked} />
     </article>
   );
 }
