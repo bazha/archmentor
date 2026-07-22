@@ -5,6 +5,7 @@ import { Layout } from './Layout';
 import { Dashboard } from '@/features/dashboard/Dashboard';
 import { Library } from '@/features/library/Library';
 import { useStore } from '@/store/useStore';
+import { translate } from '@/i18n/messages';
 import type { Lang } from '@/i18n/lang';
 
 function renderAt(path: string) {
@@ -38,5 +39,12 @@ describe.each(CASES)('app shell ($lang)', ({ lang, library, dashboard }) => {
   it('renders the library heading at /library', () => {
     renderAt('/library');
     expect(screen.getByRole('heading', { name: library })).toBeInTheDocument();
+  });
+
+  it('links the brandmark to the home page with a localized title', () => {
+    renderAt('/library');
+    const homeLink = screen.getByRole('link', { name: 'ArchMentor' });
+    expect(homeLink).toHaveAttribute('href', '/');
+    expect(homeLink).toHaveAttribute('title', translate(lang, 'common.home'));
   });
 });
