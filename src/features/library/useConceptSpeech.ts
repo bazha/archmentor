@@ -43,10 +43,12 @@ export function useConceptSpeech(concept: ConceptView): ConceptSpeech {
 
   const start = useCallback((from: number, rateOverride?: number) => {
     if (!isSpeechSupported() || sections.length === 0) return;
+    ctrlRef.current?.stop();
     ctrlRef.current = speak(sections, {
       startIndex: from,
       rate: rateOverride ?? rate,
       voice: getVoiceForLang(lang),
+      lang,
       onSectionStart: (i) => { setActiveIndex(i); setStatus('playing'); },
       onDone: () => { setActiveIndex(null); setStatus('idle'); ctrlRef.current = null; },
     });

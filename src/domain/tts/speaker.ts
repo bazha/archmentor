@@ -17,9 +17,12 @@ export interface SpeakOptions {
   startIndex?: number;
   rate: number;
   voice: SpeechSynthesisVoice | null;
+  lang: Lang;
   onSectionStart: (index: number) => void;
   onDone: () => void;
 }
+
+const BCP47: Record<Lang, string> = { ru: 'ru-RU', en: 'en-US' };
 
 export interface SpeechController {
   pause(): void;
@@ -29,7 +32,7 @@ export interface SpeechController {
 
 export function speak(sections: SpeechSection[], opts: SpeakOptions): SpeechController {
   const synth = window.speechSynthesis;
-  const { startIndex = 0, rate, voice, onSectionStart, onDone } = opts;
+  const { startIndex = 0, rate, voice, lang, onSectionStart, onDone } = opts;
   synth.cancel(); // clear any queued/previous speech
   let cancelled = false;
 
@@ -38,6 +41,7 @@ export function speak(sections: SpeechSection[], opts: SpeakOptions): SpeechCont
     const absoluteIndex = startIndex + i;
     const u = new window.SpeechSynthesisUtterance(section.text);
     u.rate = rate;
+    u.lang = BCP47[lang];
     if (voice) u.voice = voice;
     u.onstart = () => { if (!cancelled) onSectionStart(absoluteIndex); };
     if (i === queue.length - 1) {

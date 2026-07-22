@@ -5,7 +5,7 @@ import { useStore } from '@/store/useStore';
 import type { ConceptView } from '@/content/localize';
 
 class FakeUtterance {
-  text: string; rate = 1; voice: unknown = null;
+  text: string; rate = 1; voice: unknown = null; lang = '';
   onstart: (() => void) | null = null;
   onend: (() => void) | null = null;
   constructor(text: string) { this.text = text; }

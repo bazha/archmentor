@@ -3,7 +3,7 @@ import { isSpeechSupported, getVoiceForLang, speak } from './speaker';
 import type { SpeechSection } from './script';
 
 class FakeUtterance {
-  text: string; rate = 1; voice: SpeechSynthesisVoice | null = null;
+  text: string; rate = 1; voice: SpeechSynthesisVoice | null = null; lang = '';
   onstart: (() => void) | null = null;
   onend: (() => void) | null = null;
   constructor(text: string) { this.text = text; }
@@ -51,18 +51,19 @@ describe('speak', () => {
   it('queues one utterance per section, reports absolute start index, applies rate/voice', () => {
     const starts: number[] = [];
     const done = vi.fn();
-    speak(secs, { rate: 1.25, voice: getVoiceForLang('ru'), onSectionStart: (i) => starts.push(i), onDone: done });
+    speak(secs, { rate: 1.25, voice: getVoiceForLang('ru'), lang: 'ru', onSectionStart: (i) => starts.push(i), onDone: done });
     expect(synth.cancel).toHaveBeenCalled();
     expect(spoken).toHaveLength(2);
     expect(spoken[0].rate).toBe(1.25);
     expect(spoken[0].voice?.name).toBe('Milena');
+    expect(spoken[0].lang).toBe('ru-RU');
     expect(starts).toEqual([0, 1]);
     expect(done).toHaveBeenCalledTimes(1);
   });
 
   it('respects startIndex for resume/jump', () => {
     const starts: number[] = [];
-    speak(secs, { startIndex: 1, rate: 1, voice: null, onSectionStart: (i) => starts.push(i), onDone: vi.fn() });
+    speak(secs, { startIndex: 1, rate: 1, voice: null, lang: 'en', onSectionStart: (i) => starts.push(i), onDone: vi.fn() });
     expect(spoken).toHaveLength(1);
     expect(starts).toEqual([1]);
   });
@@ -70,7 +71,7 @@ describe('speak', () => {
   it('stop() cancels and suppresses further callbacks', () => {
     const done = vi.fn();
     // speak() runs synchronously in the fake; assert cancel wiring exists
-    const ctrl = speak(secs, { rate: 1, voice: null, onSectionStart: vi.fn(), onDone: done });
+    const ctrl = speak(secs, { rate: 1, voice: null, lang: 'en', onSectionStart: vi.fn(), onDone: done });
     ctrl.stop();
     expect(synth.cancel).toHaveBeenCalledTimes(2); // once on speak(), once on stop()
     ctrl.pause(); expect(synth.pause).toHaveBeenCalled();
