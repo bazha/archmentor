@@ -1,8 +1,10 @@
 name: Trello task agent
 
 on:
+  # n8n triggers this event-driven via workflow_dispatch on card → In Progress.
+  # The schedule is only a rare safety-net fallback in case n8n is down.
   schedule:
-    - cron: "*/15 * * * *"   # every ~15 min (GitHub cron is best-effort; may lag 5-30 min)
+    - cron: "0 * * * *"   # hourly fallback (GitHub cron is best-effort; may lag)
   workflow_dispatch: {}
 
 concurrency:
