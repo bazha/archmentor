@@ -57,17 +57,22 @@ jobs:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           claude_args: "--dangerously-skip-permissions"
           prompt: |
-            You are running UNATTENDED in CI (no human to answer questions). Implement ONE Trello
-            card as a pull request in THIS repository (your current working directory). Never merge
-            or deploy; never touch Trello (the workflow does that).
+            You are running UNATTENDED in CI (no human to answer questions live). Implement ONE
+            Trello card as a pull request in THIS repository (your current working directory).
+            Never merge or deploy; never touch Trello (the workflow does that).
 
-            Read the card from ./.trello-card.json  (fields: id, name, desc).
+            Read the card from ./.trello-card.json  (fields: id, name, desc, comments).
+            `comments` is the prior conversation, oldest→newest: YOUR earlier questions start with
+            "🤖"; the user's answers do NOT. Treat the user's answers as clarifications to the task.
+
             Write your machine-readable outcome to ./.trello-result.json with schema:
             {"status":"pr"|"needs-info"|"error","prUrl":"","branch":"","questions":[],"note":""}
 
             Procedure:
-            1. If the card is too vague, ambiguous, or too large for one focused PR, DO NOT write
-               code — write {"status":"needs-info","questions":["...blocking questions..."]} and stop.
+            1. Using name + desc + the answers in `comments`, judge if the task is now clear enough
+               and small enough for one focused PR. If it is STILL too vague/ambiguous/large, do NOT
+               write code — write {"status":"needs-info","questions":["...specific remaining
+               questions..."]} and stop. (The workflow posts them and asks the user to reply.)
             2. Otherwise (light cycle): create a branch trello/<card-id>-<short-slug>. Write a SHORT
                spec + plan under docs/superpowers/. Implement via TDD. Keep scope to the card.
             3. Run `npm test` and `npx tsc --noEmit`; both MUST be green. If not, write
