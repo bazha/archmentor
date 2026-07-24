@@ -50,3 +50,4 @@ Pushing to `master` deploys to GitHub Pages via GitHub Actions (`.github/workflo
 Feature-complete and deployed. Eleven sidebar modes plus a daily challenge, fully bilingual (RU/EN) with light/dark themes, WCAG AA-guarded accessibility (skip link, visible focus rings, ARIA, `prefers-reduced-motion`, a contrast test), and 226 passing tests.
 
 Design and implementation docs live in `docs/superpowers/specs/` and `docs/superpowers/plans/`.
+
