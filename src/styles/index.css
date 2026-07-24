@@ -7,11 +7,11 @@
    Onest (UI) + Source Code Pro (code). Coral accent (#EA4B71),
    navy-black canvas, faint node-editor dot grid as signature.
    Space-separated RGB so Tailwind `rgb(var(--x) / <alpha>)` works.
-   :root = light (near-white) · .dark = navy near-black
+   :root = light (grey canvas) · .dark = navy near-black
    ============================================================ */
 
 :root {
-  --surface: 252 252 253;        /* #FCFCFD n8n near-white     */
+  --surface: 246 247 250;        /* #F6F7FA n8n canvas grey    */
   --surface-raised: 255 255 255; /* #FFFFFF floating cards     */
   --surface-muted: 244 245 249;  /* #F4F5F9 inset bg           */
   --surface-code: 246 247 250;   /* #F6F7FA code panel         */
@@ -81,7 +81,7 @@ body {
   /* Signature: a faint node-editor dot grid under a coral canvas glow. */
   background-image:
     var(--app-glow),
-    radial-gradient(rgb(var(--dot) / 0.05) 1.1px, transparent 1.1px);
+    radial-gradient(rgb(var(--dot) / 0.07) 1.1px, transparent 1.1px);
   background-size: auto, 24px 24px;
   background-position: center top, -1px -1px;
   background-attachment: fixed, fixed;
