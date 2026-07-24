@@ -9,9 +9,9 @@ import '@fontsource/onest/500.css';
 import '@fontsource/onest/600.css';
 import '@fontsource/onest/700.css';
 import '@fontsource/onest/800.css';
-// Source Code Pro — code only
-import '@fontsource/source-code-pro/400.css';
-import '@fontsource/source-code-pro/700.css';
+// Fira Code — code only
+import '@fontsource/fira-code/400.css';
+import '@fontsource/fira-code/700.css';
 import './styles/index.css';
 
 const lang = useStore.getState().settings.lang; // persist hydrates synchronously
