@@ -4,7 +4,7 @@
 
 /* ============================================================
    ArchMentor — n8n-inspired "workflow canvas" theme
-   Onest (UI) + JetBrains Mono (code). Coral accent (#EA4B71),
+   Onest (UI) + Source Code Pro (code). Coral accent (#EA4B71),
    navy-black canvas, faint node-editor dot grid as signature.
    Space-separated RGB so Tailwind `rgb(var(--x) / <alpha>)` works.
    :root = light (near-white) · .dark = navy near-black
