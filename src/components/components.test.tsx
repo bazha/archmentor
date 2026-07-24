@@ -15,10 +15,10 @@ describe('shared components', () => {
     expect(container).toHaveTextContent('const answer = 42;');
   });
 
-  it('CodeBlock uses the Source Code Pro font stack', () => {
+  it('CodeBlock uses the Fira Code font stack', () => {
     const { container } = render(<CodeBlock sample={{ lang: 'typescript', code: 'const answer = 42;' }} />);
     const code = container.querySelector('code');
-    expect(code?.style.fontFamily).toContain('Source Code Pro');
+    expect(code?.style.fontFamily).toContain('Fira Code');
   });
 
   it('FlipCard shows front, then back after onFlip driven by parent', async () => {

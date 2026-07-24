@@ -5,7 +5,7 @@ import { useStore } from '@/store/useStore';
 
 SyntaxHighlighter.registerLanguage('typescript', typescript);
 
-const MONO = "'Source Code Pro', ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
+const MONO = "'Fira Code', ui-monospace, 'SF Mono', Menlo, Consolas, monospace";
 
 /** A code sample already resolved to a plain string for the current language. */
 export interface ResolvedCodeSample {
