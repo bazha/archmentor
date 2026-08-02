@@ -6,6 +6,7 @@ import { applyTheme } from './theme';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { LanguageToggle } from '@/components/LanguageToggle';
 import { CommandPalette } from '@/components/CommandPalette';
+import { GithubLink } from '@/components/GithubLink';
 import { Icon, type IconName } from '@/components/Icon';
 import { useT } from '@/i18n/useT';
 import type { MessageKey } from '@/i18n/messages';
@@ -99,6 +100,7 @@ export function Layout() {
         <header className="sticky top-0 z-40 flex h-16 items-center gap-3 border-b border-line bg-surface/70 px-4 backdrop-blur-xl md:px-7">
           <div className="text-[1.05rem] font-bold tracking-tight text-bright">{t(titleKeyFor(pathname))}</div>
           <div className="ml-auto flex items-center gap-2">
+            <GithubLink />
             <CommandPalette />
             <LanguageToggle />
             <ThemeToggle />
