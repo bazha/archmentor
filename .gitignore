@@ -3,3 +3,9 @@ dist/
 *.local
 .DS_Store
 .superpowers/
+
+# scratch files the CI agent writes into the working tree before committing
+.trello-card.json
+.trello-result.json
+.fix-context.json
+.fix-result.json

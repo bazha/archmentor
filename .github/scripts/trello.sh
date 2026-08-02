@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Trello helper for the CI task-runner. Subcommands: select-and-claim, finalize.
+# Trello helper for the CI task-runner.
+# Subcommands: select-and-claim, finalize, comment, add-label.
 # Requires env: TRELLO_KEY TRELLO_TOKEN TRELLO_BOARD_ID
 #               TRELLO_INPROGRESS_LIST_ID TRELLO_INREVIEW_LIST_ID
 # Writes .trello-card.json (select-and-claim) and reads .trello-result.json (finalize).
@@ -105,8 +106,22 @@ $q"
   esac
 }
 
+cmd_comment() { # $1 = card id, $2 = text
+  comment "$1" "$2"
+  log "commented on $1"
+}
+
+cmd_add_label() { # $1 = card id, $2 = label name, $3 = color
+  local lid
+  lid="$(ensure_label "$2" "$3")"
+  add_label "$1" "$lid"
+  log "label '$2' added to $1"
+}
+
 case "${1:-}" in
   select-and-claim) cmd_select_and_claim ;;
-  finalize) cmd_finalize "${2:?card id required}" ;;
-  *) echo "usage: $0 {select-and-claim|finalize <cardId>}" >&2; exit 2 ;;
+  finalize)  cmd_finalize  "${2:?card id required}" ;;
+  comment)   cmd_comment   "${2:?card id required}" "${3:?text required}" ;;
+  add-label) cmd_add_label "${2:?card id required}" "${3:?label name required}" "${4:-red}" ;;
+  *) echo "usage: $0 {select-and-claim|finalize <cardId>|comment <cardId> <text>|add-label <cardId> <name> [color]}" >&2; exit 2 ;;
 esac
