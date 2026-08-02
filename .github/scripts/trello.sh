@@ -8,19 +8,22 @@
 set -euo pipefail
 
 API="https://api.trello.com/1"
+# Every Trello request is bounded: a stalled call would otherwise hold the CI job
+# (and, in trello-fix.yml, its per-branch concurrency slot) until the job timeout.
+CURL=(curl -fsS --connect-timeout 10 --max-time 30)
 CARD_FILE=".trello-card.json"
 RESULT_FILE=".trello-result.json"
 log() { echo "[trello] $*" >&2; }
 _auth() { echo "key=${TRELLO_KEY}&token=${TRELLO_TOKEN}"; }
 
-api_get()   { local sep="?"; [[ "$1" == *\?* ]] && sep="&"; curl -fsS "${API}$1${sep}$(_auth)"; }
+api_get()   { local sep="?"; [[ "$1" == *\?* ]] && sep="&"; "${CURL[@]}" "${API}$1${sep}$(_auth)"; }
 board_labels() { api_get "/boards/${TRELLO_BOARD_ID}/labels?fields=name,color"; }
 list_cards()   { api_get "/lists/$1/cards?fields=name,desc,idLabels,pos"; }
-create_label() { curl -fsS -X POST "${API}/labels?$(_auth)" --data-urlencode "name=$1" --data-urlencode "color=$2" --data-urlencode "idBoard=${TRELLO_BOARD_ID}"; }
-add_label()    { curl -fsS -X POST   "${API}/cards/$1/idLabels?value=$2&$(_auth)" >/dev/null; }
-remove_label() { curl -fsS -X DELETE "${API}/cards/$1/idLabels/$2?$(_auth)" >/dev/null || true; }
-comment()      { curl -fsS -X POST "${API}/cards/$1/actions/comments?$(_auth)" --data-urlencode "text=$2" >/dev/null; }
-move_card()    { curl -fsS -X PUT  "${API}/cards/$1?idList=$2&$(_auth)" >/dev/null; }
+create_label() { "${CURL[@]}" -X POST "${API}/labels?$(_auth)" --data-urlencode "name=$1" --data-urlencode "color=$2" --data-urlencode "idBoard=${TRELLO_BOARD_ID}"; }
+add_label()    { "${CURL[@]}" -X POST   "${API}/cards/$1/idLabels?value=$2&$(_auth)" >/dev/null; }
+remove_label() { "${CURL[@]}" -X DELETE "${API}/cards/$1/idLabels/$2?$(_auth)" >/dev/null || true; }
+comment()      { "${CURL[@]}" -X POST "${API}/cards/$1/actions/comments?$(_auth)" --data-urlencode "text=$2" >/dev/null; }
+move_card()    { "${CURL[@]}" -X PUT  "${API}/cards/$1?idList=$2&$(_auth)" >/dev/null; }
 
 AGENT_MARKER="🤖"
 # Latest comment text on a card ("" if none). Used to detect a user reply.
