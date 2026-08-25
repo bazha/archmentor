@@ -13,11 +13,13 @@ function tokens(selector: string): Record<string, RGB> {
 }
 
 describe('n8n-style grey canvas with dot grid', () => {
-  it('light-mode surface (page canvas) is a distinguishable grey, not pure white', () => {
+  it('light-mode surface (page canvas) is a distinguishable pale mint, not pure white', () => {
     const { surface } = tokens(':root');
+    const [r, g, b] = surface;
     expect(surface).not.toEqual([255, 255, 255]);
-    // Grey (not tinted): channels stay close to one another.
-    expect(Math.max(...surface) - Math.min(...surface)).toBeLessThanOrEqual(8);
+    // Pale mint tint: green and blue channels sit clearly above red (not a near-neutral grey).
+    expect(g - r).toBeGreaterThan(8);
+    expect(b - r).toBeGreaterThan(6);
     // Visibly darker than the white "raised" card surface it sits behind.
     const { 'surface-raised': raised } = tokens(':root');
     const avg = (c: RGB) => (c[0] + c[1] + c[2]) / 3;
