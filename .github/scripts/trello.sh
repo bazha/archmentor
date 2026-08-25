@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Trello helper for the CI task-runner.
-# Subcommands: select-and-claim, finalize, comment, add-label.
+# Subcommands: select-and-claim, finalize, comment, add-label, done.
 # Requires env: TRELLO_KEY TRELLO_TOKEN TRELLO_BOARD_ID
 #               TRELLO_INPROGRESS_LIST_ID TRELLO_INREVIEW_LIST_ID
+# (done needs only TRELLO_KEY TRELLO_TOKEN TRELLO_DONE_LIST_ID)
 # Writes .trello-card.json (select-and-claim) and reads .trello-result.json (finalize).
 # Logs go to stderr; select-and-claim prints ONLY the selected card id to stdout.
 set -euo pipefail
@@ -121,10 +122,21 @@ cmd_add_label() { # $1 = card id, $2 = label name, $3 = color
   log "label '$2' added to $1"
 }
 
+cmd_done() { # $1 = card id, $2 = PR url — PR merged: card → Done + link comment.
+  # Both calls are non-fatal: a card already in Done / deleted must not fail the run.
+  if ! move_card "$1" "${TRELLO_DONE_LIST_ID:?TRELLO_DONE_LIST_ID required}"; then
+    log "move to Done failed (already Done / deleted?) — continuing"
+  fi
+  comment "$1" "🤖 ✅ Смержено и задеплоено: $2 • https://bazha.github.io/archmentor/" \
+    || log "comment failed (card deleted?)"
+  log "done: $1"
+}
+
 case "${1:-}" in
   select-and-claim) cmd_select_and_claim ;;
   finalize)  cmd_finalize  "${2:?card id required}" ;;
   comment)   cmd_comment   "${2:?card id required}" "${3:?text required}" ;;
   add-label) cmd_add_label "${2:?card id required}" "${3:?label name required}" "${4:-red}" ;;
-  *) echo "usage: $0 {select-and-claim|finalize <cardId>|comment <cardId> <text>|add-label <cardId> <name> [color]}" >&2; exit 2 ;;
+  done)      cmd_done      "${2:?card id required}" "${3:?PR url required}" ;;
+  *) echo "usage: $0 {select-and-claim|finalize <cardId>|comment <cardId> <text>|add-label <cardId> <name> [color]|done <cardId> <prUrl>}" >&2; exit 2 ;;
 esac
