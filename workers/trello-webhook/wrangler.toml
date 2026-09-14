@@ -1,0 +1,11 @@
+name = "trello-webhook"
+main = "index.ts"
+compatibility_date = "2026-09-09"
+workers_dev = true
+
+# Public values. account_id is deliberately NOT listed here: the repository is public,
+# so it is passed through the CLOUDFLARE_ACCOUNT_ID environment variable.
+[vars]
+GITHUB_REPO   = "bazha/archmentor"
+WORKFLOW_FILE = "trello-agent.yml"
+GIT_REF       = "master"
