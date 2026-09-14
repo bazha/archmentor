@@ -13,14 +13,14 @@
 :root {
   --surface: 240 249 247;        /* #F0F9F7 pale mint canvas   */
   --surface-raised: 255 255 255; /* #FFFFFF floating cards     */
-  --surface-muted: 244 245 249;  /* #F4F5F9 inset bg           */
-  --surface-code: 246 247 250;   /* #F6F7FA code panel         */
+  --surface-muted: 230 240 237;  /* #E6F0ED inset bg           */
+  --surface-code: 235 243 240;   /* #EBF3F0 code panel         */
   --content: 45 48 66;           /* #2D3042 navy-grey body ink */
   --bright: 16 19 48;            /* #101330 n8n ink headings   */
   --muted: 90 94 116;            /* #5A5E74 secondary text     */
   --faint: 104 108 128;          /* #686C80 de-emphasised (AA) */
-  --line: 233 234 240;           /* #E9EAF0 hairline border    */
-  --line-strong: 219 221 230;    /* #DBDDE6 stronger border    */
+  --line: 220 231 228;           /* #DCE7E4 hairline border    */
+  --line-strong: 200 216 211;    /* #C8D8D3 stronger border    */
   --accent: 196 42 87;           /* #C42A57 deep coral (fills, AA w/ white) */
   --accent-soft: 191 40 78;      /* #BF284E deep coral as text */
   --accent-strong: 168 30 69;    /* #A81E45 darker hover       */
