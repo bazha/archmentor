@@ -1,6 +1,6 @@
 export type FilterVerdict = { dispatch: boolean; reason: string };
 
-/** Префикс, которым помечены все комментарии агента (см. AGENT_MARKER в .github/scripts/trello.sh). */
+/** The prefix marking every agent comment (see AGENT_MARKER in .github/scripts/trello.sh). */
 export const AGENT_MARKER = '🤖';
 
 type TrelloAction = {
@@ -12,16 +12,16 @@ type TrelloAction = {
 };
 
 /**
- * Решает, надо ли запускать trello-agent.yml по этому экшену Trello.
+ * Decides whether this Trello action should start trello-agent.yml.
  *
- * Два правила:
- *   1. updateCard, у которого data.listAfter.id === список In Progress;
- *   2. commentCard с непустым текстом, не начинающимся с AGENT_MARKER.
+ * Two rules:
+ *   1. updateCard whose data.listAfter.id is the In Progress list;
+ *   2. commentCard with non-empty text that does not start with AGENT_MARKER.
  *
- * ВАЖНО: только listAfter. Одно перетаскивание карточки порождает ДВА updateCard-экшена
- * (смена списка и подгонка pos), и listAfter есть только у первого. Поле data.list.id
- * присутствует при любой правке карточки, уже лежащей в списке, поэтому фолбэк на него
- * даёт ложные срабатывания — этот баг уже был выловлен 2026-08-25.
+ * IMPORTANT: listAfter only. A single card drag produces TWO updateCard actions
+ * (the list change and the pos adjustment), and only the first carries listAfter.
+ * The data.list.id field is present on any edit of a card already in the list, so
+ * falling back to it causes false triggers — that bug was already caught on 2026-08-25.
  */
 export function shouldDispatch(action: unknown, inProgressListId: string): FilterVerdict {
   const candidate = (action ?? {}) as TrelloAction;

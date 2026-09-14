@@ -1,46 +1,48 @@
-# Trello-вебхук на Cloudflare Worker — план реализации
+# Trello webhook on a Cloudflare Worker — implementation plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Перенести событийный путь «карточка → In Progress → запуск агента» с self-hosted n8n на маке в stateless Cloudflare Worker, чтобы события перестали теряться при спящем ноутбуке, а фильтр двойного срабатывания оказался в гите под тестами.
+**Status:** executed inline on 2026-09-14; the resulting change is PR #16.
 
-**Architecture:** Один `fetch`-хендлер на `*.workers.dev` принимает вебхук Trello по секретному пути, прогоняет `action` через чистую функцию `shouldDispatch`, и при `true` дёргает `workflow_dispatch` для `trello-agent.yml`. Никакого состояния: от парного `updateCard` защищает фильтр, от одновременных запусков — `concurrency: trello-agent`, от повторного взятия карточки — лейбл `claude:wip`. Логика Trello (выбор карточки, лейблы, комментарии) остаётся в `.github/scripts/trello.sh` и не меняется ни строкой.
+**Goal:** Move the event path "card → In Progress → agent run" off self-hosted n8n on the mac and into a stateless Cloudflare Worker, so events stop being lost while the laptop sleeps and the double-fire filter ends up in git under test.
 
-**Tech Stack:** TypeScript, Cloudflare Workers, wrangler 4, Vitest 2 (уже в проекте), Node 22, GitHub Actions REST API.
+**Architecture:** One `fetch` handler on `*.workers.dev` accepts the Trello webhook on a secret path, runs the `action` through the pure `shouldDispatch` function, and on `true` fires `workflow_dispatch` for `trello-agent.yml`. No state: the filter guards against the paired `updateCard`, `concurrency: trello-agent` guards against overlapping runs, and the `claude:wip` label guards against claiming a card twice. The Trello logic (card selection, labels, comments) stays in `.github/scripts/trello.sh` and does not change by a single line.
+
+**Tech Stack:** TypeScript, Cloudflare Workers, wrangler 4, Vitest 2 (already in the project), Node 22, GitHub Actions REST API.
 
 **Spec:** `docs/superpowers/specs/2026-09-09-trello-webhook-cloudflare-worker-design.md`
 
 ## Global Constraints
 
-- Node 22, npm. Пакетный менеджер — npm (`package-lock.json` в репозитории).
-- Новых **runtime**-зависимостей нет. Добавляются ровно два devDependency: `wrangler`, `@cloudflare/workers-types`.
-- TypeScript strict, включая `noUnusedLocals` и `noUnusedParameters` (наследуется из корневого `tsconfig.json`).
-- В коммитах **не упоминать** Claude / Co-Authored-By / «Generated with» — правило проекта.
-- Репозиторий публичный: в коммитируемые файлы **не попадают** `account_id` Cloudflare, id доски и списков Trello, `WEBHOOK_TOKEN`, PAT. Тесты используют фиктивные id-строки.
-- Только `action.data.listAfter?.id`. Фолбэк `|| action.data.list?.id` запрещён — он даёт ложные срабатывания на любой правке карточки, уже лежащей в In Progress. Учти: в `docs/superpowers/plans/2026-07-23-trello-agent-comment-dialogue.md:175` закоммичена **старая ошибочная** форма этого выражения; копировать оттуда нельзя.
-- Маркер агента — `🤖` (совпадает с `AGENT_MARKER` в `.github/scripts/trello.sh`).
-- Деплой только вручную; автодеплой-воркфлоу не создаём.
-- Шаги, помеченные **(USER)**, выполняет человек: они интерактивные (браузер, ввод секрета в stdin) или требуют прав, которых у ассистента нет. Ассистент останавливается и просит запустить их через `! <команда>`.
+- Node 22, npm. The package manager is npm (`package-lock.json` is in the repository).
+- No new **runtime** dependencies. Exactly two devDependencies are added: `wrangler` and `@cloudflare/workers-types`.
+- TypeScript strict, including `noUnusedLocals` and `noUnusedParameters` (inherited from the root `tsconfig.json`).
+- Commits must **not** mention Claude / Co-Authored-By / "Generated with" — a project rule.
+- The repository is public: committed files must **never** contain the Cloudflare `account_id`, Trello board or list ids, `WEBHOOK_TOKEN`, or the PAT. Tests use fake id strings.
+- Only `action.data.listAfter?.id`. The `|| action.data.list?.id` fallback is forbidden — it fires on any edit of a card already sitting in In Progress. Note: `docs/superpowers/plans/2026-07-23-trello-agent-comment-dialogue.md:175` has the **old, incorrect** form of this expression committed; do not copy it from there.
+- The agent marker is `🤖` (matching `AGENT_MARKER` in `.github/scripts/trello.sh`).
+- Manual deploys only; no auto-deploy workflow is created.
+- Steps marked **(USER)** are performed by a human: they are interactive (a browser, a secret typed into stdin) or need permissions the assistant lacks. The assistant stops and asks for them to be run as `! <command>`.
 
 ---
 
-### Task 1: Чистый фильтр `shouldDispatch` + тесты
+### Task 1: The pure `shouldDispatch` filter + tests
 
 **Files:**
 - Create: `workers/trello-webhook/filter.ts`
 - Test: `workers/trello-webhook/filter.test.ts`
 
 **Interfaces:**
-- Consumes: ничего (первая задача).
-- Produces: `export const AGENT_MARKER = '🤖'` и
+- Consumes: nothing (first task).
+- Produces: `export const AGENT_MARKER = '🤖'` and
   `export function shouldDispatch(action: unknown, inProgressListId: string): { dispatch: boolean; reason: string }`.
-  Хендлер из Task 3 импортирует именно это.
+  The handler in Task 3 imports exactly this.
 
-Первые три шага заодно проверяют предположение спеки «править `vite.config.ts` не нужно»: корневой Vitest задаёт `environment: 'jsdom'` и глобальный `setupFiles: ['./src/test-setup.ts']`, и они применятся и к файлам под `workers/`.
+The first three steps double as a check of the spec's assumption that "`vite.config.ts` needs no change": the root Vitest sets `environment: 'jsdom'` and a global `setupFiles: ['./src/test-setup.ts']`, and both will apply to files under `workers/` as well.
 
-- [ ] **Step 1: Написать падающий тест**
+- [ ] **Step 1: Write the failing test**
 
-Создать `workers/trello-webhook/filter.test.ts`. Фикстуры — реальная форма payload'ов Trello, урезанная до используемых полей; id списков фиктивные, чтобы настоящие не попали в репозиторий.
+Create `workers/trello-webhook/filter.test.ts`. The fixtures mirror the real shape of Trello payloads, trimmed to the fields in use; list ids are fake so the real ones never enter the repository. Comment text is left in Russian on purpose — it mirrors what the board actually carries, including the agent's own comment in `trello.sh`.
 
 ```ts
 import { describe, expect, it } from 'vitest';
@@ -49,7 +51,7 @@ import { shouldDispatch } from './filter';
 const IN_PROGRESS = 'list-in-progress';
 const TODO = 'list-todo';
 
-// Перетаскивание карточки в In Progress: у ЭТОГО экшена есть listAfter.
+// Dragging a card into In Progress: THIS action is the one that carries listAfter.
 const movedIntoInProgress = {
   type: 'updateCard',
   data: {
@@ -61,7 +63,7 @@ const movedIntoInProgress = {
   },
 };
 
-// Второй экшен ТОГО ЖЕ перетаскивания — только позиция. listAfter нет, зато есть list.
+// The second action of the SAME drag — position only. No listAfter, but there is a list.
 const posOnlyInInProgress = {
   type: 'updateCard',
   data: {
@@ -72,7 +74,7 @@ const posOnlyInInProgress = {
   },
 };
 
-// Переименование карточки, которая уже лежит в In Progress.
+// Renaming a card that is already sitting in In Progress.
 const renamedInInProgress = {
   type: 'updateCard',
   data: {
@@ -120,7 +122,7 @@ describe('shouldDispatch', () => {
     expect(shouldDispatch(posOnlyInInProgress, IN_PROGRESS).dispatch).toBe(false);
   });
 
-  // Регресс: наивный фильтр по data.list.id срабатывал на любой правке карточки в In Progress.
+  // Regression: a naive data.list.id filter fired on any edit of a card in In Progress.
   it('ignores an edit of a card already sitting in In Progress', () => {
     expect(shouldDispatch(renamedInInProgress, IN_PROGRESS).dispatch).toBe(false);
   });
@@ -155,28 +157,28 @@ describe('shouldDispatch', () => {
 });
 ```
 
-- [ ] **Step 2: Прогнать и убедиться, что падает**
+- [ ] **Step 2: Run it and confirm it fails**
 
 Run: `npm test -- workers/trello-webhook/filter.test.ts`
-Expected: FAIL с `Failed to resolve import "./filter"` (файла ещё нет).
+Expected: FAIL with `Failed to resolve import "./filter"` (the file does not exist yet).
 
-Это же и есть проверка окружения: если вместо ошибки импорта Vitest напишет «No test files found», значит дефолтный `include` не резолвится от корня — тогда в `vite.config.ts` в блок `test` добавляется
-`include: ['src/**/*.test.{ts,tsx}', 'workers/**/*.test.ts']`, и шаг повторяется. Если падает `src/test-setup.ts`, в начало файла теста добавляется докблок:
+This doubles as the environment check: if Vitest says "No test files found" instead of an import error, the default `include` does not resolve from the root — then add to the `test` block in `vite.config.ts`:
+`include: ['src/**/*.test.{ts,tsx}', 'workers/**/*.test.ts']` and repeat the step. If `src/test-setup.ts` blows up, add a docblock at the top of the test file:
 
 ```ts
 // @vitest-environment node
 ```
 
-Зафиксируй в сообщении коммита, какой из трёх вариантов оказался фактом.
+Record in the commit message which of the three turned out to be the fact.
 
-- [ ] **Step 3: Минимальная реализация**
+- [ ] **Step 3: Minimal implementation**
 
-Создать `workers/trello-webhook/filter.ts`:
+Create `workers/trello-webhook/filter.ts`:
 
 ```ts
 export type FilterVerdict = { dispatch: boolean; reason: string };
 
-/** Префикс, которым помечены все комментарии агента (см. AGENT_MARKER в .github/scripts/trello.sh). */
+/** The prefix marking every agent comment (see AGENT_MARKER in .github/scripts/trello.sh). */
 export const AGENT_MARKER = '🤖';
 
 type TrelloAction = {
@@ -188,16 +190,16 @@ type TrelloAction = {
 };
 
 /**
- * Решает, надо ли запускать trello-agent.yml по этому экшену Trello.
+ * Decides whether this Trello action should start trello-agent.yml.
  *
- * Два правила:
- *   1. updateCard, у которого data.listAfter.id === список In Progress;
- *   2. commentCard с непустым текстом, не начинающимся с AGENT_MARKER.
+ * Two rules:
+ *   1. updateCard whose data.listAfter.id is the In Progress list;
+ *   2. commentCard with non-empty text that does not start with AGENT_MARKER.
  *
- * ВАЖНО: только listAfter. Одно перетаскивание карточки порождает ДВА updateCard-экшена
- * (смена списка и подгонка pos), и listAfter есть только у первого. Поле data.list.id
- * присутствует при любой правке карточки, уже лежащей в списке, поэтому фолбэк на него
- * даёт ложные срабатывания — этот баг уже был выловлен 2026-08-25.
+ * IMPORTANT: listAfter only. A single card drag produces TWO updateCard actions
+ * (the list change and the pos adjustment), and only the first carries listAfter.
+ * The data.list.id field is present on any edit of a card already in the list, so
+ * falling back to it causes false triggers — that bug was already caught on 2026-08-25.
  */
 export function shouldDispatch(action: unknown, inProgressListId: string): FilterVerdict {
   const candidate = (action ?? {}) as TrelloAction;
@@ -223,17 +225,17 @@ export function shouldDispatch(action: unknown, inProgressListId: string): Filte
 }
 ```
 
-- [ ] **Step 4: Прогнать и убедиться, что зелено**
+- [ ] **Step 4: Run it and confirm it is green**
 
 Run: `npm test -- workers/trello-webhook/filter.test.ts`
-Expected: PASS, 13 тестов (6 именованных + 6 из `it.each` + «explains its verdict»).
+Expected: PASS, 13 tests (6 named + 6 from `it.each` + "explains its verdict").
 
-- [ ] **Step 5: Прогнать весь набор**
+- [ ] **Step 5: Run the whole suite**
 
 Run: `npm test`
-Expected: PASS. Существующие 266 тестов приложения не должны затронуться; общее число вырастает ровно на число новых.
+Expected: PASS. The existing application tests must be untouched; the total grows by exactly the number of new ones.
 
-- [ ] **Step 6: Коммит**
+- [ ] **Step 6: Commit**
 
 ```bash
 git add workers/trello-webhook/filter.ts workers/trello-webhook/filter.test.ts
@@ -242,38 +244,38 @@ git commit -m "feat(worker): pure Trello action filter with the listAfter regres
 
 ---
 
-### Task 2: Типизация Worker'а под CI-гейтом
+### Task 2: The Worker's types behind the CI gate
 
 **Files:**
 - Create: `workers/trello-webhook/tsconfig.json`
-- Modify: `package.json` (блок `devDependencies`, блок `scripts`)
-- Modify: `.github/workflows/ci.yml:20-22` (после шага `npm test`)
+- Modify: `package.json` (the `devDependencies` and `scripts` blocks)
+- Modify: `.github/workflows/ci.yml:20-22` (after the `npm test` step)
 
 **Interfaces:**
-- Consumes: `workers/trello-webhook/filter.ts` из Task 1.
-- Produces: скрипт `npm run typecheck:worker`; глобальные типы Workers (`Request`, `Response`, `ExportedHandler`) доступны файлам под `workers/trello-webhook/`. Task 3 на них опирается.
+- Consumes: `workers/trello-webhook/filter.ts` from Task 1.
+- Produces: the `npm run typecheck:worker` script; the Workers globals (`Request`, `Response`, `ExportedHandler`) available to files under `workers/trello-webhook/`. Task 3 relies on them.
 
-Корневой `tsc --noEmit` Worker не видит: в `tsconfig.json` стоит `include: ["src"]`. Без отдельного гейта Worker формально в гите, но вне проверки — то есть ровно та непроверяемость, из-за которой мы уходим от GUI-ноды n8n.
+The root `tsc --noEmit` does not see the Worker: `tsconfig.json` sets `include: ["src"]`. Without a separate gate the Worker would be nominally in git but outside verification — exactly the unverifiability we are leaving the n8n GUI node to escape.
 
-- [ ] **Step 1: Поставить devDependencies**
+- [ ] **Step 1: Install the devDependencies**
 
-Версию `@cloudflare/workers-types` не угадываем (у пакета календарная схема вида `4.2026xxxx.0`) — сначала спрашиваем:
+Do not guess the `@cloudflare/workers-types` version (the package uses a calendar scheme) — ask first:
 
 ```bash
 npm view @cloudflare/workers-types version
 ```
 
-Затем ставим то, что вернулось, и уже проверенный `wrangler` 4.130.0:
+Then install what it returned, alongside the already-verified `wrangler` 4.130.0:
 
 ```bash
-npm install --save-dev wrangler@^4.130.0 "@cloudflare/workers-types@^<версия из предыдущей команды>"
+npm install --save-dev wrangler@^4.130.0 "@cloudflare/workers-types@^<version from the previous command>"
 ```
 
-Проверить, что в `dependencies` (не dev) ничего не добавилось: `git diff package.json`.
+Confirm nothing landed in `dependencies` (not dev): `git diff package.json`.
 
-- [ ] **Step 2: Создать tsconfig Worker'а**
+- [ ] **Step 2: Create the Worker's tsconfig**
 
-`workers/trello-webhook/tsconfig.json` — не наследует корневой, потому что там `lib: DOM` и `jsx`, которые Worker'у противопоказаны (DOM-типы конфликтуют с типами Workers):
+`workers/trello-webhook/tsconfig.json` — it does not extend the root one, because that sets `lib: DOM` and `jsx`, both wrong for a Worker (the DOM types conflict with the Workers types):
 
 ```json
 {
@@ -296,35 +298,35 @@ npm install --save-dev wrangler@^4.130.0 "@cloudflare/workers-types@^<верси
 }
 ```
 
-`*.test.ts` исключён: тесты гоняет Vitest со своими глобалами (`describe`/`it`/`expect`/`vi`), которых в типах Workers нет.
+`*.test.ts` is excluded: tests run under Vitest with its own globals (`describe`/`it`/`expect`/`vi`), which the Workers types do not know about.
 
-- [ ] **Step 3: Добавить скрипт**
+- [ ] **Step 3: Add the script**
 
-В `package.json`, в `scripts`, после `"typecheck"`:
+In `package.json`, in `scripts`, after `"typecheck"`:
 
 ```json
 "typecheck:worker": "tsc --noEmit -p workers/trello-webhook/tsconfig.json"
 ```
 
-- [ ] **Step 4: Прогнать — должно быть зелено уже сейчас**
+- [ ] **Step 4: Run it — it should already be green**
 
 Run: `npm run typecheck:worker`
-Expected: без вывода, код возврата 0 (в `workers/` пока только `filter.ts`, который чистый TS).
+Expected: no output, exit code 0 (so far `workers/` holds only `filter.ts`, which is plain TS).
 
-- [ ] **Step 5: Добавить шаг в CI**
+- [ ] **Step 5: Add the CI step**
 
-В `.github/workflows/ci.yml` после `- run: npm test` вставить:
+In `.github/workflows/ci.yml`, after `- run: npm test`, insert:
 
 ```yaml
       - run: npm run typecheck:worker
 ```
 
-- [ ] **Step 6: Проверить, что корневые гейты не сломались**
+- [ ] **Step 6: Confirm the root gates still hold**
 
 Run: `npm test && npm run build`
-Expected: PASS. `npm run build` — это `tsc --noEmit && vite build`; он по-прежнему смотрит только в `src`, и `workers/` в бандл приложения не попадает.
+Expected: PASS. `npm run build` is `tsc --noEmit && vite build`; it still looks only at `src`, and `workers/` never enters the application bundle.
 
-- [ ] **Step 7: Коммит**
+- [ ] **Step 7: Commit**
 
 ```bash
 git add package.json package-lock.json workers/trello-webhook/tsconfig.json .github/workflows/ci.yml
@@ -333,19 +335,19 @@ git commit -m "build(worker): typecheck the worker in CI"
 
 ---
 
-### Task 3: Хендлер Worker'а
+### Task 3: The Worker handler
 
 **Files:**
 - Create: `workers/trello-webhook/index.ts`
 - Test: `workers/trello-webhook/index.test.ts`
 
 **Interfaces:**
-- Consumes: `shouldDispatch` из Task 1; типы Workers из Task 2.
-- Produces: `export interface Env { GITHUB_REPO: string; WORKFLOW_FILE: string; GIT_REF: string; GH_DISPATCH_TOKEN?: string; TRELLO_INPROGRESS_LIST_ID?: string; WEBHOOK_TOKEN?: string }` и `export default { fetch }`. Имена полей `Env` должны совпадать с `[vars]` и именами секретов в Task 4 — иначе Worker получит `undefined` в рантайме и молча отдаст 404 на всё.
+- Consumes: `shouldDispatch` from Task 1; the Workers types from Task 2.
+- Produces: `export interface Env { GITHUB_REPO: string; WORKFLOW_FILE: string; GIT_REF: string; GH_DISPATCH_TOKEN?: string; TRELLO_INPROGRESS_LIST_ID?: string; WEBHOOK_TOKEN?: string }` and `export default { fetch }`. The `Env` field names must match the `[vars]` and secret names in Task 4 letter for letter — otherwise the Worker receives `undefined` at runtime and silently 404s everything.
 
-- [ ] **Step 1: Написать падающие тесты**
+- [ ] **Step 1: Write the failing tests**
 
-Создать `workers/trello-webhook/index.test.ts`. Докблок обязателен: под jsdom нет `Request`/`Response`, а под `node` их даёт Node 22.
+Create `workers/trello-webhook/index.test.ts`. The docblock is mandatory: jsdom has no `Request`/`Response`, while the node environment gets them from Node 22.
 
 ```ts
 // @vitest-environment node
@@ -493,24 +495,24 @@ describe('worker fetch', () => {
 });
 ```
 
-- [ ] **Step 2: Прогнать и убедиться, что падает**
+- [ ] **Step 2: Run them and confirm they fail**
 
 Run: `npm test -- workers/trello-webhook/index.test.ts`
-Expected: FAIL с `Failed to resolve import "./index"`.
+Expected: FAIL with `Failed to resolve import "./index"`.
 
-- [ ] **Step 3: Реализация**
+- [ ] **Step 3: Implementation**
 
-Создать `workers/trello-webhook/index.ts`:
+Create `workers/trello-webhook/index.ts`:
 
 ```ts
 import { shouldDispatch } from './filter';
 
 export interface Env {
-  /** Публичные значения из [vars] в wrangler.toml. */
+  /** Public values from [vars] in wrangler.toml. */
   GITHUB_REPO: string;
   WORKFLOW_FILE: string;
   GIT_REF: string;
-  /** Секреты (wrangler secret put). Необязательные: без них Worker безопасно отдаёт 404. */
+  /** Secrets (wrangler secret put). Optional: without them the Worker safely 404s. */
   GH_DISPATCH_TOKEN?: string;
   TRELLO_INPROGRESS_LIST_ID?: string;
   WEBHOOK_TOKEN?: string;
@@ -535,13 +537,13 @@ async function dispatchWorkflow(env: Env): Promise<number> {
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    // Trello делает HEAD на callbackURL при создании вебхука и без 200 вебхук не создаётся.
+    // Trello issues a HEAD to the callbackURL at webhook creation and refuses to create it without a 200.
     if (request.method === 'HEAD') return new Response(null, { status: 200 });
 
     const { pathname } = new URL(request.url);
     const expected = env.WEBHOOK_TOKEN ? `/trello/${env.WEBHOOK_TOKEN}` : '';
     if (request.method !== 'POST' || expected === '' || pathname !== expected) {
-      // Ни путь, ни его часть в лог не попадают — только факт отказа.
+      // Neither the path nor any part of it reaches the log — only the fact of the rejection.
       log(`rejected ${request.method}: path mismatch`);
       return new Response('not found', { status: 404 });
     }
@@ -578,23 +580,23 @@ export default {
     } else {
       log(`dispatch failed with ${status} — returning 500 so Trello retries`);
     }
-    // 500 осознанно: Trello отретраит через 30с / 60с / 120с и переживёт короткий сбой GitHub.
+    // The 500 is deliberate: Trello retries at 30s / 60s / 120s and absorbs a short GitHub outage.
     return new Response('dispatch failed', { status: 500 });
   },
 } satisfies ExportedHandler<Env>;
 ```
 
-- [ ] **Step 4: Прогнать тесты хендлера**
+- [ ] **Step 4: Run the handler tests**
 
 Run: `npm test -- workers/trello-webhook/index.test.ts`
-Expected: PASS, 10 тестов.
+Expected: PASS, 10 tests.
 
-- [ ] **Step 5: Прогнать оба гейта**
+- [ ] **Step 5: Run both gates**
 
 Run: `npm test && npm run typecheck:worker`
-Expected: PASS оба.
+Expected: PASS on both.
 
-- [ ] **Step 6: Коммит**
+- [ ] **Step 6: Commit**
 
 ```bash
 git add workers/trello-webhook/index.ts workers/trello-webhook/index.test.ts
@@ -603,19 +605,19 @@ git commit -m "feat(worker): Trello webhook handler dispatching trello-agent.yml
 
 ---
 
-### Task 4: Деплой и секреты
+### Task 4: Deploy and secrets
 
 **Files:**
 - Create: `workers/trello-webhook/wrangler.toml`
-- Modify: `.gitignore` (добавить `.dev.vars` и `.wrangler/`)
+- Modify: `.gitignore` (add `.dev.vars` and `.wrangler/`)
 
 **Interfaces:**
-- Consumes: `index.ts` и `Env` из Task 3 — имена в `[vars]` и имена секретов обязаны совпадать с полями `Env` буква в букву.
-- Produces: живой URL `https://trello-webhook.bazhanau.workers.dev` и значение `WEBHOOK_TOKEN`, которое понадобится в Task 5 для `callbackURL`.
+- Consumes: `index.ts` and `Env` from Task 3 — the names in `[vars]` and the secret names must match the `Env` fields letter for letter.
+- Produces: the live URL `https://trello-webhook.bazhanau.workers.dev` and the `WEBHOOK_TOKEN` value, needed in Task 5 for the `callbackURL`.
 
-Аккаунт Cloudflare уже создан (`bazhanau.arthur@gmail.com`), `wrangler login` пройден.
+The Cloudflare account already exists (`bazhanau.arthur@gmail.com`) and `wrangler login` is done.
 
-- [ ] **Step 1: Создать wrangler.toml**
+- [ ] **Step 1: Create wrangler.toml**
 
 ```toml
 name = "trello-webhook"
@@ -623,42 +625,42 @@ main = "index.ts"
 compatibility_date = "2026-09-09"
 workers_dev = true
 
-# Публичные значения. account_id здесь НЕ указываем: репозиторий публичный,
-# он передаётся через переменную окружения CLOUDFLARE_ACCOUNT_ID.
+# Public values. account_id is deliberately NOT listed here: the repository is public,
+# so it is passed through the CLOUDFLARE_ACCOUNT_ID environment variable.
 [vars]
 GITHUB_REPO   = "bazha/archmentor"
 WORKFLOW_FILE = "trello-agent.yml"
 GIT_REF       = "master"
 ```
 
-- [ ] **Step 2: Закрыть локальные артефакты wrangler от гита**
+- [ ] **Step 2: Keep wrangler's local artifacts out of git**
 
-В `.gitignore` добавить в конец:
+Append to `.gitignore`:
 
 ```
-# wrangler: локальные переменные разработки и его кэш сборки
+# wrangler: local development variables and its build cache
 .dev.vars
 .wrangler/
 ```
 
-`.dev.vars` содержит секреты и не должен попасть в публичный репозиторий; существующий `*.local` его не ловит.
+`.dev.vars` holds secrets and must never reach a public repository; the existing `*.local` pattern does not catch it.
 
-- [ ] **Step 3: Прогнать хендлер локально, не запуская агента**
+- [ ] **Step 3: Exercise the handler locally without starting the agent**
 
-Создать `workers/trello-webhook/.dev.vars` — **без** `GH_DISPATCH_TOKEN`:
+Create `workers/trello-webhook/.dev.vars` — **without** `GH_DISPATCH_TOKEN`:
 
 ```
 WEBHOOK_TOKEN=local-dev-token
 TRELLO_INPROGRESS_LIST_ID=list-in-progress
 ```
 
-В одном терминале:
+In one terminal:
 
 ```bash
 npx wrangler dev --config workers/trello-webhook/wrangler.toml --port 8787
 ```
 
-В другом:
+In another:
 
 ```bash
 curl -s -o /dev/null -w 'moved: %{http_code}\n' -X POST \
@@ -672,38 +674,38 @@ curl -s -o /dev/null -w 'renamed: %{http_code}\n' -X POST \
   http://127.0.0.1:8787/trello/local-dev-token
 ```
 
-Expected: `moved: 500` (фильтр сказал «да», dispatch ушёл в GitHub и получил `401`/`403`, потому что токена нет — в логе `wrangler dev` видна строка про отказ, для 401/403 это `PAT expired or lost Actions:write`) и `renamed: 200` (фильтр сказал «нет», dispatch не уходил). То есть маршрут и фильтр проверены на живом рантайме Workers, а агент не запускался. Убедиться, что `gh run list --workflow=trello-agent.yml --limit 3` не показывает новых запусков.
+Expected: `moved: 500` (the filter said yes, the dispatch went to GitHub and got `401`/`403` because there is no token — the `wrangler dev` log shows the rejection line, which for 401/403 is `PAT expired or lost Actions:write`) and `renamed: 200` (the filter said no, no dispatch went out). So the route and the filter are verified on a live Workers runtime while the agent never ran. Confirm `gh run list --workflow=trello-agent.yml --limit 3` shows no new runs.
 
-Погасить `wrangler dev` (Ctrl-C).
+Stop `wrangler dev` (Ctrl-C).
 
-- [ ] **Step 4 (USER): Первый деплой**
+- [ ] **Step 4 (USER): First deploy**
 
 ```
 ! CLOUDFLARE_ACCOUNT_ID=86e23b29daf9f14757296b5485cdfd59 npx wrangler deploy --config workers/trello-webhook/wrangler.toml
 ```
 
-Субдомен регистрируется в дашборде (`…/workers/subdomain`) — зарегистрирован **`bazhanau`**; после регистрации деплой надо повторить, иначе маршрут не привязывается. Выбор фактически необратим: смена ломает все `workers.dev`-адреса аккаунта. В конце вывода будет URL — ожидаем `https://trello-webhook.bazhanau.workers.dev`.
+The subdomain is registered in the dashboard (`…/workers/subdomain`) — **`bazhanau`** was registered; after registering, the deploy must be repeated or the route does not attach. The choice is effectively irreversible: changing it breaks every `workers.dev` address on the account. The URL is printed at the end of the output — expect `https://trello-webhook.bazhanau.workers.dev`.
 
-Между этим шагом и Step 6 эндпоинт живёт, но безопасен: `WEBHOOK_TOKEN` не задан, `expected === ''`, всё кроме HEAD получает 404.
+Between this step and Step 6 the endpoint is live but safe: `WEBHOOK_TOKEN` is unset, `expected === ''`, and everything but HEAD gets a 404.
 
-- [ ] **Step 5 (USER): Создать fine-grained PAT**
+- [ ] **Step 5 (USER): Create the fine-grained PAT**
 
-В браузере: **github.com/settings/personal-access-tokens/new** →
+In the browser: **github.com/settings/personal-access-tokens/new** →
 - Token name: `trello-webhook-worker-dispatch`
 - Resource owner: `bazha`
-- Expiration: **1 year** (запиши получившуюся дату — 2027-09-09 при выпуске сегодня; она пойдёт в память проекта в Task 6 Step 5)
+- Expiration: **1 year** (write down the resulting date — 2027-09-09 if issued on the plan's date; it goes into project memory in Task 6 Step 5)
 - Repository access: **Only select repositories** → `archmentor`
-- Repository permissions: **Actions → Read and write** (`Metadata → Read-only` добавится само)
+- Repository permissions: **Actions → Read and write** (`Metadata → Read-only` is added automatically)
 
-Ничего больше не включать. Это НЕ `GH_PAT`: у того есть право пуша в master, и его копия в Worker'е означала бы, что утечка Worker'а = утечка записи в репозиторий.
+Enable nothing else. This is NOT `GH_PAT`: that one can push to master, and a copy of it inside the Worker would mean that leaking the Worker equals leaking write access to the repository.
 
-- [ ] **Step 6 (USER): Сгенерировать токен пути и положить три секрета**
+- [ ] **Step 6 (USER): Generate the path token and store all three secrets**
 
 ```
 ! openssl rand -hex 32
 ```
 
-Сохранить вывод (он понадобится в Task 5 Step 4) и положить секреты — каждая команда спросит значение в stdin:
+Keep the output (Task 5 Step 4 needs it) and store the secrets — each command prompts for the value on stdin:
 
 ```
 ! npx wrangler secret put GH_DISPATCH_TOKEN --config workers/trello-webhook/wrangler.toml
@@ -711,16 +713,16 @@ Expected: `moved: 500` (фильтр сказал «да», dispatch ушёл в
 ! npx wrangler secret put WEBHOOK_TOKEN --config workers/trello-webhook/wrangler.toml
 ```
 
-Значения: PAT из Step 5; id списка In Progress (`6a60b020daa8e07f3df0e6c4`, он же в GitHub Secrets); hex-строка из `openssl`.
+Values: the PAT from Step 5; the In Progress list id (`6a60b020daa8e07f3df0e6c4`, the same one that is in GitHub Secrets); the hex string from `openssl`.
 
-- [ ] **Step 7: Проверить список секретов**
+- [ ] **Step 7: Check the secret list**
 
 ```bash
 npx wrangler secret list --config workers/trello-webhook/wrangler.toml
 ```
-Expected: три имени — `GH_DISPATCH_TOKEN`, `TRELLO_INPROGRESS_LIST_ID`, `WEBHOOK_TOKEN`. Значения не отдаются, и это правильно.
+Expected: three names — `GH_DISPATCH_TOKEN`, `TRELLO_INPROGRESS_LIST_ID`, `WEBHOOK_TOKEN`. The values are not returned, and that is correct.
 
-- [ ] **Step 8: Проверить живой эндпоинт**
+- [ ] **Step 8: Check the live endpoint**
 
 ```bash
 curl -sI  "https://trello-webhook.bazhanau.workers.dev/trello/<WEBHOOK_TOKEN>" | head -1
@@ -728,11 +730,11 @@ curl -s -o /dev/null -w '%{http_code}\n' -X POST \
   -H 'content-type: application/json' -d '{"action":{"type":"updateCard","data":{}}}' \
   "https://trello-webhook.bazhanau.workers.dev/trello/definitely-wrong"
 ```
-Expected: `HTTP/2 200` на HEAD; `404` на POST по неверному пути.
+Expected: `HTTP/2 200` on HEAD; `404` on the POST to the wrong path.
 
-Оба ответа не запускают воркфлоу. Проверить, что не запустили: `gh run list --workflow=trello-agent.yml --limit 3` — новых запусков быть не должно.
+Neither response starts a workflow. Confirm that: `gh run list --workflow=trello-agent.yml --limit 3` should show no new runs.
 
-- [ ] **Step 9: Коммит**
+- [ ] **Step 9: Commit**
 
 ```bash
 git add workers/trello-webhook/wrangler.toml .gitignore
@@ -741,41 +743,41 @@ git commit -m "chore(worker): wrangler config for the trello-webhook worker"
 
 ---
 
-### Task 5: Переключение вебхука Trello
+### Task 5: Cutting the Trello webhook over
 
 **Files:**
-- Modify: `.github/workflows/trello-agent.yml:4-5` (комментарий в шапке)
+- Modify: `.github/workflows/trello-agent.yml:4-5` (the header comment)
 
 **Interfaces:**
-- Consumes: URL Worker'а и `WEBHOOK_TOKEN` из Task 4.
-- Produces: ровно один активный вебхук Trello, смотрящий на Worker.
+- Consumes: the Worker URL and `WEBHOOK_TOKEN` from Task 4.
+- Produces: exactly one active Trello webhook pointing at the Worker.
 
-Весь риск миграции здесь. Два живых вебхука на одну доску = два dispatch'а на одно перетаскивание.
+All the migration risk lives here. Two live webhooks on one board mean two dispatches per drag.
 
-- [ ] **Step 1: Загрузить креды Trello и посмотреть, что есть**
+- [ ] **Step 1: Load the Trello credentials and see what exists**
 
 ```bash
 set -a; source ~/docker/n8n/trello.env; set +a
 curl -s "https://api.trello.com/1/tokens/$TRELLO_TOKEN/webhooks?key=$TRELLO_KEY" \
   | jq -r '.[] | "\(.id)  \(.callbackURL)  active=\(.active)"'
 ```
-Expected: одна запись на `https://myth-thievish-backlash.ngrok-free.dev/...`. Если записей больше одной — остановиться и разобраться, прежде чем что-либо удалять.
+Expected: a single entry pointing at `https://myth-thievish-backlash.ngrok-free.dev/...`. If there is more than one, stop and investigate before deleting anything.
 
-- [ ] **Step 2: Остановить контейнеры**
+- [ ] **Step 2: Stop the containers**
 
 ```bash
 cd ~/docker/n8n && docker compose stop
 ```
-**Без `down`, без `-v`.** Волюм `n8n_data` — единственный путь откатa.
+**No `down`, no `-v`.** The `n8n_data` volume is the only rollback path.
 
-- [ ] **Step 3: Удалить старый вебхук**
+- [ ] **Step 3: Delete the old webhook**
 
 ```bash
 curl -s -X DELETE "https://api.trello.com/1/webhooks/<OLD_ID>?key=$TRELLO_KEY&token=$TRELLO_TOKEN" -o /dev/null -w '%{http_code}\n'
 ```
 Expected: `200`.
 
-- [ ] **Step 4: Создать новый**
+- [ ] **Step 4: Create the new one**
 
 ```bash
 curl -s -X POST "https://api.trello.com/1/webhooks?key=$TRELLO_KEY&token=$TRELLO_TOKEN" \
@@ -783,18 +785,18 @@ curl -s -X POST "https://api.trello.com/1/webhooks?key=$TRELLO_KEY&token=$TRELLO
   --data-urlencode "idModel=6a60afe8fa78c7079643cd70" \
   --data-urlencode "description=trello-agent via cloudflare worker" | jq '{id, active, callbackURL}'
 ```
-Expected: JSON с `active: true`. Trello синхронно дёрнет HEAD и создаст вебхук только при `200` — если получишь ошибку, вернись к Task 4 Step 8, вебхук не создан, и надо чинить Worker (откат не требуется).
+Expected: JSON with `active: true`. Trello synchronously issues a HEAD and only creates the webhook on a `200` — on an error, go back to Task 4 Step 8: the webhook was not created and the Worker needs fixing (no rollback required).
 
-- [ ] **Step 5: Проверить, что он один**
+- [ ] **Step 5: Verify there is exactly one**
 
 ```bash
 curl -s "https://api.trello.com/1/tokens/$TRELLO_TOKEN/webhooks?key=$TRELLO_KEY" | jq 'length'
 ```
 Expected: `1`.
 
-- [ ] **Step 6: Обновить комментарий в воркфлоу**
+- [ ] **Step 6: Update the workflow comment**
 
-В `.github/workflows/trello-agent.yml` заменить строки 4-5:
+In `.github/workflows/trello-agent.yml`, replace lines 4-5:
 
 ```yaml
   # A Cloudflare Worker (workers/trello-webhook) triggers this event-driven via
@@ -802,7 +804,7 @@ Expected: `1`.
   # The schedule is only a rare safety-net fallback in case the Worker or the GitHub API is down.
 ```
 
-- [ ] **Step 7: Коммит**
+- [ ] **Step 7: Commit**
 
 ```bash
 git add .github/workflows/trello-agent.yml
@@ -811,78 +813,75 @@ git commit -m "docs(trello-agent): the event-driven trigger is now a Cloudflare 
 
 ---
 
-### Task 6: Приёмка на живой доске
+### Task 6: Acceptance on the live board
 
 **Files:**
-- Modify: `/Users/arthur/.claude-work/projects/-Users-arthur-Documents-work-learna/memory/n8n-selfhosted-trello-automation.md` (перезаписывается целиком)
-- Modify: `/Users/arthur/.claude-work/projects/-Users-arthur-Documents-work-learna/memory/MEMORY.md` (строка-указатель)
+- Modify: `/Users/arthur/.claude-work/projects/-Users-arthur-Documents-work-learna/memory/n8n-selfhosted-trello-automation.md` (rewritten wholesale)
+- Modify: `/Users/arthur/.claude-work/projects/-Users-arthur-Documents-work-learna/memory/MEMORY.md` (the index line)
 
 **Interfaces:**
-- Consumes: работающий вебхук из Task 5.
-- Produces: подтверждение, что все три сценария проходят. До этого ничего не сносим.
+- Consumes: the working webhook from Task 5.
+- Produces: confirmation that all three scenarios pass. Nothing is torn down before that.
 
-Все три обязательны. Пока они не пройдены, `docker compose down` из Task 7 делать нельзя.
+All three are mandatory. Until they pass, the `docker compose down` from Task 7 must not happen.
 
-- [ ] **Step 1 (USER): Позитивный сценарий**
+- [ ] **Step 1 (USER): Positive scenario**
 
-Создать небольшую тестовую карточку и перетащить её в **In Progress**. Затем:
-
-```bash
-gh run list --workflow=trello-agent.yml --limit 5
-```
-Expected: новый запуск появляется в течение секунд, и он **ровно один**. Два запуска на одно перетаскивание = фильтр по `listAfter` не работает; тогда остановиться, вернуть карточку назад и разбираться (юнит-тест на `posOnlyInInProgress` должен был это поймать — значит фикстура не совпала с реальным payload'ом, и надо снять настоящий через `npx wrangler tail`).
-
-Дать циклу доработать: агент открывает PR → смержить → `gh run list --workflow=trello-done.yml` показывает запуск → карточка в **Done** с одним комментарием `🤖 ✅`.
-
-- [ ] **Step 2 (USER): Негативный сценарий — главный**
-
-Переименовать карточку, которая **уже лежит** в In Progress (например, ту же, если она ещё там, или любую другую).
+Create a small test card and drag it into **In Progress**. Then:
 
 ```bash
 gh run list --workflow=trello-agent.yml --limit 5
 ```
-Expected: новых запусков нет. Это проверка настоящего payload'а Trello против того же правила, что покрыто юнит-тестом `renamedInInProgress`.
+Expected: a new run appears within seconds, and there is **exactly one**. Two runs per drag means the `listAfter` filter is not working; stop, move the card back and investigate (the `posOnlyInInProgress` unit test should have caught it — so the fixture must have diverged from the real payload, and the real one has to be captured via `npx wrangler tail`).
 
-- [ ] **Step 3 (USER): Диалоговый сценарий**
+Let the cycle finish: the agent opens a PR → merge it → `gh run list --workflow=trello-done.yml` shows a run → the card lands in **Done** with a single `🤖 ✅` comment.
 
-На карточке с лейблом `needs-info` ответить обычным комментарием (без `🤖`). Expected: новый запуск `trello-agent.yml` в течение секунд. Комментарий самого агента (начинается с `🤖`) запуска давать не должен — это видно по тому, что после `finalize` лишних запусков не появилось.
+- [ ] **Step 2 (USER): Negative scenario — the important one**
 
-- [ ] **Step 4: Посмотреть логи Worker'а**
+Rename a card that is **already sitting** in In Progress (the same one if it is still there, or any other).
+
+```bash
+gh run list --workflow=trello-agent.yml --limit 5
+```
+Expected: no new runs. This checks a real Trello payload against the same rule the `renamedInInProgress` unit test covers.
+
+- [ ] **Step 3 (USER): Dialogue scenario**
+
+On a card carrying the `needs-info` label, reply with an ordinary comment (no `🤖`). Expected: a new `trello-agent.yml` run within seconds. The agent's own comment (which starts with `🤖`) must not produce a run — visible from the absence of extra runs after `finalize`.
+
+- [ ] **Step 4: Look at the Worker logs**
 
 ```bash
 npx wrangler tail --config workers/trello-webhook/wrangler.toml
 ```
-Пока стрим открыт — подвигать карточку. Expected: строки вида `[trello-webhook] updateCard card=… dispatch=true (card moved into In Progress)` и `dispatch=false` на парном pos-экшене. Убедиться, что `WEBHOOK_TOKEN` не появляется в **наших** строках `[trello-webhook] …`. Учти:
-собственная строка доступа wrangler (`[wrangler:info] POST /trello/<токен> 200 OK`) URL печатает
-целиком — это свойство платформы, а не наш лог, и видит её только владелец аккаунта. Проверено
-локально в Task 4 Step 3.
+With the stream open, move a card around. Expected: lines like `[trello-webhook] updateCard card=… dispatch=true (card moved into In Progress)` and `dispatch=false` for the paired pos action. Confirm `WEBHOOK_TOKEN` does not appear in **our** `[trello-webhook] …` lines. Note: wrangler's own access line (`[wrangler:info] POST /trello/<token> 200 OK`) prints the URL in full — that is a platform property, not our log, and only the account owner sees it. Verified locally in Task 4 Step 3.
 
-- [ ] **Step 5: Перезаписать память проекта**
+- [ ] **Step 5: Rewrite project memory**
 
-Заменить содержимое `memory/n8n-selfhosted-trello-automation.md` (frontmatter `name`/`description`/`metadata` сохранить, `description` обновить) так, чтобы там было: стек — Cloudflare Worker `workers/trello-webhook`, URL `https://trello-webhook.bazhanau.workers.dev` (без токена пути), три секрета и их назначение, **дата истечения PAT** из Task 4 Step 5, команда деплоя с `CLOUDFLARE_ACCOUNT_ID`, `account_id` `86e23b29daf9f14757296b5485cdfd59`, факт что Trello-креды теперь в `~/.config/trello/env`, готча про `listAfter`, и что n8n не осталось ни в каком виде. Строку в `MEMORY.md` обновить под новое описание.
+Replace the contents of `memory/n8n-selfhosted-trello-automation.md` (keep the `name`/`description`/`metadata` frontmatter, update `description`) so it records: the stack — Cloudflare Worker `workers/trello-webhook`, the URL `https://trello-webhook.bazhanau.workers.dev` (without the path token), the three secrets and their purpose, the **PAT expiry date** from Task 4 Step 5, the deploy command with `CLOUDFLARE_ACCOUNT_ID`, the `account_id` `86e23b29daf9f14757296b5485cdfd59`, the fact that the Trello credentials now live in `~/.config/trello/env`, the `listAfter` gotcha, and that no form of n8n remains. Update the `MEMORY.md` line to match the new description.
 
-- [ ] **Step 6: Коммит**
+- [ ] **Step 6: Commit**
 
-Файлы памяти лежат вне репозитория и не коммитятся. Коммитить в этой задаче нечего — если рабочее дерево чистое, задача закрыта.
+Memory files live outside the repository and are not committed. There is nothing to commit in this task — if the working tree is clean, the task is done.
 
 ```bash
 git status --short
 ```
-Expected: пусто.
+Expected: empty.
 
 ---
 
-### Task 7: Снос локального n8n
+### Task 7: Tearing down local n8n
 
-**Files:** нет (операции в `~/docker/n8n` и во внешних сервисах).
+**Files:** none (operations in `~/docker/n8n` and in external services).
 
 **Interfaces:**
-- Consumes: пройденную приёмку из Task 6.
-- Produces: мак, который можно выключить, не ломая автоматику.
+- Consumes: the passing acceptance from Task 6.
+- Produces: a mac that can be switched off without breaking the automation.
 
-Делается **только** после Task 6. Шаг 2 — отложенный, не раньше 2026-09-16.
+Runs **only** after Task 6. Step 4 is deferred — no earlier than a week after the cutover.
 
-- [ ] **Step 1: Вынести Trello-креды до любого удаления**
+- [ ] **Step 1: Extract the Trello credentials before deleting anything**
 
 ```bash
 mkdir -p ~/.config/trello
@@ -890,30 +889,30 @@ cp ~/docker/n8n/trello.env ~/.config/trello/env
 chmod 600 ~/.config/trello/env
 grep -c TRELLO ~/.config/trello/env
 ```
-Expected: `2` (key и token на месте).
+Expected: `2` (key and token both present).
 
-В GitHub Secrets токен write-only, и `~/docker/n8n/trello.env` — единственная копия на руках. Потерять её = перевыпуск токена, а перевыпуск убивает все вебхуки старого токена, то есть саму автоматику.
+The token is write-only in GitHub Secrets, and `~/docker/n8n/trello.env` is the only copy at hand. Losing it means reissuing the token, and reissuing kills every webhook of the old token — that is, the automation itself.
 
-- [ ] **Step 2: Погасить контейнеры, сохранив волюм**
+- [ ] **Step 2: Bring the containers down, keeping the volume**
 
 ```bash
 cd ~/docker/n8n && docker compose down
 docker volume ls | grep n8n_data
 ```
-Expected: волюм `n8n_data` на месте. **`-v` не добавлять.** Откат до шага 3 стоит две команды: `docker compose up -d` + перерегистрировать вебхук на ngrok-домен.
+Expected: the `n8n_data` volume is still there. **Do not add `-v`.** Rollback before step 4 costs two commands: `docker compose up -d` plus re-registering the webhook against the ngrok domain.
 
-- [ ] **Step 3: Проверить, что мак больше не нужен**
+- [ ] **Step 3: Confirm the mac is no longer needed**
 
-С телефона перевести карточку в In Progress (Docker при этом погашен). Затем:
+Move a card into In Progress from a phone, with Docker down. Then:
 
 ```bash
 gh run list --workflow=trello-agent.yml --limit 3
 ```
-Expected: запуск есть. Это и есть цель всей миграции.
+Expected: a run is there. That is the goal of the whole migration.
 
-- [ ] **Step 4 (USER, не раньше 2026-09-16): Окончательная зачистка**
+- [ ] **Step 4 (USER, no earlier than a week after the cutover): Final cleanup**
 
-После недели нормальной работы:
+After a week of normal operation:
 
 ```
 ! cd ~/docker/n8n && docker compose down -v
@@ -921,17 +920,17 @@ Expected: запуск есть. Это и есть цель всей мигра
 ! docker image rm docker.n8n.io/n8nio/n8n:2.36.0 ngrok/ngrok:3.39.11
 ```
 
-И во внешних сервисах: освободить закреплённый домен `myth-thievish-backlash.ngrok-free.dev` и удалить аккаунт ngrok; удалить аккаунт n8n Cloud `bazhanau.app.n8n.cloud` (держался как rollback до 2026-09-01, срок истёк).
+And in the external services: release the reserved domain `myth-thievish-backlash.ngrok-free.dev` and delete the ngrok account; delete the n8n Cloud account `bazhanau.app.n8n.cloud` (kept as a rollback until 2026-09-01, now expired).
 
-После `down -v` откат невозможен: вместе с волюмом уходят креды и сам воркфлоу n8n. К этому моменту `~/.config/trello/env` из Step 1 должен существовать — перепроверить перед выполнением.
+After `down -v` rollback is impossible: the volume takes the credentials and the n8n workflow itself with it. By then `~/.config/trello/env` from Step 1 must exist — re-check before running this.
 
 ---
 
-## Итоговая проверка (критерии готовности из спеки)
+## Final check (definition of done, from the spec)
 
-- [ ] `npm test` зелёный, включая все кейсы фильтра; `npm run typecheck:worker` зелёный; оба под CI-гейтом на pull_request.
-- [ ] Worker задеплоен, отвечает `200` на HEAD и `404` на неверный путь.
-- [ ] Trello-вебхуков на доску ровно один, смотрит на Worker, `active=true`.
-- [ ] Все три сценария приёмки пройдены, включая негативный.
-- [ ] Контейнеры остановлены, `trello.env` скопирован в `~/.config/trello/env`.
-- [ ] Карточка, переведённая в In Progress с телефона при выключенном Docker, запускает агента.
+- [ ] `npm test` green, including every filter case; `npm run typecheck:worker` green; both behind the CI gate on pull_request.
+- [ ] The Worker is deployed, answers `200` to HEAD and `404` on a wrong path.
+- [ ] Exactly one Trello webhook on the board, pointing at the Worker, `active=true`.
+- [ ] All three acceptance scenarios pass, the negative one included.
+- [ ] Containers stopped, `trello.env` copied to `~/.config/trello/env`.
+- [ ] A card moved to In Progress from a phone, with Docker down, starts the agent.

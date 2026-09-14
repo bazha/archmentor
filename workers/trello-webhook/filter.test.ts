@@ -4,7 +4,7 @@ import { shouldDispatch } from './filter';
 const IN_PROGRESS = 'list-in-progress';
 const TODO = 'list-todo';
 
-// Перетаскивание карточки в In Progress: у ЭТОГО экшена есть listAfter.
+// Dragging a card into In Progress: THIS action is the one that carries listAfter.
 const movedIntoInProgress = {
   type: 'updateCard',
   data: {
@@ -16,7 +16,7 @@ const movedIntoInProgress = {
   },
 };
 
-// Второй экшен ТОГО ЖЕ перетаскивания — только позиция. listAfter нет, зато есть list.
+// The second action of the SAME drag — position only. No listAfter, but there is a list.
 const posOnlyInInProgress = {
   type: 'updateCard',
   data: {
@@ -27,7 +27,7 @@ const posOnlyInInProgress = {
   },
 };
 
-// Переименование карточки, которая уже лежит в In Progress.
+// Renaming a card that is already sitting in In Progress.
 const renamedInInProgress = {
   type: 'updateCard',
   data: {
@@ -75,7 +75,7 @@ describe('shouldDispatch', () => {
     expect(shouldDispatch(posOnlyInInProgress, IN_PROGRESS).dispatch).toBe(false);
   });
 
-  // Регресс: наивный фильтр по data.list.id срабатывал на любой правке карточки в In Progress.
+  // Regression: a naive data.list.id filter fired on any edit of a card in In Progress.
   it('ignores an edit of a card already sitting in In Progress', () => {
     expect(shouldDispatch(renamedInInProgress, IN_PROGRESS).dispatch).toBe(false);
   });

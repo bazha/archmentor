@@ -1,11 +1,11 @@
 import { shouldDispatch } from './filter';
 
 export interface Env {
-  /** Публичные значения из [vars] в wrangler.toml. */
+  /** Public values from [vars] in wrangler.toml. */
   GITHUB_REPO: string;
   WORKFLOW_FILE: string;
   GIT_REF: string;
-  /** Секреты (wrangler secret put). Необязательные: без них Worker безопасно отдаёт 404. */
+  /** Secrets (wrangler secret put). Optional: without them the Worker safely 404s. */
   GH_DISPATCH_TOKEN?: string;
   TRELLO_INPROGRESS_LIST_ID?: string;
   WEBHOOK_TOKEN?: string;
@@ -30,13 +30,13 @@ async function dispatchWorkflow(env: Env): Promise<number> {
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    // Trello делает HEAD на callbackURL при создании вебхука и без 200 вебхук не создаётся.
+    // Trello issues a HEAD to the callbackURL at webhook creation and refuses to create it without a 200.
     if (request.method === 'HEAD') return new Response(null, { status: 200 });
 
     const { pathname } = new URL(request.url);
     const expected = env.WEBHOOK_TOKEN ? `/trello/${env.WEBHOOK_TOKEN}` : '';
     if (request.method !== 'POST' || expected === '' || pathname !== expected) {
-      // Ни путь, ни его часть в лог не попадают — только факт отказа.
+      // Neither the path nor any part of it reaches the log — only the fact of the rejection.
       log(`rejected ${request.method}: path mismatch`);
       return new Response('not found', { status: 404 });
     }
@@ -73,7 +73,7 @@ export default {
     } else {
       log(`dispatch failed with ${status} — returning 500 so Trello retries`);
     }
-    // 500 осознанно: Trello отретраит через 30с / 60с / 120с и переживёт короткий сбой GitHub.
+    // The 500 is deliberate: Trello retries at 30s / 60s / 120s and absorbs a short GitHub outage.
     return new Response('dispatch failed', { status: 500 });
   },
 } satisfies ExportedHandler<Env>;

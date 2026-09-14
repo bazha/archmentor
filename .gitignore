@@ -10,6 +10,6 @@ dist/
 .fix-context.json
 .fix-result.json
 
-# wrangler: локальные переменные разработки и его кэш сборки
+# wrangler: local development variables and its build cache
 .dev.vars
 .wrangler/
