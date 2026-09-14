@@ -28,6 +28,6 @@ describe('layoutConcepts', () => {
   });
 
   it('exposes all seven categories in a fixed order', () => {
-    expect(CATEGORY_ORDER).toEqual(['solid', 'creational', 'structural', 'behavioral', 'architecture', 'tradeoff', 'microservices']);
+    expect(CATEGORY_ORDER).toEqual(['solid', 'creational', 'structural', 'behavioral', 'architecture', 'tradeoff', 'microservices', 'data']);
   });
 });

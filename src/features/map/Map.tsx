@@ -12,7 +12,7 @@ import { ConceptPanel } from './ConceptPanel';
 const CAT_DOT: Record<Category, string> = {
   solid: 'bg-cat-solid', creational: 'bg-cat-creational', structural: 'bg-cat-structural',
   behavioral: 'bg-cat-behavioral', architecture: 'bg-cat-architecture', tradeoff: 'bg-cat-tradeoff',
-  microservices: 'bg-cat-microservices',
+  microservices: 'bg-cat-microservices', data: 'bg-cat-data',
 };
 
 function ConceptNode({ data }: NodeProps) {

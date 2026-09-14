@@ -1760,6 +1760,192 @@ export const conceptProse: Record<string, ConceptProse> = {
       "A one-off integration or prototype where the layer's cost isn't justified",
       "You fully control both sides and can agree on a shared model directly"
     ]
+  },
+  "cap-theorem": {
+    "tagline": "Under a network partition, a distributed store must choose between consistency and availability",
+    "definition": "The CAP theorem (Eric Brewer, formalised by Gilbert and Lynch) states that a distributed data store cannot simultaneously guarantee all three of Consistency (every read sees the latest write), Availability (every request gets a non-error response) and Partition tolerance (the system keeps working despite dropped or delayed messages between nodes). Because real networks do experience partitions, partition tolerance is not optional, so the actual, ongoing choice a system makes is between consistency (CP) and availability (AP) for the duration of a partition.",
+    "problem": "Distributed systems replicate data across nodes and data centres. When the network partitions, an isolated group of nodes can no longer reach the leader or the rest of the replicas, yet it keeps receiving client requests. The engineer has to decide, explicitly, what those nodes do: keep answering with data that might be stale or conflicting (availability), or refuse to answer until the partition heals and a quorum is reachable again (consistency). Leaving the decision implicit produces one of the worst possible outcomes — an indefinite hang, or a wrong answer nobody chose on purpose.",
+    "solution": "Bake the decision into the client or service explicitly: pick CP (block or reject requests on the minority side until a quorum is reachable) or AP (serve local data, marking it as possibly stale), and write code paths for both branches rather than assuming the happy path. The example below shows a client that treats a primary timeout as a signal of a partition and deliberately degrades to a stale replica read, marking the response as such, instead of hanging or throwing.",
+    "code": "// A client that degrades to a stale read instead of hanging or throwing\n// when the primary is unreachable during a network partition (AP choice).\ninterface Reading { value: number; asOf: number; stale: boolean; }\n\nclass PartitionAwareClient {\n  constructor(\n    private primary: { read(): Promise<Reading> },\n    private replica: { read(): Promise<Reading> },\n    private timeoutMs = 300,\n  ) {}\n\n  async read(): Promise<Reading> {\n    try {\n      return await this.withTimeout(this.primary.read(), this.timeoutMs);\n    } catch {\n      // Primary unreachable — this IS the partition. Choosing availability:\n      // serve the replica's last known value instead of blocking the caller.\n      const r = await this.replica.read();\n      return { ...r, stale: true };\n    }\n  }\n\n  private withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {\n    return Promise.race([\n      p,\n      new Promise<T>((_, reject) => setTimeout(() => reject(new Error('timeout')), ms)),\n    ]);\n  }\n}",
+    "pros": [
+      "Forces an explicit, written-down decision about what happens during a partition, instead of an accidental hang or a silent wrong answer",
+      "Makes the availability/consistency trade-off visible to callers via an explicit marker such as `stale`, so they can decide how to react",
+      "Lets different operations in the same system pick different sides — strict reads for a balance check, stale-tolerant reads for a product catalog"
+    ],
+    "cons": [
+      "CAP describes only behaviour during a partition — outside a partition it says nothing about latency, for which PACELC is the more useful model",
+      "The C in CAP is linearizability, a far stronger guarantee than what most teams mean by 'consistent'; conflating the two breeds false confidence",
+      "Reduces a rich space of consistency models to a binary C/A choice, oversimplifying systems that offer tunable consistency per request"
+    ],
+    "tradeoffs": [
+      "Consistency (reject or block until a quorum is reachable) versus availability (serve local, possibly stale data) — during a partition you cannot have both",
+      "A CP choice trades uptime for correctness: clients on the minority side get errors rather than wrong answers",
+      "An AP choice trades correctness for uptime: clients get answers on both sides of the partition, possibly conflicting ones that must be reconciled later"
+    ],
+    "whenToUse": [
+      "Designing what a distributed store or service should do when a node or data centre becomes unreachable",
+      "Choosing between databases or consistency settings for a specific workload — financial ledgers lean CP, session or presence data leans AP",
+      "Explaining to stakeholders why a multi-region system cannot promise both zero downtime and always-fresh reads"
+    ],
+    "whenNotToUse": [
+      "A single-node system, or one with no network partitions between replicas, has nothing to trade off — CAP does not apply",
+      "Reasoning about steady-state latency and throughput — use PACELC or plain latency/queueing analysis instead"
+    ]
+  },
+  "consistency-models": {
+    "tagline": "Naming exactly how stale or out-of-order a read may be, from linearizable to eventual",
+    "definition": "A consistency model is a contract a data store offers about what values reads may return relative to a history of writes — ranging from linearizability (every operation appears to take effect instantly, in a single global order) down through causal consistency, session guarantees like read-your-writes and monotonic reads, to eventual consistency (replicas converge given no further writes, with no bound on when). The stronger the model, the closer reads behave to a single, non-distributed copy of the data; the weaker the model, the more staleness or reordering callers must tolerate.",
+    "problem": "A distributed store with multiple replicas has no single instant at which 'the' value of a key is defined — different replicas can legitimately hold different versions at the same wall-clock moment. Without naming the guarantee precisely, bug reports collapse into a vague 'sometimes it's stale', code ends up assuming stronger guarantees than the store actually offers, and the same word 'consistent' gets used for wildly different behaviours across teams.",
+    "solution": "Pick and document the weakest consistency model that a given feature actually needs, and enforce it explicitly rather than hoping the store's defaults happen to be strong enough. The example below implements read-your-writes: a client remembers the highest write version it produced (a session token) and only reads from a replica that has caught up to at least that version, so a client never sees its own write disappear even though the store overall is only eventually consistent.",
+    "code": "// Read-your-writes: the client remembers the highest write version it has\n// produced (a \"session token\") and a replica must have caught up to it\n// before serving that client's reads — otherwise the client would see its\n// own write disappear.\ninterface Replica { version(): number; read(key: string): string | undefined; }\n\nclass SessionConsistentReader {\n  private lastWrittenVersion = 0;\n\n  recordWrite(version: number): void {\n    this.lastWrittenVersion = Math.max(this.lastWrittenVersion, version);\n  }\n\n  read(key: string, replicas: Replica[]): string | undefined {\n    // Route to any replica caught up to (at least) this session's last write.\n    const caughtUp = replicas.find((r) => r.version() >= this.lastWrittenVersion);\n    if (!caughtUp) throw new Error('no replica is caught up yet — retry or read from primary');\n    return caughtUp.read(key);\n  }\n}",
+    "pros": [
+      "Naming the model precisely (linearizable, causal, read-your-writes, eventual) turns a vague 'sometimes stale' report into a specific, testable guarantee",
+      "Weaker models are usually cheaper — lower latency, higher availability — so picking the weakest model a feature actually needs saves real cost",
+      "Session guarantees like read-your-writes fix the most user-visible symptom of eventual consistency at a fraction of the cost of full linearizability"
+    ],
+    "cons": [
+      "Weaker models push complexity onto every client that reads the data — code must tolerate and reconcile stale or out-of-order values",
+      "Guarantees compose badly: read-your-writes on one service says nothing about what a second service sees when it reads the same data",
+      "The vocabulary itself is a trap — 'eventual consistency' hides how large the staleness window and how surprising the anomalies can be under real load"
+    ],
+    "tradeoffs": [
+      "Stronger models simplify reasoning for every caller but cost latency and availability, since they typically require coordination on every operation",
+      "Weaker models are fast and available but shift correctness work onto application code — conflict resolution, session tokens, idempotency",
+      "Session-level guarantees fix the common case cheaply, but they are per-client, not global — two different users can still observe different orders"
+    ],
+    "whenToUse": [
+      "Specifying a data store's API contract precisely, so client code knows exactly what staleness it must tolerate",
+      "Debugging reports of 'my own write disappeared' or 'values went backwards' — usually a missing session guarantee, not a bug in the store",
+      "Deciding, per feature, whether it truly needs linearizable reads (an account balance) or can run on eventual consistency (a like counter)"
+    ],
+    "whenNotToUse": [
+      "A single-node system with no replication has one natural order and no consistency model to choose",
+      "Premature strengthening — bolting session tokens or quorum reads onto a feature that never showed a staleness bug adds cost with no user-visible benefit"
+    ]
+  },
+  "quorum": {
+    "tagline": "Overlapping read and write sets (R + W > N) so a read always sees the latest acknowledged write",
+    "definition": "In a leaderless replicated store with N replicas, a quorum system requires a write to be acknowledged by W replicas and a read to collect responses from R replicas, choosing W and R so that R + W > N. That inequality guarantees the set of nodes touched by any read overlaps the set touched by any prior write in at least one node, so a read is mathematically guaranteed to see the most recent acknowledged value (once conflicting versions are resolved) without every replica needing to be up to date.",
+    "problem": "Without a leader that serializes every operation, nothing automatically stops a read from hitting only replicas that haven't seen the latest write yet. Requiring all N replicas to acknowledge every write (W=N) makes the system unavailable the moment any single node is slow or down; requiring only one (W=1) makes writes fast but gives no guarantee a later read will see them. Neither extreme is usable for a system that must stay both fast and correct enough.",
+    "solution": "Choose W and R per operation such that R + W > N, guaranteeing overlap between any read set and any write set, and use read repair to push the freshest value back to replicas that answered with a stale one. The example below implements the R + W > N check plus read repair: on every read it compares versions across the R replicas it contacted, returns the newest, and writes it back to any replica that was behind.",
+    "code": "// Quorum read/write: as long as R + W > N, every read set and every write\n// set overlap in at least one node, so a read is guaranteed to see the\n// latest acknowledged write.\ninterface Node { id: string; write(key: string, value: string, version: number): void; read(key: string): { value: string; version: number } | undefined; }\n\nclass QuorumStore {\n  constructor(private nodes: Node[], private w: number, private r: number) {\n    if (w + r <= nodes.length) throw new Error('quorum misconfigured: R + W must exceed N');\n  }\n\n  write(key: string, value: string, version: number): void {\n    const acked = this.nodes.slice(0, this.w); // in practice: the first W to ack\n    acked.forEach((n) => n.write(key, value, version));\n  }\n\n  read(key: string): string | undefined {\n    const responses = this.nodes.slice(0, this.r).map((n) => ({ node: n, res: n.read(key) }));\n    const latest = responses.reduce((best, cur) =>\n      (cur.res?.version ?? -1) > (best.res?.version ?? -1) ? cur : best);\n\n    // Read repair: nodes that answered with a stale (or missing) version get\n    // pushed the latest value, so the next quorum read needs less repair.\n    if (latest.res) {\n      responses\n        .filter((r) => (r.res?.version ?? -1) < latest.res!.version)\n        .forEach((r) => r.node.write(key, latest.res!.value, latest.res!.version));\n    }\n    return latest.res?.value;\n  }\n}",
+    "pros": [
+      "Tunable per operation: raise W for safety-critical writes, raise R for staleness-sensitive reads, without changing the replication topology",
+      "Survives node failures gracefully — as long as a quorum of the N nodes is reachable, reads and writes keep working",
+      "Read repair piggybacks on normal reads, so stale replicas self-heal without a separate background job"
+    ],
+    "cons": [
+      "R + W > N guarantees overlap, not a recency ordering across concurrent writes — conflicting versions can still occur and need a resolution rule (last-write-wins, vector clocks)",
+      "Every read and write touches multiple nodes, so latency is bounded by the slowest of the R or W responders, not the fastest single node",
+      "Choosing W=N or R=N for 'extra safety' quietly turns the store into CP — any single node outage then blocks the operation"
+    ],
+    "tradeoffs": [
+      "Higher W means safer writes but slower writes and less write availability during node failures",
+      "Higher R means fresher reads but slower reads; a lower R is fast but may return a value read repair hasn't caught up on yet",
+      "R + W > N buys read-after-write safety more cheaply than routing everything through a single leader, but concurrent conflicting writes at W < N still need a merge rule"
+    ],
+    "whenToUse": [
+      "A leaderless (Dynamo-style) replicated store where consistency should be tunable per operation instead of one fixed guarantee",
+      "Balancing read versus write load and latency by shifting the R/W split while keeping the R + W > N invariant",
+      "Explaining why a store configured with W=1 can lose an acknowledged write if the node fails before replication catches up"
+    ],
+    "whenNotToUse": [
+      "A system with a single leader already serializes all writes through one node — quorum arithmetic doesn't apply the same way",
+      "Workloads that need true linearizability across all replicas are better served by a consensus-backed leader than by tunable quorums"
+    ]
+  },
+  "partitioning": {
+    "tagline": "Splitting a dataset across nodes by key, so storage and write throughput scale beyond one machine",
+    "definition": "Partitioning (sharding) divides a dataset into disjoint pieces — shards — each held by a different node, with a partitioning scheme that maps a key to the shard that owns it. A naive scheme like `id % N` is trivial to implement but ties every key's location to the total node count; consistent hashing places both nodes and keys on a hash ring so that adding or removing a node only reassigns the keys immediately next to it, leaving the rest of the mapping untouched.",
+    "problem": "A single node has finite storage and finite write throughput, and eventually one or both become the bottleneck no amount of vertical scaling can outrun. Splitting the data across nodes solves the capacity problem, but the naive way to do it — `id % N` — recomputes the owner of nearly every key whenever N changes, turning a routine capacity change (adding one more node) into a full-dataset reshuffle that competes with live traffic.",
+    "solution": "Choose a partitioning key that spreads load evenly and keeps commonly-queried-together data on the same shard, and use consistent hashing rather than modulo so that cluster resizing moves only the keys that must move. The example contrasts the two: `id % N`, where changing N remaps almost everything, against a hash ring where adding a node only steals keys from its immediate neighbour on the ring.",
+    "code": "// Naive: id % N. Adding or removing a node changes N, which remaps almost\n// every key — a full data reshuffle.\nfunction shardByModulo(id: number, nodeCount: number): number {\n  return id % nodeCount;\n}\n\n// Consistent hashing: nodes and keys are placed on the same ring; a key\n// belongs to the first node clockwise from it. Adding a node only steals\n// keys from its immediate neighbour on the ring — the rest stay put.\nclass ConsistentHashRing {\n  private ring: { hash: number; node: string }[] = [];\n\n  addNode(node: string, points = 3): void {\n    for (let i = 0; i < points; i++) {\n      this.ring.push({ hash: this.hash(`${node}#${i}`), node });\n    }\n    this.ring.sort((a, b) => a.hash - b.hash);\n  }\n\n  shardFor(key: string): string {\n    const h = this.hash(key);\n    const point = this.ring.find((p) => p.hash >= h) ?? this.ring[0];\n    return point.node;\n  }\n\n  private hash(s: string): number {\n    let h = 0;\n    for (const ch of s) h = (h * 31 + ch.charCodeAt(0)) >>> 0;\n    return h;\n  }\n}\n\n// shardByModulo(id, 3) vs shardByModulo(id, 4): most ids change shard.\n// ring.addNode('node-4'): only the keys between node-4 and its clockwise\n// neighbour move — everyone else's data stays where it was.",
+    "pros": [
+      "Splits data and load across many nodes, so both storage capacity and write throughput scale roughly linearly with node count",
+      "Consistent hashing bounds the data movement caused by adding or removing a node to roughly 1/N of the keyspace, instead of a full reshuffle",
+      "A well-chosen key keeps related data on the same shard, so common queries stay single-shard and fast"
+    ],
+    "cons": [
+      "Queries that span multiple shards — joins, cross-shard transactions, global sorts or aggregates — become expensive fan-out operations",
+      "A skewed key, such as one hot tenant or celebrity id, creates a hot shard that adding more nodes doesn't fix",
+      "Resharding, even the cheaper consistent-hashing kind, is operationally risky: it moves live data while the system keeps serving traffic"
+    ],
+    "tradeoffs": [
+      "`id % N` is simpler to reason about but remaps nearly all keys on every topology change; consistent hashing adds a ring data structure but keeps resharding local",
+      "A key that spreads load evenly avoids hot shards but scatters related records, making cross-shard queries the common case instead of the exception",
+      "More virtual nodes per physical node smooths load distribution but adds bookkeeping and metadata overhead"
+    ],
+    "whenToUse": [
+      "A single node's storage or write throughput is the bottleneck and vertical scaling has run out of room",
+      "The workload naturally partitions by a stable key — tenant id, user id, order id — with few cross-key queries",
+      "The cluster size is expected to change over time, which favours consistent hashing over modulo from the start"
+    ],
+    "whenNotToUse": [
+      "The dataset and load comfortably fit one well-replicated node — partitioning only adds cross-shard complexity with no gain",
+      "The dominant queries are cross-entity joins or aggregates that don't align with any single partition key"
+    ]
+  },
+  "replication": {
+    "tagline": "Keeping copies of data on multiple nodes for read scale and failover, at the cost of replica lag",
+    "definition": "Replication maintains multiple copies of the same data on different nodes, typically with one leader accepting writes and one or more followers applying the same changes, either synchronously (a write only succeeds once followers confirm it) or asynchronously (the leader acknowledges immediately and followers catch up afterwards). Followers can serve reads and can be promoted to leader if the current leader fails, at the cost that an asynchronously replicated follower is always some distance behind the leader — its replication lag.",
+    "problem": "A single node can serve only so many reads, and its failure takes the whole dataset down with it. Simply pointing more read traffic at a lone node doesn't scale past its hardware limits, and without a second copy of the data anywhere, a disk failure or crash is unrecoverable. Naively reading from 'a copy' of the data without accounting for how far behind that copy might be produces silently wrong answers under load, exactly when the extra read capacity is needed most.",
+    "solution": "Replicate data to followers and route reads across them to scale read throughput and survive node loss, but track each follower's replication lag and only serve reads that can tolerate it — falling back to the leader when no follower is fresh enough. The example routes a read to whichever replica has the least lag under a configured budget, and reads from the leader directly when every replica is lagging too far behind.",
+    "code": "// Route reads to a replica, but only if it isn't lagging past an acceptable\n// budget — otherwise fall back to the leader for a fresh read.\ninterface Replica { lagMs(): number; read(key: string): string | undefined; }\ninterface Leader { read(key: string): string | undefined; }\n\nclass LagAwareReadRouter {\n  constructor(\n    private leader: Leader,\n    private replicas: Replica[],\n    private maxLagMs = 1000,\n  ) {}\n\n  read(key: string): string | undefined {\n    const fresh = this.replicas\n      .filter((r) => r.lagMs() <= this.maxLagMs)\n      .sort((a, b) => a.lagMs() - b.lagMs());\n\n    if (fresh.length === 0) {\n      // Every replica is lagging too far behind — read the source of truth.\n      return this.leader.read(key);\n    }\n    return fresh[0].read(key);\n  }\n}",
+    "pros": [
+      "Read replicas absorb read traffic away from the leader, scaling read throughput independently of writes",
+      "A follower can take over as leader if the current leader fails, giving the system availability during node loss",
+      "Geographically distributed replicas put a copy of the data close to distant users, cutting read latency"
+    ],
+    "cons": [
+      "Asynchronous replication means followers lag, so a read routed to a lagging replica can return stale data",
+      "Failover is not instant or free: detecting a dead leader and promoting a follower takes time and can briefly lose unreplicated writes",
+      "More replicas means more write fan-out and more nodes to monitor for lag, disk space, and drift"
+    ],
+    "tradeoffs": [
+      "Synchronous replication keeps followers fresh but adds write latency, and can block writes if a follower is slow or down; asynchronous replication is fast but risks stale reads and lost writes on failover",
+      "Routing reads to the nearest or least-loaded replica improves latency and throughput at the cost of consistency guarantees on those reads",
+      "More replicas improve read capacity and fault tolerance but multiply write amplification and operational surface area"
+    ],
+    "whenToUse": [
+      "Read load is much higher than write load and a single node can't serve all of it",
+      "The system needs to survive the loss of a node without losing availability",
+      "Users are geographically spread and read latency from a single region is unacceptable"
+    ],
+    "whenNotToUse": [
+      "The workload is write-heavy and reads are rare — replicas mostly add write fan-out with little payoff",
+      "The feature needs a guaranteed-fresh read on every request and cannot tolerate any lag — read from the leader instead"
+    ]
+  },
+  "consensus": {
+    "tagline": "Getting a majority of unreliable nodes to agree on one fact, safely, even if some of them fail",
+    "definition": "Consensus protocols (Paxos, Raft, and their derivatives) let a group of nodes agree on a single value or sequence of decisions — such as who the current leader is, or what the next committed log entry should be — despite node crashes, restarts, and message delays, as long as a majority of the group is reachable. Systems like etcd and ZooKeeper expose consensus as a lock or coordination service, commonly used to elect a leader and to hand out a fencing token: a number that only increases, so any two lease holders can be strictly ordered.",
+    "problem": "A distributed lock built on a single point of truth is fragile: a process can believe it holds the lock and act as leader long after its lease has actually expired, for example because it stalled in a long garbage-collection pause or was cut off by a network delay. When it finally resumes and writes, nothing stops it from clobbering data that the rightful new leader — elected in the meantime — has already written, because the lock alone carries no proof of who is current.",
+    "solution": "Use a consensus-backed lock service to hand out a monotonically increasing fencing token with every lease, and make every write carry that token so storage can reject any write whose token is older than the last one it has already accepted. This turns 'I believe I hold the lock' into a value storage can verify cheaply, closing the stalled-leader class of bugs that a plain mutual-exclusion lock cannot close on its own.",
+    "code": "// A consensus-backed lock service (Raft/Paxos under the hood, e.g. etcd,\n// ZooKeeper) hands out a monotonically increasing fencing token with every\n// lease. Storage rejects any write carrying a token older than the last\n// one it has seen — so a stalled \"leader\" that wakes up late can't\n// corrupt data even though it still thinks it holds the lock.\ninterface LockService { acquire(name: string): { token: number }; }\ninterface GuardedStorage { write(token: number, value: string): void; }\n\nclass FencedWriter {\n  constructor(private lock: LockService, private storage: GuardedStorage) {}\n\n  writeAsLeader(value: string): void {\n    const { token } = this.lock.acquire('leader-election'); // token from consensus\n    // Even if this process pauses here for a long GC/network stall and a\n    // new leader is elected with a higher token, this write will be\n    // rejected by storage once it finally goes out — never silently applied.\n    this.storage.write(token, value);\n  }\n}\n\nclass InMemoryGuardedStorage implements GuardedStorage {\n  private lastToken = 0;\n  write(token: number, value: string): void {\n    if (token < this.lastToken) throw new Error(`stale write rejected: token ${token} < ${this.lastToken}`);\n    this.lastToken = token;\n    // ...persist value...\n  }\n}",
+    "pros": [
+      "Gives a distributed system a single agreed-upon fact — who is leader, what value was committed — even though no node can fully trust its own clock or a bare lock's mutual exclusion alone",
+      "Fencing tokens turn 'I believe I hold the lock' into a verifiable, monotonically increasing proof that storage can check with one comparison",
+      "Consensus protocols tolerate a minority of node failures without losing agreement, unlike a single coordinator"
+    ],
+    "cons": [
+      "Every agreed decision requires a round of communication with a majority of nodes, adding latency compared to a purely local decision",
+      "A consensus group needs a majority to make progress at all, so it stalls if it loses that majority even while some minority nodes are healthy",
+      "Correct implementations of Raft or Paxos are notoriously subtle; hand-rolling one is a common source of production data-loss bugs"
+    ],
+    "tradeoffs": [
+      "Consensus buys a single, globally agreed fact at the cost of a majority round-trip on every decision — far more expensive than an uncoordinated write",
+      "A fencing token adds one integer comparison to every write, in exchange for closing the stalled-leader class of bugs a plain lock cannot close",
+      "Relying on an external consensus service such as etcd or ZooKeeper offloads the hard part but makes that service's availability a dependency for every leader election"
+    ],
+    "whenToUse": [
+      "Electing a single leader or coordinator in a distributed system — who gets to write, who owns a partition",
+      "Any time a lock or lease grants exclusivity over a resource that a stalled or GC-paused holder could otherwise corrupt",
+      "Committing a value every node must agree on before proceeding, such as a cluster configuration change"
+    ],
+    "whenNotToUse": [
+      "A single process, or a system with one obvious source of truth, doesn't need agreement between multiple nodes",
+      "High-throughput, low-latency operations that can tolerate eventual consistency shouldn't be routed through a consensus round for every write — reserve it for the rare coordination decision"
+    ]
   }
 };
 
@@ -3317,5 +3503,191 @@ export const questionProse: Record<string, QuestionProse> = {
       "core"
     ],
     "explanation": "The canonical term is \"hot path\" — the frequently executed code, identified by measurement, where optimization actually pays off. \"Cold\" paths run rarely and aren't worth optimizing, a \"critical path\" is a dependency-scheduling concept, and \"core\" describes central modules rather than execution frequency."
+  },
+  "data-cap-theorem-1": {
+    "prompt": "According to the CAP theorem, what must a distributed data store trade off when a network partition occurs?",
+    "options": [
+      "Consistency (every read sees the latest write) versus availability (every request gets a non-error response), since partition tolerance itself cannot be given up on a real network",
+      "Consistency versus partition tolerance, because availability is always guaranteed by client-side retries",
+      "Latency versus throughput, since CAP is fundamentally about performance under load",
+      "Security versus usability, since encrypting replicated data slows down consensus"
+    ],
+    "explanation": "CAP holds during a partition: a store can't give both a guaranteed-fresh answer and a guaranteed non-error answer to every request on every side of the split, and partition tolerance isn't optional on a real network with real failures. The second option confuses availability with a retry strategy — retries don't restore a response the theorem says can't exist during the partition. The third mistakes CAP for a performance model; that trade-off is closer to what PACELC adds on top of CAP. The fourth invents a trade-off CAP says nothing about."
+  },
+  "data-cap-theorem-2": {
+    "prompt": "A team picks strict consistency (CP) for a shopping-cart service so it stays correct during a network partition. What is the direct cost of that choice?",
+    "options": [
+      "During a partition, the minority side must refuse requests or block until it can reach a quorum, so some users see errors or timeouts",
+      "The service becomes eventually consistent and silently returns stale carts",
+      "The service loses partition tolerance entirely and crashes on any network hiccup",
+      "There is no cost — CP gives both instant answers and always-fresh data at all times"
+    ],
+    "explanation": "Choosing CP means the side of the partition that can't reach a quorum has to stop answering rather than answer with possibly-wrong data — that unavailability, not silent staleness, is the price. The second option describes the AP choice, the opposite of what was picked. The third overstates the failure mode: CP systems keep running on the majority side, they just refuse service on the minority side. The fourth ignores that CAP is precisely about there being no free choice during a partition."
+  },
+  "data-cap-theorem-3": {
+    "prompt": "This client falls back to a replica and marks the reading `stale` when the primary times out. Which CAP choice does this represent, and why?",
+    "code": "class PartitionAwareClient {\n  async read(): Promise<Reading> {\n    try {\n      return await this.withTimeout(this.primary.read(), this.timeoutMs);\n    } catch {\n      const r = await this.replica.read();\n      return { ...r, stale: true };\n    }\n  }\n}",
+    "options": [
+      "AP — it sacrifices strict consistency to keep answering requests during what looks like a partition",
+      "CP — it blocks the caller until the primary becomes reachable again",
+      "It sidesteps CAP entirely, since a client-side timeout is not the same thing as a network partition",
+      "CA — it guarantees both full consistency and full availability at the same time"
+    ],
+    "explanation": "Serving the replica's last known value instead of blocking is the availability choice: the client keeps answering, at the cost of a guaranteed-fresh answer, and marks that cost explicitly with `stale`. The second option describes the opposite behaviour — blocking is the CP choice, not what this code does. The third is wrong: from the client's point of view an unreachable primary within the timeout is indistinguishable from, and is treated as, a partition. The fourth describes a combination CAP proves impossible to sustain across a real partition."
+  },
+  "data-consistency-models-1": {
+    "prompt": "What does 'read-your-writes' consistency guarantee, and what does it not guarantee?",
+    "options": [
+      "That a client sees its own prior writes on subsequent reads, with no guarantee about what other clients see or when",
+      "That every client, everywhere, sees every write in the same global order (linearizability)",
+      "That writes eventually reach all replicas, with no guarantee about which client sees what first",
+      "That reads are always served from the primary and never from a replica"
+    ],
+    "explanation": "Read-your-writes is a session guarantee: it only promises a client won't see its own writes disappear, saying nothing about cross-client ordering. The second option describes linearizability, a much stronger and more expensive guarantee. The third describes plain eventual consistency, which is weaker than read-your-writes and doesn't protect a client from its own write vanishing. The fourth describes a routing policy, not a consistency model — read-your-writes can be satisfied by routing to any sufficiently caught-up replica, not only the primary."
+  },
+  "data-consistency-models-2": {
+    "prompt": "Why might a team deliberately choose eventual consistency over linearizability for a 'likes' counter, but not for an account balance?",
+    "options": [
+      "Eventual consistency trades a small, mostly harmless staleness window for lower latency and higher availability — acceptable for a counter, unacceptable for money",
+      "Eventual consistency is strictly more correct in every case, so it should always be preferred when available",
+      "Linearizability is only implementable for numeric fields, so a balance has no other option",
+      "There is no real difference between the two models — they return identical results under any workload"
+    ],
+    "explanation": "The choice is a cost/benefit call: a slightly stale like count is invisible to users, while a slightly stale balance can mean spending money that isn't there, so the stronger, more expensive guarantee is worth it only for the balance. The second option is backwards — eventual consistency is weaker, not more correct. The third invents a restriction that doesn't exist; linearizability applies to any data type. The fourth denies the entire premise of consistency models existing."
+  },
+  "data-consistency-models-3": {
+    "prompt": "The code routes a client's read only to a replica whose version is at least the client's last write. Which anomaly does this specifically prevent?",
+    "code": "class SessionConsistentReader {\n  private lastWrittenVersion = 0;\n  recordWrite(version: number): void {\n    this.lastWrittenVersion = Math.max(this.lastWrittenVersion, version);\n  }\n  read(key: string, replicas: Replica[]): string | undefined {\n    const caughtUp = replicas.find((r) => r.version() >= this.lastWrittenVersion);\n    if (!caughtUp) throw new Error('no replica is caught up yet');\n    return caughtUp.read(key);\n  }\n}",
+    "options": [
+      "The client's own recent write appearing to vanish because the read landed on a replica that hasn't caught up yet",
+      "Two different clients disagreeing about the final value forever",
+      "A write being lost entirely before it reaches any replica",
+      "A deadlock between two concurrent transactions"
+    ],
+    "explanation": "By refusing to read from a replica that hasn't reached the client's last write version, the code guarantees the client always sees its own writes — the read-your-writes guarantee. It does not resolve permanent cross-client disagreement (that needs a conflict-resolution or convergence mechanism), does not protect against a write never reaching any replica (a durability/replication-factor concern), and has nothing to do with deadlocks, which arise from lock ordering, not read routing."
+  },
+  "data-quorum-1": {
+    "prompt": "Why must R + W be greater than N for quorum reads and writes to guarantee seeing the latest acknowledged write?",
+    "options": [
+      "It forces every read set to overlap with every write set in at least one node, so at least one replica the read touches has the latest write",
+      "It guarantees that all N replicas are always fully in sync at every moment",
+      "It is an arbitrary convention with no effect on correctness, only on performance",
+      "It ensures writes are applied in the same order on every node"
+    ],
+    "explanation": "R + W > N is a pigeonhole argument: with N nodes total, a read set of size R and a write set of size W that together exceed N cannot both avoid a common node, so the read must hit at least one node that has the latest write. It does not force all N replicas to be in sync — that's a stronger, unnecessary property. It is not arbitrary; violating it (R + W <= N) breaks the read-sees-latest-write guarantee. And it says nothing about write ordering across nodes, which is a separate concern from set overlap."
+  },
+  "data-quorum-2": {
+    "prompt": "A team sets W=1 and R=1 on a 3-node quorum store to maximize speed. What do they give up?",
+    "options": [
+      "The R + W > N guarantee (1 + 1 is not greater than 3), so a read can land on a node that hasn't seen the latest write",
+      "Nothing — small R and W values only affect throughput, never correctness",
+      "The ability to tolerate any node failure at all",
+      "Read repair, which only functions when R + W > N"
+    ],
+    "explanation": "With W=1 and R=1 on N=3, R + W = 2 <= 3, so a read set and a write set can miss each other entirely, and the client can read stale data with no guarantee otherwise. The second option is exactly what the setup sacrifices. The third overstates it: the system can still tolerate node failures, it just no longer guarantees read-after-write freshness. The fourth is also wrong — read repair can still run whenever a read happens to touch a stale replica, it just isn't guaranteed to run before every read returns the latest value."
+  },
+  "data-quorum-3": {
+    "prompt": "After collecting R responses, this code writes the latest version back to any node that answered with an older one. What is this technique called, and what does it achieve?",
+    "code": "read(key: string): string | undefined {\n  const responses = this.nodes.slice(0, this.r).map((n) => ({ node: n, res: n.read(key) }));\n  const latest = responses.reduce((best, cur) =>\n    (cur.res?.version ?? -1) > (best.res?.version ?? -1) ? cur : best);\n  responses\n    .filter((r) => (r.res?.version ?? -1) < latest.res!.version)\n    .forEach((r) => r.node.write(key, latest.res!.value, latest.res!.version));\n  return latest.res?.value;\n}",
+    "options": [
+      "Read repair — it lets stale replicas catch up opportunistically, so future reads need less repair",
+      "Two-phase commit — it guarantees atomicity of the write across all nodes",
+      "Leader election — it decides which node becomes the primary",
+      "Sharding — it splits the keyspace across nodes"
+    ],
+    "explanation": "Pushing the freshest value to nodes that answered with a stale one, during an ordinary read, is read repair — it heals replicas gradually instead of requiring a separate repair process. It has nothing to do with two-phase commit, which coordinates a single atomic write across participants before it is applied anywhere. It is not leader election, since there's no primary being chosen here. And it is not sharding, which is about partitioning keys across nodes, not repairing stale copies of the same key."
+  },
+  "data-partitioning-1": {
+    "prompt": "What is the main operational problem with sharding data using `id % N`?",
+    "options": [
+      "Adding or removing a node changes N, which remaps almost every key to a different shard, forcing a near-total data reshuffle",
+      "It cannot distribute load evenly under any circumstances",
+      "It requires a central coordinator to serve every read",
+      "It only works with numeric ids and can never be adapted to string keys"
+    ],
+    "explanation": "Because the shard assignment is a direct function of N, changing the node count changes the assignment for almost every key at once, which is exactly the expensive reshuffle consistent hashing is designed to avoid. Modulo sharding actually distributes evenly for well-hashed ids, so the claim about uneven distribution is false. It needs no central coordinator — routing is a pure function each node can compute locally. And string keys can be hashed to a number just as well as using a numeric id directly."
+  },
+  "data-partitioning-2": {
+    "prompt": "Consistent hashing is usually preferred over `id % N` for clusters expected to grow over time. What do you give up to get that benefit?",
+    "options": [
+      "Simplicity — you need a hash ring with virtual nodes instead of one modulo operation, in exchange for localized data movement on resharding",
+      "Nothing — consistent hashing is strictly simpler than a modulo operation in every respect",
+      "The ability to add or remove nodes from the cluster at all",
+      "Even key distribution, which only a modulo scheme can guarantee"
+    ],
+    "explanation": "Consistent hashing trades a bit of implementation and conceptual complexity — a ring, virtual nodes, lookups — for the much lower cost of resharding when the cluster changes size. It's not simpler in every respect; the ring is genuinely more machinery than one modulo. It doesn't remove the ability to resize the cluster — the opposite is true, that's the whole point. And even distribution is achievable with consistent hashing too, via enough virtual nodes per physical node — modulo has no monopoly on it."
+  },
+  "data-partitioning-3": {
+    "prompt": "Why does adding a node to this ring only move a fraction of the keys, unlike `id % N`?",
+    "code": "class ConsistentHashRing {\n  private ring: { hash: number; node: string }[] = [];\n  addNode(node: string, points = 3): void {\n    for (let i = 0; i < points; i++) {\n      this.ring.push({ hash: this.hash(`${node}#${i}`), node });\n    }\n    this.ring.sort((a, b) => a.hash - b.hash);\n  }\n  shardFor(key: string): string {\n    const h = this.hash(key);\n    return (this.ring.find((p) => p.hash >= h) ?? this.ring[0]).node;\n  }\n}",
+    "options": [
+      "A key only moves if the new node lands between it and its current owner on the ring — every other key's nearest clockwise node is unchanged",
+      "Because the ring recomputes every key's hash from scratch whenever a node is added",
+      "Because virtual points make the ring immune to any data movement whatsoever",
+      "Because the ring is only ever allowed to hold exactly one node"
+    ],
+    "explanation": "Consistent hashing only reassigns the keys that fall between the new node's ring position and its predecessor's — everyone else's nearest clockwise node doesn't change, which is exactly why the migration is local instead of global. Key hashes aren't recomputed on node changes; only the node-to-key assignment shifts for the affected slice. Virtual points smooth load distribution, they don't eliminate data movement entirely — some movement is unavoidable and desired when a node joins to take its share. And the ring supports any number of nodes; that's the entire point of using it for a growable cluster."
+  },
+  "data-replication-1": {
+    "prompt": "Why can a read routed to a replica return a different, older answer than the same read routed to the leader?",
+    "options": [
+      "Replication to followers is typically asynchronous, so a follower can lag behind the leader by some amount of time",
+      "Replicas store a completely different schema from the leader",
+      "Replicas only accept writes and never serve reads at all",
+      "The leader and replicas are designed to always disagree, regardless of replication mode"
+    ],
+    "explanation": "Asynchronous replication acknowledges a write at the leader before every follower has applied it, so a follower can legitimately be some milliseconds-to-seconds behind — that lag is exactly why its reads can be stale. Replicas mirror the leader's schema, they don't diverge structurally. Serving reads is in fact one of the main reasons to have replicas at all. And agreement is the goal of replication, not disagreement — lag is a side effect of the asynchronous mode, not a design intent."
+  },
+  "data-replication-2": {
+    "prompt": "A team switches from asynchronous to synchronous replication specifically to eliminate stale replica reads. What do they pay for that?",
+    "options": [
+      "Higher write latency, and writes can stall or fail if a synchronous follower is slow or unreachable",
+      "Nothing measurable — synchronous replication has no downside compared to asynchronous",
+      "The complete loss of the ability to fail over to a follower",
+      "A mandatory reduction to exactly one replica"
+    ],
+    "explanation": "Synchronous replication only acknowledges a write once the required followers confirm it, so the leader's write latency is now bounded by the slowest required follower, and a stuck or unreachable follower can block writes entirely. There is a real, well-known cost, so the claim of no downside is false. Failover actually becomes safer with synchronous replication, not impossible, since followers are guaranteed to be caught up. And nothing about synchronous replication limits the replica count to one — it can be applied to as many followers as required for acknowledgment."
+  },
+  "data-replication-3": {
+    "prompt": "Why does this router fall back to the leader instead of just picking the least-lagging replica when every replica exceeds `maxLagMs`?",
+    "code": "class LagAwareReadRouter {\n  read(key: string): string | undefined {\n    const fresh = this.replicas\n      .filter((r) => r.lagMs() <= this.maxLagMs)\n      .sort((a, b) => a.lagMs() - b.lagMs());\n    if (fresh.length === 0) {\n      return this.leader.read(key);\n    }\n    return fresh[0].read(key);\n  }\n}",
+    "options": [
+      "Because the 'least-lagging of a bad set' can still be staler than the caller finds acceptable — the leader is the only node guaranteed current",
+      "Because reading from any replica is always slower than reading from the leader",
+      "Because the leader is the only node ever allowed to serve reads in a replicated system",
+      "Because replicas cannot serve reads while a write is in flight"
+    ],
+    "explanation": "Picking the 'best of a bad bunch' still doesn't satisfy the caller's freshness budget if every replica is over it — only the leader is guaranteed to reflect the latest acknowledged write, which is why the router falls back to it. Replica reads are typically faster, not slower, which is the entire reason to prefer them when they're fresh enough. Replicas routinely serve reads in this pattern — that's their main purpose. And nothing here relates to a write being in flight; the guard is purely about measured lag against a budget."
+  },
+  "data-consensus-1": {
+    "prompt": "What problem does a fencing token solve that a plain distributed lock does not?",
+    "options": [
+      "It stops a leader that stalled (GC pause, network delay) and lost its lock from corrupting shared state once it wakes up, because storage rejects its now-stale token",
+      "It removes the need for any majority of nodes to ever agree on anything",
+      "It makes lock acquisition instantaneous, with zero network round-trips",
+      "It guarantees the lock can never be released by a competing process"
+    ],
+    "explanation": "A plain lock only tells a process it once held exclusivity; it can't stop a process that stalled past its lease from acting later as if it still held it. A monotonically increasing fencing token lets the storage layer reject any write carrying an old token, closing exactly that gap. It doesn't remove the need for majority agreement — the token itself is produced by a consensus-backed service that still needs a majority. It doesn't make acquisition free of round-trips; consensus still requires communication. And it doesn't prevent a competing process from acquiring the lock — quite the opposite, a new holder getting a higher token is the normal, expected case the mechanism is built around."
+  },
+  "data-consensus-2": {
+    "prompt": "Why does every consensus decision, such as a Raft leader election, require a round-trip to a majority of nodes instead of just asking one coordinator?",
+    "options": [
+      "So the agreed fact survives the loss of a minority of nodes — one coordinator's answer can't be trusted alone if that coordinator itself could be wrong, partitioned, or dead",
+      "Because a single coordinator would be just as safe but faster, and the majority round-trip is only a historical convention",
+      "Because consensus protocols are physically unable to count votes from more than one node at a time",
+      "Because a majority round-trip removes the need for any node to persist data to disk"
+    ],
+    "explanation": "Requiring a majority is what makes the decision survive the failure of any minority of nodes, including a coordinator that might itself be partitioned or wrong — a single coordinator's word alone offers no such guarantee. It's not merely convention: replacing the majority check with a single coordinator reintroduces a single point of failure that consensus is specifically designed to remove. Nothing about the protocols prevents counting multiple votes; that's literally what they do. And durability/persistence is a separate concern from the quorum requirement — nodes still need to persist state to survive crashes."
+  },
+  "data-consensus-3": {
+    "prompt": "The old leader stalls, a new leader is elected with a higher fencing token, and the old leader's delayed write finally arrives at storage. What happens, and why?",
+    "code": "class InMemoryGuardedStorage implements GuardedStorage {\n  private lastToken = 0;\n  write(token: number, value: string): void {\n    if (token < this.lastToken) throw new Error('stale write rejected');\n    this.lastToken = token;\n  }\n}",
+    "options": [
+      "Storage rejects it, because its token is lower than the last token storage has already accepted from the new leader",
+      "Storage accepts it silently, overwriting the new leader's data, because writes are applied in arrival order",
+      "The lock service retroactively cancels the new leader's election to let the old write through",
+      "The write blocks forever, waiting for the old leader to reacquire the lock"
+    ],
+    "explanation": "The guard compares the incoming token against the last accepted one and rejects anything older, which is exactly the case here — the old leader's token is smaller than the new leader's already-applied token. Arrival order plays no role; that's precisely the bug fencing tokens are designed to prevent. Consensus decisions like a completed leader election aren't retroactively undone by a late write. And the code throws immediately rather than blocking — there's no waiting involved."
   }
 };
