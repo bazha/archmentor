@@ -11,7 +11,7 @@
    ============================================================ */
 
 :root {
-  --surface: 246 247 250;        /* #F6F7FA n8n canvas grey    */
+  --surface: 240 249 247;        /* #F0F9F7 pale mint canvas   */
   --surface-raised: 255 255 255; /* #FFFFFF floating cards     */
   --surface-muted: 244 245 249;  /* #F4F5F9 inset bg           */
   --surface-code: 246 247 250;   /* #F6F7FA code panel         */
