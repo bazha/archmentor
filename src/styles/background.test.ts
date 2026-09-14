@@ -26,6 +26,17 @@ describe('n8n-style grey canvas with dot grid', () => {
     expect(avg(raised) - avg(surface)).toBeGreaterThanOrEqual(5);
   });
 
+  it('light-mode inset surfaces and borders share the canvas mint hue family, not blue-grey', () => {
+    const { surface, 'surface-muted': surfaceMuted, 'surface-code': surfaceCode, line } = tokens(':root');
+    for (const [name, [r, g, b]] of Object.entries({ 'surface-muted': surfaceMuted, 'surface-code': surfaceCode, line })) {
+      expect(g - r, `${name}: green - red`).toBeGreaterThan(0);
+      expect(b - r, `${name}: blue - red`).toBeGreaterThan(0);
+    }
+    // An inset surface must read as recessed: darker than the canvas it sits on.
+    const avg = (c: RGB) => (c[0] + c[1] + c[2]) / 3;
+    expect(avg(surfaceMuted)).toBeLessThan(avg(surface));
+  });
+
   it('body paints a dot grid over the canvas in both themes', () => {
     const bodyRule = css.match(/body\s*\{([^}]*)\}/)?.[1] ?? '';
     expect(bodyRule).toMatch(/background-image:/);
