@@ -611,7 +611,7 @@ git commit -m "feat(worker): Trello webhook handler dispatching trello-agent.yml
 
 **Interfaces:**
 - Consumes: `index.ts` и `Env` из Task 3 — имена в `[vars]` и имена секретов обязаны совпадать с полями `Env` буква в букву.
-- Produces: живой URL `https://trello-webhook.bazha.workers.dev` и значение `WEBHOOK_TOKEN`, которое понадобится в Task 5 для `callbackURL`.
+- Produces: живой URL `https://trello-webhook.bazhanau.workers.dev` и значение `WEBHOOK_TOKEN`, которое понадобится в Task 5 для `callbackURL`.
 
 Аккаунт Cloudflare уже создан (`bazhanau.arthur@gmail.com`), `wrangler login` пройден.
 
@@ -682,7 +682,7 @@ Expected: `moved: 500` (фильтр сказал «да», dispatch ушёл в
 ! CLOUDFLARE_ACCOUNT_ID=86e23b29daf9f14757296b5485cdfd59 npx wrangler deploy --config workers/trello-webhook/wrangler.toml
 ```
 
-Wrangler спросит workers.dev-субдомен — ввести **`bazha`**. Выбор фактически необратим: смена ломает все `workers.dev`-адреса аккаунта. В конце вывода будет URL — ожидаем `https://trello-webhook.bazha.workers.dev`.
+Субдомен регистрируется в дашборде (`…/workers/subdomain`) — зарегистрирован **`bazhanau`**; после регистрации деплой надо повторить, иначе маршрут не привязывается. Выбор фактически необратим: смена ломает все `workers.dev`-адреса аккаунта. В конце вывода будет URL — ожидаем `https://trello-webhook.bazhanau.workers.dev`.
 
 Между этим шагом и Step 6 эндпоинт живёт, но безопасен: `WEBHOOK_TOKEN` не задан, `expected === ''`, всё кроме HEAD получает 404.
 
@@ -723,10 +723,10 @@ Expected: три имени — `GH_DISPATCH_TOKEN`, `TRELLO_INPROGRESS_LIST_ID`
 - [ ] **Step 8: Проверить живой эндпоинт**
 
 ```bash
-curl -sI  "https://trello-webhook.bazha.workers.dev/trello/<WEBHOOK_TOKEN>" | head -1
+curl -sI  "https://trello-webhook.bazhanau.workers.dev/trello/<WEBHOOK_TOKEN>" | head -1
 curl -s -o /dev/null -w '%{http_code}\n' -X POST \
   -H 'content-type: application/json' -d '{"action":{"type":"updateCard","data":{}}}' \
-  "https://trello-webhook.bazha.workers.dev/trello/definitely-wrong"
+  "https://trello-webhook.bazhanau.workers.dev/trello/definitely-wrong"
 ```
 Expected: `HTTP/2 200` на HEAD; `404` на POST по неверному пути.
 
@@ -779,7 +779,7 @@ Expected: `200`.
 
 ```bash
 curl -s -X POST "https://api.trello.com/1/webhooks?key=$TRELLO_KEY&token=$TRELLO_TOKEN" \
-  --data-urlencode "callbackURL=https://trello-webhook.bazha.workers.dev/trello/<WEBHOOK_TOKEN>" \
+  --data-urlencode "callbackURL=https://trello-webhook.bazhanau.workers.dev/trello/<WEBHOOK_TOKEN>" \
   --data-urlencode "idModel=6a60afe8fa78c7079643cd70" \
   --data-urlencode "description=trello-agent via cloudflare worker" | jq '{id, active, callbackURL}'
 ```
@@ -859,7 +859,7 @@ npx wrangler tail --config workers/trello-webhook/wrangler.toml
 
 - [ ] **Step 5: Перезаписать память проекта**
 
-Заменить содержимое `memory/n8n-selfhosted-trello-automation.md` (frontmatter `name`/`description`/`metadata` сохранить, `description` обновить) так, чтобы там было: стек — Cloudflare Worker `workers/trello-webhook`, URL `https://trello-webhook.bazha.workers.dev` (без токена пути), три секрета и их назначение, **дата истечения PAT** из Task 4 Step 5, команда деплоя с `CLOUDFLARE_ACCOUNT_ID`, `account_id` `86e23b29daf9f14757296b5485cdfd59`, факт что Trello-креды теперь в `~/.config/trello/env`, готча про `listAfter`, и что n8n не осталось ни в каком виде. Строку в `MEMORY.md` обновить под новое описание.
+Заменить содержимое `memory/n8n-selfhosted-trello-automation.md` (frontmatter `name`/`description`/`metadata` сохранить, `description` обновить) так, чтобы там было: стек — Cloudflare Worker `workers/trello-webhook`, URL `https://trello-webhook.bazhanau.workers.dev` (без токена пути), три секрета и их назначение, **дата истечения PAT** из Task 4 Step 5, команда деплоя с `CLOUDFLARE_ACCOUNT_ID`, `account_id` `86e23b29daf9f14757296b5485cdfd59`, факт что Trello-креды теперь в `~/.config/trello/env`, готча про `listAfter`, и что n8n не осталось ни в каком виде. Строку в `MEMORY.md` обновить под новое описание.
 
 - [ ] **Step 6: Коммит**
 

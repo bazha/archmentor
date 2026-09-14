@@ -45,7 +45,7 @@ Docker-волюмом.
    URL складывается как `https://<name из wrangler.toml>.<субдомен аккаунта>.workers.dev`.
    Субдомен выбирается один раз на аккаунт при первом деплое и считается постоянным (смена ломает
    все `workers.dev`-адреса аккаунта), поэтому берём нейтральный, по нику, а не по имени проекта:
-   **`bazha`**, итого `https://trello-webhook.bazha.workers.dev`. Аккаунт Cloudflare уже создан
+   **`bazhanau`**, итого `https://trello-webhook.bazhanau.workers.dev`. Аккаунт Cloudflare уже создан
    (`bazhanau.arthur@gmail.com`), `wrangler login` пройден, `account_id` — в памяти проекта.
    Cloudflare Tunnel (старый «вариант C») отвергнут именно потому, что требовал бы домена.
 
