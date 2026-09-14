@@ -9,3 +9,7 @@ dist/
 .trello-result.json
 .fix-context.json
 .fix-result.json
+
+# wrangler: local development variables and its build cache
+.dev.vars
+.wrangler/

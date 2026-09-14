@@ -1,8 +1,9 @@
 name: Trello task agent
 
 on:
-  # n8n triggers this event-driven via workflow_dispatch on card → In Progress.
-  # The schedule is only a rare safety-net fallback in case n8n is down.
+  # A Cloudflare Worker (workers/trello-webhook) triggers this event-driven via
+  # workflow_dispatch on card → In Progress and on a user comment.
+  # The schedule is only a rare safety-net fallback in case the Worker or the GitHub API is down.
   schedule:
     - cron: "0 * * * *"   # hourly fallback (GitHub cron is best-effort; may lag)
   workflow_dispatch: {}
