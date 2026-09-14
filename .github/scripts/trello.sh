@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # Trello helper for the CI task-runner.
-# Subcommands: select-and-claim, finalize, comment, add-label, done.
+# Subcommands: select-and-claim, finalize, comment, add-label, done, health.
 # Requires env: TRELLO_KEY TRELLO_TOKEN TRELLO_BOARD_ID
 #               TRELLO_INPROGRESS_LIST_ID TRELLO_INREVIEW_LIST_ID
-# (done needs only TRELLO_KEY TRELLO_TOKEN TRELLO_DONE_LIST_ID)
+# (done needs only TRELLO_KEY TRELLO_TOKEN TRELLO_DONE_LIST_ID;
+#  health needs TRELLO_KEY TRELLO_TOKEN TRELLO_BOARD_ID TRELLO_DONE_LIST_ID)
 # Writes .trello-card.json (select-and-claim) and reads .trello-result.json (finalize).
 # Logs go to stderr; select-and-claim prints ONLY the selected card id to stdout.
 set -euo pipefail
@@ -25,6 +26,7 @@ add_label()    { "${CURL[@]}" -X POST   "${API}/cards/$1/idLabels?value=$2&$(_au
 remove_label() { "${CURL[@]}" -X DELETE "${API}/cards/$1/idLabels/$2?$(_auth)" >/dev/null || true; }
 comment()      { "${CURL[@]}" -X POST "${API}/cards/$1/actions/comments?$(_auth)" --data-urlencode "text=$2" >/dev/null; }
 move_card()    { "${CURL[@]}" -X PUT  "${API}/cards/$1?idList=$2&$(_auth)" >/dev/null; }
+set_desc()     { "${CURL[@]}" -X PUT  "${API}/cards/$1?$(_auth)" --data-urlencode "desc=$2" >/dev/null; }
 
 AGENT_MARKER="🤖"
 # Latest comment text on a card ("" if none). Used to detect a user reply.
@@ -132,11 +134,53 @@ cmd_done() { # $1 = card id, $2 = PR url — PR merged: card → Done + link com
   log "done: $1"
 }
 
+# The board's own health report. State lives in the card description (rewritten on every
+# run, so a stale timestamp is itself the alarm); a problem additionally gets a comment,
+# which is what actually notifies in Trello.
+HEALTH_CARD_NAME="🫀 Health — board automation"
+
+health_card_id() { # finds the card by name, creates it in Done if missing
+  local id
+  id="$(api_get "/boards/${TRELLO_BOARD_ID}/cards?fields=name" \
+        | jq -r --arg n "$HEALTH_CARD_NAME" 'map(select(.name==$n)) | .[0].id // ""')"
+  if [[ -z "$id" ]]; then
+    id="$("${CURL[@]}" -X POST "${API}/cards?$(_auth)" \
+          --data-urlencode "idList=${TRELLO_DONE_LIST_ID:?TRELLO_DONE_LIST_ID required}" \
+          --data-urlencode "name=${HEALTH_CARD_NAME}" \
+          --data-urlencode "desc=Служебная карточка автоматики. Обновляется health-воркфлоу раз в сутки." \
+          | jq -r '.id')"
+    log "health card created: $id"
+  fi
+  echo "$id"
+}
+
+cmd_health() { # $1 = ok|fail, $2 = detail
+  local state="$1" detail="$2" id stamp
+  id="$(health_card_id)"
+  stamp="$(date -u +'%Y-%m-%d %H:%M UTC')"
+  if [[ "$state" == "ok" ]]; then
+    # Success is silent on purpose: a daily comment would bury the card within a month.
+    set_desc "$id" "✅ Проверено $stamp
+
+$detail"
+    log "health ok: $detail"
+  else
+    set_desc "$id" "❌ Проблема — $stamp
+
+$detail"
+    # The 🤖 prefix is mandatory: the Worker dispatches the agent on any user comment,
+    # so an unmarked health comment would wake the agent on every failure report.
+    comment "$id" "🤖 ⚠️ Health-check: $detail"
+    log "health fail: $detail"
+  fi
+}
+
 case "${1:-}" in
   select-and-claim) cmd_select_and_claim ;;
   finalize)  cmd_finalize  "${2:?card id required}" ;;
   comment)   cmd_comment   "${2:?card id required}" "${3:?text required}" ;;
   add-label) cmd_add_label "${2:?card id required}" "${3:?label name required}" "${4:-red}" ;;
   done)      cmd_done      "${2:?card id required}" "${3:?PR url required}" ;;
-  *) echo "usage: $0 {select-and-claim|finalize <cardId>|comment <cardId> <text>|add-label <cardId> <name> [color]|done <cardId> <prUrl>}" >&2; exit 2 ;;
+  health)    cmd_health    "${2:?ok|fail required}" "${3:?detail required}" ;;
+  *) echo "usage: $0 {select-and-claim|finalize <cardId>|comment <cardId> <text>|add-label <cardId> <name> [color]|done <cardId> <prUrl>|health <ok|fail> <detail>}" >&2; exit 2 ;;
 esac
