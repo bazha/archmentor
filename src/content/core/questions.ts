@@ -1400,5 +1400,155 @@ export const questionsCore: QuestionCore[] = [
     "correctIndex": 0,
     "conceptId": "consensus",
     "codeLang": "typescript"
+  },
+  {
+    "id": "data-idempotency-1",
+    "type": "concept",
+    "category": "data",
+    "grade": "middle",
+    "correctIndex": 0,
+    "conceptId": "idempotency"
+  },
+  {
+    "id": "data-idempotency-2",
+    "type": "tradeoff",
+    "category": "data",
+    "grade": "middle",
+    "correctIndex": 0,
+    "conceptId": "idempotency"
+  },
+  {
+    "id": "data-idempotency-3",
+    "type": "concept",
+    "category": "data",
+    "grade": "middle",
+    "correctIndex": 0,
+    "conceptId": "idempotency",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "data-transactional-outbox-1",
+    "type": "concept",
+    "category": "data",
+    "grade": "senior",
+    "correctIndex": 0,
+    "conceptId": "transactional-outbox"
+  },
+  {
+    "id": "data-transactional-outbox-2",
+    "type": "tradeoff",
+    "category": "data",
+    "grade": "senior",
+    "correctIndex": 0,
+    "conceptId": "transactional-outbox"
+  },
+  {
+    "id": "data-transactional-outbox-3",
+    "type": "concept",
+    "category": "data",
+    "grade": "senior",
+    "correctIndex": 0,
+    "conceptId": "transactional-outbox",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "data-delivery-semantics-1",
+    "type": "concept",
+    "category": "data",
+    "grade": "senior",
+    "correctIndex": 0,
+    "conceptId": "delivery-semantics"
+  },
+  {
+    "id": "data-delivery-semantics-2",
+    "type": "tradeoff",
+    "category": "data",
+    "grade": "senior",
+    "correctIndex": 0,
+    "conceptId": "delivery-semantics"
+  },
+  {
+    "id": "data-delivery-semantics-3",
+    "type": "concept",
+    "category": "data",
+    "grade": "senior",
+    "correctIndex": 0,
+    "conceptId": "delivery-semantics",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "data-optimistic-locking-1",
+    "type": "concept",
+    "category": "data",
+    "grade": "middle",
+    "correctIndex": 0,
+    "conceptId": "optimistic-locking"
+  },
+  {
+    "id": "data-optimistic-locking-2",
+    "type": "tradeoff",
+    "category": "data",
+    "grade": "middle",
+    "correctIndex": 0,
+    "conceptId": "optimistic-locking"
+  },
+  {
+    "id": "data-optimistic-locking-3",
+    "type": "concept",
+    "category": "data",
+    "grade": "middle",
+    "correctIndex": 0,
+    "conceptId": "optimistic-locking",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "data-backpressure-1",
+    "type": "concept",
+    "category": "data",
+    "grade": "senior",
+    "correctIndex": 0,
+    "conceptId": "backpressure"
+  },
+  {
+    "id": "data-backpressure-2",
+    "type": "tradeoff",
+    "category": "data",
+    "grade": "senior",
+    "correctIndex": 0,
+    "conceptId": "backpressure"
+  },
+  {
+    "id": "data-backpressure-3",
+    "type": "concept",
+    "category": "data",
+    "grade": "senior",
+    "correctIndex": 0,
+    "conceptId": "backpressure",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "data-change-data-capture-1",
+    "type": "concept",
+    "category": "data",
+    "grade": "senior",
+    "correctIndex": 0,
+    "conceptId": "change-data-capture"
+  },
+  {
+    "id": "data-change-data-capture-2",
+    "type": "tradeoff",
+    "category": "data",
+    "grade": "senior",
+    "correctIndex": 0,
+    "conceptId": "change-data-capture"
+  },
+  {
+    "id": "data-change-data-capture-3",
+    "type": "concept",
+    "category": "data",
+    "grade": "senior",
+    "correctIndex": 0,
+    "conceptId": "change-data-capture",
+    "codeLang": "typescript"
   }
 ];

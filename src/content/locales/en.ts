@@ -1946,6 +1946,192 @@ export const conceptProse: Record<string, ConceptProse> = {
       "A single process, or a system with one obvious source of truth, doesn't need agreement between multiple nodes",
       "High-throughput, low-latency operations that can tolerate eventual consistency shouldn't be routed through a consensus round for every write — reserve it for the rare coordination decision"
     ]
+  },
+  "idempotency": {
+    "tagline": "Retrying the same request twice must have the same effect as sending it once.",
+    "definition": "An idempotent operation produces the same result no matter how many times it's applied. For a network API this means a client can safely retry a request after a timeout or a dropped connection without risking the underlying side effect — a card charge, an order, an outbound email — happening twice. The usual implementation is an idempotency key: a unique value the client generates once per logical operation and resends on every retry, paired with a server-side store that remembers, for each key, whether the operation has already run and what response it produced.",
+    "problem": "Networks fail at the worst possible moment: after the server has already processed the request but before its response reaches the client. From the client's side, a timeout is indistinguishable from 'the server never received this' — the only safe-looking move is to retry. But if the first attempt actually succeeded, a naive retry re-executes the same side effect: a second charge on the same card, a duplicate order for the same cart, a second copy of the same email. The client cannot tell these two situations apart on its own; the server has to be the one that remembers what already happened.",
+    "solution": "The client generates an idempotency key once per logical operation — not once per HTTP attempt — and attaches it to every retry of that operation. Before doing any work, the server checks a store keyed by that value: if the key has been seen, it returns the previously stored result without re-running the side effect; if not, it performs the operation and records the result under that key. The side effect and the record of having performed it must be written together, in the same local transaction, so a crash between the two can't leave an effect that happened with no key recorded, or a key recorded for an effect that never actually committed.",
+    "code": "// Idempotency-key store: dedupe the side effect on retry, not the request itself.\ninterface StoredResult { status: number; body: unknown; }\n\nclass IdempotencyStore {\n  private results = new Map<string, StoredResult>();\n\n  async run(key: string, fn: () => Promise<StoredResult>): Promise<StoredResult> {\n    const cached = this.results.get(key);\n    if (cached) return cached; // retry: same key, same effect — skip re-execution\n\n    const result = await fn();\n    this.results.set(key, result);\n    return result;\n  }\n}\n\nasync function chargeCard(store: IdempotencyStore, key: string, amountCents: number) {\n  return store.run(key, async () => {\n    const charge = await paymentGateway.charge(amountCents);\n    return { status: 200, body: charge };\n  });\n}",
+    "pros": [
+      "Retries become safe by construction, so clients and network libraries can retry aggressively on timeouts without risking a duplicate charge, order, or message.",
+      "Moves the correctness burden off the transport layer — you don't need the network or the broker to guarantee exactly-once delivery, only at-least-once plus a key.",
+      "Composes directly with at-least-once delivery, so a webhook handler or queue consumer becomes safe to redeliver without extra machinery."
+    ],
+    "cons": [
+      "Needs its own storage (a key table or cache) with a retention/TTL policy — a store that never expires keys grows forever, and one with too short a TTL stops deduping after the window closes.",
+      "The key must scope exactly one logical operation; reusing a key for a different payload has to be rejected as a conflict, or two unrelated requests silently collapse into one.",
+      "Doesn't make an operation idempotent on its own — the side effect still has to be guarded by the same store, or a retry that races past the check before the first attempt finishes can still duplicate work."
+    ],
+    "tradeoffs": [
+      "Storing the full response body (lets a retry replay byte-for-byte what the client originally received) versus storing only a status/marker (cheaper, but a retry can't reproduce the original payload).",
+      "Short key TTL (less storage, but a very late retry stops being deduped and re-executes) versus long TTL (safer against late retries, more storage held indefinitely).",
+      "Locking the key while the first attempt is in flight (a concurrent retry gets a fast, explicit conflict) versus letting concurrent retries race through (simpler, but needs the underlying operation to tolerate a brief window of double execution)."
+    ],
+    "whenToUse": [
+      "Any externally callable, mutating endpoint reached over an unreliable network where the caller might retry — payments, order creation, provisioning.",
+      "Consumers of at-least-once queues or webhooks that can receive the same message more than once by design.",
+      "Steps inside a distributed workflow or saga that might be re-invoked after a partial failure or an orchestrator restart."
+    ],
+    "whenNotToUse": [
+      "Pure read-only endpoints — a GET with no side effect is already idempotent; there's nothing for a key store to deduplicate.",
+      "Operations already wrapped in a single synchronous transaction with no retry path reachable by the caller — the extra store buys nothing there."
+    ]
+  },
+  "transactional-outbox": {
+    "tagline": "Write the business row and the outbox event in the same local transaction; a separate relay publishes it later.",
+    "definition": "The transactional outbox pattern writes an event as a row in an ordinary database table, inside the very same ACID transaction that writes the business change it describes. A separate process — the relay — reads unpublished outbox rows, publishes them to a message broker, and marks them sent. Because the business write and the event write share one transaction, they commit or roll back together; there is no window where one succeeded and the other didn't.",
+    "problem": "Writing to a database and separately publishing to a message broker is two independent operations against two independent systems. If the process crashes, or the broker is unreachable, between the database commit and the broker publish — or in the other order — one side ends up out of sync with the other: the order is saved but nobody hears about it, or an event goes out for an order that then fails to save. This is the dual-write problem, and no amount of retrying the publish call alone fixes it, because the two writes are never atomic with each other.",
+    "solution": "Instead of publishing directly, the write path inserts the event as a row into an outbox table in the same local transaction as the business write — one ACID commit, so both happen or neither does. A separate relay process then reads rows that haven't been published yet (polling the table, or tailing the database's replication log the way change data capture does), publishes each to the broker, and marks it published. The relay's own publish-then-mark step is itself only at-least-once — it can crash between the two — so downstream consumers still need to dedupe by event id, tying this pattern to delivery semantics and idempotency on the consuming side.",
+    "code": "// Both writes happen in one local DB transaction — atomic by construction.\nasync function placeOrder(db: Db, order: Order) {\n  await db.transaction(async (tx) => {\n    await tx.insert('orders', order);\n    await tx.insert('outbox', {\n      id: crypto.randomUUID(),\n      aggregateId: order.id,\n      type: 'OrderPlaced',\n      payload: JSON.stringify(order),\n      publishedAt: null,\n    });\n  });\n}\n\n// Relay: a separate process that polls unpublished rows and publishes them.\nasync function relayOnce(db: Db, broker: Broker) {\n  const rows = await db.query(\n    'SELECT * FROM outbox WHERE published_at IS NULL ORDER BY id LIMIT 100',\n  );\n  for (const row of rows) {\n    await broker.publish(row.type, row.payload); // may crash before the next line\n    await db.query('UPDATE outbox SET published_at = now() WHERE id = $1', [row.id]);\n  }\n}",
+    "pros": [
+      "Eliminates the dual-write problem by construction: the event can never be committed without the business change, or vice versa, because they share one transaction.",
+      "Works against any broker with no distributed transaction (2PC/XA) between the database and the broker — the relay only ever talks to its own database and, separately, to the broker.",
+      "The outbox table doubles as a durable, replayable log of everything that happened to the aggregate, useful for audits or rebuilding a downstream projection from scratch."
+    ],
+    "cons": [
+      "Adds a relay component that has to run continuously, be monitored, and scale with write volume — it's a new piece of operational surface, not free.",
+      "The relay's publish step is itself at-least-once (it can crash between publishing and marking a row sent), so consumers still need to dedupe — the pattern moves the dual-write problem, it doesn't remove the need for idempotent consumers.",
+      "A naive polling relay adds both latency (events wait up to a poll interval) and read load on the outbox table; avoiding that generally means adopting log-tailing infrastructure instead."
+    ],
+    "tradeoffs": [
+      "A polling relay (simple to build, adds poll-interval latency and steady read load) versus a log-tailing relay via change data capture (near-zero added load and latency, but requires log-access infrastructure).",
+      "Deleting rows once published (keeps the table small) versus marking published_at and retaining them (keeps a full audit trail, at the cost of table growth that needs its own archival).",
+      "Relying on primary-key/insert order for publish ordering (simple, works within one aggregate) versus needing explicit per-aggregate sequencing when multiple writers can insert outbox rows for the same aggregate concurrently."
+    ],
+    "whenToUse": [
+      "Any write path that must both persist state and reliably notify other services or systems — order placement, payment capture, inventory changes.",
+      "Replacing an existing direct 'write to DB, then call the broker' path that has been observed to drift out of sync in production after a crash or broker outage.",
+      "Feeding a saga orchestrator or event-driven consumers from writes made inside an otherwise ordinary relational transaction."
+    ],
+    "whenNotToUse": [
+      "Single-service systems with no downstream consumers of the write — there's nothing to notify, so the extra table and relay are pure overhead.",
+      "Systems that already have a reliable, well-operated distributed transaction (2PC) spanning the database and the broker — rare in practice, but where it genuinely exists and is trusted, an outbox table adds a second mechanism doing the same job."
+    ]
+  },
+  "delivery-semantics": {
+    "tagline": "Exactly-once delivery is not something the network gives you — it's at-least-once delivery plus dedupe by message id.",
+    "definition": "Delivery semantics describe what a messaging system promises about how many times a consumer sees each message. At-most-once fires a message and never retries, so it can be silently lost. At-least-once retries until it gets an acknowledgment, so a message can arrive more than once. 'Exactly-once' is the semantics people actually want — each message has exactly one effect — but no real transport delivers it for free; it is built on top of at-least-once delivery plus a consumer that recognizes and skips messages it has already applied, keyed by a stable message id.",
+    "problem": "A broker configured for 'exactly-once' still has to retry: a consumer can crash after applying a message's effect but before acknowledging it, or a network blip can delay an ack past a timeout that triggers redelivery. Either way, the same message reaches the handler twice. If the handler isn't built to expect this, the business effect happens twice — a customer charged twice, a notification email sent twice, a counter incremented twice — and it looks like a broker bug even though the broker behaved exactly as designed.",
+    "solution": "Treat every consumer as receiving at-least-once, and make it recognize redelivery explicitly: before applying a message's effect, check whether its id has already been recorded as processed; if so, skip it; if not, apply the effect and record the id, atomically, in the same transaction. This turns 'the broker guarantees exactly-once' — a promise no real system fully keeps — into 'the consumer guarantees effectively-once', which is achievable with an ordinary database transaction and composes with idempotency.",
+    "code": "// \"Exactly-once\" processing, built from at-least-once delivery plus dedupe by id.\nasync function handleMessage(db: Db, msg: { id: string; type: string; payload: unknown }) {\n  const already = await db.query('SELECT 1 FROM processed_messages WHERE id = $1', [msg.id]);\n  if (already.length > 0) return; // redelivery of a message we already applied\n\n  await db.transaction(async (tx) => {\n    await applySideEffect(tx, msg); // e.g. credit the account\n    await tx.insert('processed_messages', { id: msg.id, processedAt: new Date() });\n  });\n}",
+    "pros": [
+      "Delivers the business-level guarantee people actually want ('this happened once') without needing the broker itself to support a true exactly-once transport.",
+      "Composes with any at-least-once broker — Kafka, SQS, RabbitMQ with manual ack — with no dependency on a specific vendor's 'exactly-once' feature.",
+      "Turns redelivery into an expected, tested code path instead of a rare edge case discovered in production as a duplicate-charge bug."
+    ],
+    "cons": [
+      "Requires a durable, transactional record of processed ids next to the side effect — if the two are written separately (not atomically), a crash between them reopens the same race it was meant to close.",
+      "Producers must send stable, unique ids that survive their own retries, or the consumer has nothing reliable to dedupe on.",
+      "The processed-ids table grows without bound unless it's pruned on a retention window matched to the maximum realistic redelivery delay."
+    ],
+    "tradeoffs": [
+      "At-most-once (never retries, so it can silently lose messages) versus at-least-once with dedupe (always retries, needs a processed-ids table) — most systems accept the dedupe cost because silent loss is usually worse.",
+      "Deduping by a stable message id (cheap, requires the producer to guarantee id stability) versus deduping by a content hash or business idempotency key (works even with a weak producer, costs more to compute and compare).",
+      "Acknowledging after the effect is applied (safe — a crash mid-processing causes redelivery, which dedupe handles) versus acknowledging before applying the effect (never redelivered, but a crash right after the ack loses the message for good)."
+    ],
+    "whenToUse": [
+      "Any consumer of an at-least-once broker or queue — Kafka, SQS, RabbitMQ with manual acknowledgment — where redelivery is a documented, expected possibility.",
+      "Handlers whose side effect is not already naturally idempotent — charging money, sending an email, incrementing a counter.",
+      "Explaining to stakeholders why an occasional duplicate email is expected behavior of an undeduped consumer, not a broker malfunction."
+    ],
+    "whenNotToUse": [
+      "Handlers that are already naturally idempotent on their own — an upsert keyed by the message's own id needs no separate dedupe table.",
+      "Low-value, loss-tolerant signals — best-effort metrics or telemetry pings — where at-most-once and occasional silent loss is the cheaper, acceptable choice."
+    ]
+  },
+  "optimistic-locking": {
+    "tagline": "Assume conflicts are rare: write only if the row hasn't changed since you read it, and hand the caller an explicit conflict instead of silently overwriting.",
+    "definition": "Optimistic locking (or optimistic concurrency control) attaches a version number, or a timestamp used the same way, to each row. A writer reads the row together with its current version, computes a new value, and writes it back conditionally: UPDATE ... WHERE id = ? AND version = ?. If no other writer has touched the row in the meantime, the version still matches and the update succeeds, bumping the version. If someone else updated it first, the WHERE clause matches zero rows, and the writer gets an explicit signal — not a silent overwrite — that it needs to re-read, reconcile, or ask the user what to do.",
+    "problem": "Two clients read the same row at nearly the same time, each computes a change based on that stale snapshot, and both write back. Without any conflict detection, the second write simply overwrites the first — whoever wrote last wins, and the first writer's change is lost without a trace, without an error, without anyone noticing until later. This is the classic lost-update problem, and it's especially likely wherever a user reads a record, spends time thinking or editing, and only then submits a write — the 'thinking time' is exactly when another writer can slip in.",
+    "solution": "Add a version column (or reuse updated_at as a de facto version) to the row. Every write includes the version it read as a condition on the update, and increments the version as part of the same statement. If the conditional update affects zero rows, someone else already moved the version forward since the read — the write did not happen, and the caller receives that as an explicit result to handle: retry after re-reading, present a merge UI, or surface an error, rather than the row being clobbered without anyone knowing.",
+    "code": "// Optimistic concurrency: the UPDATE only succeeds if the version hasn't moved.\nasync function updateProfile(db: Db, id: string, expectedVersion: number, patch: Partial<Profile>) {\n  const result = await db.query(\n    'UPDATE profiles SET name = $1, version = version + 1 WHERE id = $2 AND version = $3',\n    [patch.name, id, expectedVersion],\n  );\n\n  if (result.rowCount === 0) {\n    throw new ConflictError('profile was modified by someone else since you read it');\n  }\n}",
+    "pros": [
+      "No lock is held while the user is reading, thinking, or editing — other readers and writers aren't blocked for the whole edit session, only for the instant of the final write.",
+      "Conflicts surface as an explicit result the caller has to handle, replacing a silent lost update with a visible, testable failure mode.",
+      "Cheap in the common, no-contention case: one conditional UPDATE, no separate lock-acquire and lock-release round trip."
+    ],
+    "cons": [
+      "Under high contention on the same row, most writes lose the race and must retry, which can perform worse than a pessimistic lock that simply queues writers instead of rejecting and retrying them.",
+      "Every write path to the row has to participate — include the version in its WHERE clause and bump it — or a single writer that skips this silently reintroduces the lost-update problem it was meant to close.",
+      "It reports only that the row changed, not what changed — resolving the conflict (merge vs. reject vs. retry) is left entirely to the caller."
+    ],
+    "tradeoffs": [
+      "Optimistic locking (no blocking, retry-on-conflict, best when conflicts between writers are rare) versus pessimistic locking (blocks other writers upfront, best when conflicts are frequent or expected).",
+      "A single version counter (simple, only tells you that the row changed) versus per-column diffing or a CRDT-style structure (tells you what changed, and can sometimes merge automatically instead of rejecting).",
+      "Failing the request outright on conflict (simple, pushes the retry or the conversation with the user to the caller) versus automatically retrying with a fresh read (hides the conflict from the user, but risks a retry storm if contention is actually high)."
+    ],
+    "whenToUse": [
+      "Multi-step edits where a user reads, thinks, then writes — web forms, document editors — where holding a lock for the entire think time would block everyone else.",
+      "Entities where conflicting concurrent writes are rare in practice, so paying a lock's upfront blocking cost isn't worth it for the occasional conflict.",
+      "Replacing an existing silent last-write-wins path where a lost-update bug has already been observed in production."
+    ],
+    "whenNotToUse": [
+      "High-contention hot rows — a shared counter, a single popular item's remaining stock — where most concurrent writes would conflict; an atomic increment, a queue, or pessimistic locking avoids the resulting retry storm.",
+      "Paths where the caller genuinely has no reasonable way to react to a conflict — a fire-and-forget background job with nobody to show a 'someone else changed this' message to."
+    ]
+  },
+  "backpressure": {
+    "tagline": "When producers outpace consumers, an unbounded queue doesn't prevent the crash — it just delays it and makes it worse.",
+    "definition": "Backpressure is an explicit policy for what a system does when incoming work arrives faster than it can be processed: bound the queue or buffer sitting between producer and consumer, and once it's full, either reject new work (signal the caller to back off) or shed existing lower-priority work to make room. Either choice keeps memory and latency bounded no matter how large the incoming burst is, instead of letting the buffer grow without limit.",
+    "problem": "A fast producer — a traffic spike, a retry storm, a batch job kicking off — pushes work into a queue faster than a slower consumer can drain it. If the queue has no bound, it keeps growing: memory usage climbs, and every item waits longer than the one before it, so by the time an item is finally processed it may already be too old to matter. Eventually the process runs out of memory and crashes, taking down whatever work — including requests that would otherwise have succeeded — was in flight at the time. What looked like graceful handling of a spike becomes a slow-motion, self-inflicted, and much larger outage than simply rejecting the excess would have been.",
+    "solution": "Give the queue a fixed capacity and an explicit policy for what happens when it's full: reject the new item immediately, returning an error the caller can see and react to (retry later, back off, fail fast), or shed an existing item — typically the oldest or the lowest-priority one — to admit something more valuable. Either way, the system fails fast, cheaply, and visibly at a bounded size, instead of failing slowly, expensively, and invisibly once memory runs out.",
+    "code": "// Bounded queue: reject new work once capacity is reached instead of growing forever.\nclass BoundedQueue<T> {\n  private items: T[] = [];\n  constructor(private readonly capacity: number) {}\n\n  tryPush(item: T): boolean {\n    if (this.items.length >= this.capacity) {\n      return false; // signal backpressure to the caller — do not grow unbounded\n    }\n    this.items.push(item);\n    return true;\n  }\n\n  pop(): T | undefined {\n    return this.items.shift();\n  }\n}\n\nasync function handleRequest(queue: BoundedQueue<Job>, job: Job) {\n  if (!queue.tryPush(job)) {\n    throw new Error('503: overloaded, retry later'); // fail fast, caller can back off\n  }\n}",
+    "pros": [
+      "Failure becomes immediate and cheap — reject one request — instead of delayed and catastrophic: an out-of-memory crash that takes the whole process, and every request already in flight, down with it.",
+      "Makes overload visible to the caller as an explicit rejection it can act on — retry elsewhere, back off, alert — instead of hiding it inside ever-growing, silently degrading latency.",
+      "Keeps memory usage and processing latency bounded and predictable under any input rate, not just the rates a system happened to be tested against in staging."
+    ],
+    "cons": [
+      "Rejected or shed work has to go somewhere — dropped, retried by the caller, or redirected — or backpressure just relocates the overload problem to whatever is upstream of it.",
+      "Choosing the capacity is a genuine tuning problem: too small rejects bursts that would have been fine to absorb; too large just delays the same out-of-memory failure it exists to prevent.",
+      "Shedding by priority (rather than plain FIFO) requires the system to know each item's priority at all, which is classification logic a simple bounded queue didn't need before."
+    ],
+    "tradeoffs": [
+      "Rejecting new work outright (simple, protects everything already admitted, penalizes whoever happens to arrive during the spike) versus shedding older or lower-priority items (protects freshness, but can discard work that was already partway processed).",
+      "A small buffer (fails fast, low latency for anything accepted, rejects more of a burst) versus a large buffer (absorbs bigger bursts, but queued items wait longer and may already be stale by the time they're processed).",
+      "Signaling backpressure only to the immediate caller (simple, local) versus propagating it through the whole call chain, alongside bulkhead isolation and circuit-breaker short-circuiting, so upstream systems slow down too instead of piling up pressure at just one point."
+    ],
+    "whenToUse": [
+      "Any queue, buffer, or channel between a producer and a slower consumer where bursts are possible — ingestion pipelines, in-process work queues, HTTP servers under load.",
+      "Systems that have previously crashed or degraded catastrophically under a traffic spike, instead of cleanly failing a bounded fraction of requests.",
+      "Protecting a slow downstream dependency from being overwhelmed by a fast upstream one, typically alongside bulkhead isolation and circuit-breaker short-circuiting at each hop."
+    ],
+    "whenNotToUse": [
+      "Fixed, well-understood load with generous headroom — an internal batch job with a known, bounded input size — where the operational cost of tuning capacity buys little.",
+      "Paths where losing or rejecting work is unacceptable and slow processing is perfectly fine — a queue feeding an overnight report — where an unbounded (or very large) queue is the actual intent, not a bug."
+    ]
+  },
+  "change-data-capture": {
+    "tagline": "Read a database's own write-ahead log instead of polling its tables, and see every committed change exactly once, in commit order.",
+    "definition": "Change data capture (CDC) is a technique for turning a database's committed writes into a stream of ordered change events, by tailing the same transaction log (write-ahead log, binlog) the database already writes for its own replication — rather than periodically querying tables for what looks different. Each change event carries a log sequence number (LSN) that increases monotonically with commit order, so downstream consumers can process events strictly in the order they actually committed, and can resume precisely from the last LSN they processed after a restart.",
+    "problem": "Polling a table for 'what changed since I last checked' is both lossy and racy: if a row is updated twice between two polls, the poll only ever sees the final state, and every intermediate value is gone without a trace. Rows updated and then deleted between polls can disappear entirely, with no record they ever changed. And a poll racing against concurrent writes can miss a row that committed just after the query started, or double-count one that committed mid-scan. On top of the correctness problems, polling adds read load to the primary database on every interval, whether or not anything actually changed.",
+    "solution": "A CDC connector reads the database's own transaction log directly — the same durable, ordered record the database itself relies on for replication — instead of issuing queries against the tables. Every committed change becomes an event exactly once, in true commit order, tagged with its LSN. Downstream consumers apply events in LSN order and persist the last LSN they successfully applied alongside their own state, so after a crash or restart they can resume exactly where they left off instead of guessing what they might have missed.",
+    "code": "// CDC consumer: order events by LSN, and resume exactly where it left off.\ninterface ChangeEvent { table: string; lsn: bigint; op: 'insert' | 'update' | 'delete'; row: unknown; }\n\nclass CdcConsumer {\n  private lastLsn = 0n;\n\n  async apply(event: ChangeEvent) {\n    if (event.lsn <= this.lastLsn) return; // already processed — safe to skip on redelivery\n    await this.project(event);\n    this.lastLsn = event.lsn; // persisted alongside the projection, not just in memory\n  }\n\n  private async project(event: ChangeEvent) {\n    // update a read model / search index / cache from the row change\n  }\n}",
+    "pros": [
+      "Captures every committed change exactly once in true commit order, including intermediate states that a polling query would have silently missed.",
+      "Adds near-zero extra load to the source database — the connector reads a log the database already writes for its own replication, not extra application queries.",
+      "Decouples downstream systems — a search index, a cache, a data warehouse, another service's read model — from the source database's schema and query patterns entirely."
+    ],
+    "cons": [
+      "Requires log access and a CDC connector (Debezium, or a database's native logical replication) as a real, operated piece of infrastructure — it has to run, be monitored, and be upgraded alongside the source database.",
+      "Schema changes on the source table — a renamed column, a changed type — can break the change stream or any downstream consumer that assumed the old shape.",
+      "Consumers still see changes with some replication lag, and must handle the same 'resume from last LSN' and dedupe concerns as any other event stream — CDC removes polling's problems, not every distributed-systems problem."
+    ],
+    "tradeoffs": [
+      "Log-based CDC (near-zero source load, true commit order, requires log-access/connector infrastructure) versus polling for changes (works against any database with no special access, but is lossy and adds recurring read load).",
+      "Streaming every row-level change (a complete history, more events, more downstream processing) versus periodic snapshot-and-diff (fewer events, cheaper, but coarser-grained and blind to intermediate states between snapshots).",
+      "At-least-once delivery to consumers requiring LSN-based dedupe — a simple connector contract, more consumer-side bookkeeping — versus exactly-once sink connectors, which simplify the consumer at the cost of more complex, more fragile connector-side machinery."
+    ],
+    "whenToUse": [
+      "Keeping a search index, cache, or read-optimized projection in sync with a system-of-record table without dual-writing from application code.",
+      "Feeding an event-driven pipeline or another service's data store from an existing relational database that wasn't designed event-first.",
+      "Auditing or replaying the full history of changes to a table, not just inspecting its current state."
+    ],
+    "whenNotToUse": [
+      "Simple cases already well served by a periodic batch export or ETL job on a schedule that meets freshness requirements — CDC's log-tailing infrastructure is unjustified overhead there.",
+      "Source systems that don't expose a stable log or logical-replication feed at all (some managed databases restrict this) — polling or an application-level transactional outbox may be the only option available."
+    ]
   }
 };
 
@@ -3689,5 +3875,191 @@ export const questionProse: Record<string, QuestionProse> = {
       "The write blocks forever, waiting for the old leader to reacquire the lock"
     ],
     "explanation": "The guard compares the incoming token against the last accepted one and rejects anything older, which is exactly the case here — the old leader's token is smaller than the new leader's already-applied token. Arrival order plays no role; that's precisely the bug fencing tokens are designed to prevent. Consensus decisions like a completed leader election aren't retroactively undone by a late write. And the code throws immediately rather than blocking — there's no waiting involved."
+  },
+  "data-idempotency-1": {
+    "prompt": "What does an idempotency key actually let a server do when the same request arrives twice?",
+    "options": [
+      "Recognize the second request as a retry of the first and return the already-stored result instead of re-executing the side effect",
+      "Encrypt the request body so a captured request cannot be replayed by an attacker",
+      "Guarantee that the network delivers the request exactly once at the transport layer",
+      "Automatically undo the side effect performed by the first attempt"
+    ],
+    "explanation": "An idempotency key's job is purely to let the server tell 'this exact operation already ran' apart from 'this is new work' and answer accordingly — it has nothing to do with encryption, transport-layer delivery guarantees, or automatic rollback; none of those are what the key or its store provide."
+  },
+  "data-idempotency-2": {
+    "prompt": "A payments service stores only the HTTP status code under each idempotency key, not the response body, to keep the store small. What does this choice give up?",
+    "options": [
+      "A retry with the same key can no longer be replayed with the exact response body the client originally received — only the status can be reproduced",
+      "Nothing — a status code alone is always enough to reconstruct any response a client might need",
+      "The ability to detect a retry at all, since status codes aren't unique per request",
+      "Storage space, since status codes actually take more room than a typical JSON response body"
+    ],
+    "explanation": "Only what's recorded under the key can be returned: if that's just a status, the retry has nothing but the status to give back — the original response body is gone for good. Detecting a retry depends on the key itself, not on what's stored under it, so that option confuses two different things. Storing a status instead of a full body is smaller, not larger, so the last option is backwards too."
+  },
+  "data-idempotency-3": {
+    "prompt": "Given this IdempotencyStore, what happens on a second call to run() with the same key while the first call's fn() has already completed?",
+    "code": "class IdempotencyStore {\n  private results = new Map<string, StoredResult>();\n\n  async run(key: string, fn: () => Promise<StoredResult>): Promise<StoredResult> {\n    const cached = this.results.get(key);\n    if (cached) return cached;\n\n    const result = await fn();\n    this.results.set(key, result);\n    return result;\n  }\n}",
+    "options": [
+      "fn() is not invoked again — the cached result from the first call is returned directly",
+      "fn() runs again, and its new result silently overwrites the cached one",
+      "The store throws, because a key can only be used once, ever",
+      "Both results are kept and the caller receives an array of two responses"
+    ],
+    "explanation": "run() checks this.results.get(key) first; when a cached result exists it is returned immediately and fn() is never called — that's exactly how the code avoids re-executing the side effect. Nothing in the code overwrites the cache, throws, or accumulates an array of results."
+  },
+  "data-transactional-outbox-1": {
+    "prompt": "Why does the transactional outbox pattern insert the event as a row in the same database transaction as the business write, instead of publishing to the broker directly from the same code path?",
+    "options": [
+      "So the business write and the event are atomic with each other — a crash or broker outage can't leave one committed without the other",
+      "Because message brokers cannot accept writes from application code, only from database triggers",
+      "To make the write faster, since writing an extra table row is always quicker than a network call to a broker",
+      "Because outbox rows are required by SQL databases before any INSERT is allowed"
+    ],
+    "explanation": "The only real reason is atomicity: one local transaction guarantees the business change and the event row either both commit or both roll back, closing exactly the out-of-sync window that separate database writes and broker publishes create. Brokers accept calls from application code just fine — the trigger-only restriction is invented. The extra row makes the write slightly slower, not faster, and it's worth it anyway. And SQL requires no outbox row before any INSERT — that requirement belongs to the pattern, not the database."
+  },
+  "data-transactional-outbox-2": {
+    "prompt": "A team switches their outbox relay from polling every 5 seconds to tailing the database's replication log (a change-data-capture connector). What do they gain, and at what cost?",
+    "options": [
+      "Near-zero publish latency and no added read load on the outbox table, at the cost of operating log-access/CDC infrastructure instead of a simple polling query",
+      "Nothing changes — polling and log-tailing read exactly the same data at exactly the same cost",
+      "Stronger consistency guarantees — the relay's publish step becomes exactly-once instead of at-least-once",
+      "The ability to skip writing to the outbox table entirely, since the log already contains the event"
+    ],
+    "explanation": "Log-tailing removes the poll interval (events publish almost immediately after commit) and the repeated SELECTs against the outbox table — but in exchange it requires setting up and operating a CDC connector, which isn't free. What the relay reads doesn't change in nature, only how quickly and cheaply it gets it. Neither approach turns publishing into exactly-once — the publish-then-mark step remains at-least-once either way. And the outbox table is still required — it's exactly the table whose changes the log captures."
+  },
+  "data-transactional-outbox-3": {
+    "prompt": "In this relay, what happens if the process crashes right after broker.publish() succeeds but before the UPDATE statement runs?",
+    "code": "async function relayOnce(db: Db, broker: Broker) {\n  const rows = await db.query(\n    'SELECT * FROM outbox WHERE published_at IS NULL ORDER BY id LIMIT 100',\n  );\n  for (const row of rows) {\n    await broker.publish(row.type, row.payload);\n    await db.query('UPDATE outbox SET published_at = now() WHERE id = $1', [row.id]);\n  }\n}",
+    "options": [
+      "The row is republished on the next run, since it still has publishedAt = null — the event is delivered at least once, so the consumer must dedupe",
+      "The event is permanently lost, since the database has no record that it needs to be republished",
+      "The transaction automatically rolls back the broker.publish() call, so the event is never actually delivered",
+      "The relay detects the crash and marks the row published without republishing it"
+    ],
+    "explanation": "Marking published_at happens in a separate statement after publishing; if the process crashes in between, the row is left with publishedAt = null and gets selected and published again the next time the relay runs — delivery is guaranteed at-least-once, not exactly-once, and dedupe stays the consumer's responsibility. broker.publish() is a call to an external system, not part of the database transaction, so it can't be rolled back. And nothing in this code 'detects a crash' or marks a row published without republishing it — after a crash the process simply restarts and reads the same unpublished rows again."
+  },
+  "data-delivery-semantics-1": {
+    "prompt": "A broker is configured for 'exactly-once' delivery, yet a consumer occasionally receives the same message twice. What does this actually reflect?",
+    "options": [
+      "No real transport delivers true exactly-once for free — what's really provided is at-least-once delivery, and the consumer must dedupe to get an effectively-once result",
+      "The broker is misconfigured, since a correctly configured exactly-once broker can never redeliver a message",
+      "The message was corrupted in transit, which broker checksums failed to catch",
+      "The consumer is subscribed to the same topic twice by mistake"
+    ],
+    "explanation": "A broker's 'exactly-once' setting is a transport configuration, not a law of physics: real failures (a consumer crashing after applying an effect but before acknowledging; a network delay pushing an ack past a redelivery timeout) still cause redelivery, which is exactly why 'effectively-once' is achieved by dedupe on the consumer side, not by the broker setting alone. The other options invent explanations — corruption, double subscription, misconfiguration — that the mere fact of a redelivery doesn't establish."
+  },
+  "data-delivery-semantics-2": {
+    "prompt": "A team switches a consumer from acknowledging a message before applying its effect to acknowledging only after the effect is applied and committed. What do they trade?",
+    "options": [
+      "They give up 'never redelivered' for 'never silently lost' — a crash mid-processing now causes redelivery, which the consumer must dedupe, instead of losing the message for good if it crashed right after an early ack",
+      "Nothing observable changes, since acknowledgment timing has no effect on delivery behavior",
+      "They gain true exactly-once delivery, since acknowledging late guarantees the broker cannot redeliver",
+      "They lose the ability to process messages in order, since late acknowledgment disables ordering guarantees"
+    ],
+    "explanation": "Acknowledging before processing risks losing the message forever if a crash happens right after the ack but before the effect is applied — the broker believes everything is fine and never redelivers. Acknowledging after processing removes that loss risk, at the cost of redelivery on a mid-processing crash, which a deduping consumer must handle. Acknowledgment timing is exactly what determines this behavior, so the second option is wrong; this change alone grants neither true exactly-once delivery nor any change to ordering guarantees."
+  },
+  "data-delivery-semantics-3": {
+    "prompt": "This handler applies the side effect and records the message id in the same transaction. Why does that matter?",
+    "code": "async function handleMessage(db: Db, msg: { id: string; type: string; payload: unknown }) {\n  const already = await db.query('SELECT 1 FROM processed_messages WHERE id = $1', [msg.id]);\n  if (already.length > 0) return;\n\n  await db.transaction(async (tx) => {\n    await applySideEffect(tx, msg);\n    await tx.insert('processed_messages', { id: msg.id, processedAt: new Date() });\n  });\n}",
+    "options": [
+      "It guarantees a crash between the two steps can't happen — the effect is applied and the id is recorded together, or neither is, so a redelivered message is either fully skipped or fully reapplied-and-recorded, never mismatched",
+      "It makes the message queue itself transactional, so the broker will never redeliver this message again",
+      "It has no real benefit over writing them separately — a transaction here is only for style",
+      "It prevents the message from ever being processed more than once at the network level"
+    ],
+    "explanation": "Without a shared transaction, exactly the scenario this code closes off becomes possible: apply the effect but crash before recording the id (redelivery reapplies the effect), or record the id but crash before applying the effect (redelivery silently skips an effect that never actually happened). The transaction makes these two steps atomic with each other. It doesn't make the queue itself transactional and it doesn't operate at the network level — it's purely a consistency mechanism between the effect and its record inside one database."
+  },
+  "data-optimistic-locking-1": {
+    "prompt": "Two clients read the same row (version=1), then both try to write based on that read. What does optimistic locking do differently from an unguarded write?",
+    "options": [
+      "It conditions each write on the version it read, so the second writer's conditional update matches zero rows and fails explicitly instead of silently overwriting the first writer's change",
+      "It blocks the second client from reading the row until the first client finishes writing",
+      "It automatically merges both clients' changes into a single combined update",
+      "It queues both writes and applies them one after another in the order they were received"
+    ],
+    "explanation": "The mechanism is the WHERE version = expected condition: if the version already moved, the update matches no rows and explicitly reports that to the caller instead of clobbering someone else's change. Optimistic locking blocks nothing on read, merges nothing automatically, and doesn't turn concurrent writes into a queue — the absence of blocking and queueing is exactly the point, in contrast to pessimistic locking."
+  },
+  "data-optimistic-locking-2": {
+    "prompt": "A team adds optimistic locking to a shared counter row that receives thousands of concurrent increments per second. What's the likely result?",
+    "options": [
+      "Most updates lose the version race and must retry, so throughput can actually be worse than a pessimistic lock or an atomic increment that simply serializes writers instead of rejecting them",
+      "Throughput improves, since optimistic locking never blocks any writer",
+      "The counter becomes immune to lost updates with no other tradeoff, since versioning has no cost under contention",
+      "The row automatically switches to pessimistic locking once contention crosses a threshold"
+    ],
+    "explanation": "With thousands of concurrent writes per second to one row, nearly every write reads a version that goes stale before its update attempt lands, so the overwhelming majority of updates lose the race and must retry — and a retry itself reads again and risks going stale again. That's exactly why hot counters typically use an atomic increment or pessimistic locking instead of optimistic locking. No mechanism automatically switches locking strategy in response to contention, and versioning is certainly not free under heavy contention."
+  },
+  "data-optimistic-locking-3": {
+    "prompt": "In this code, under what condition does updateProfile throw ConflictError?",
+    "code": "async function updateProfile(db: Db, id: string, expectedVersion: number, patch: Partial<Profile>) {\n  const result = await db.query(\n    'UPDATE profiles SET name = $1, version = version + 1 WHERE id = $2 AND version = $3',\n    [patch.name, id, expectedVersion],\n  );\n\n  if (result.rowCount === 0) {\n    throw new ConflictError('profile was modified by someone else since you read it');\n  }\n}",
+    "options": [
+      "When the UPDATE's WHERE clause (id = ? AND version = ?) matches zero rows, meaning some other write already advanced the version past what this caller read",
+      "Whenever two different columns are updated in the same statement",
+      "Whenever the database connection pool is exhausted",
+      "Whenever patch.name is undefined"
+    ],
+    "explanation": "The code checks result.rowCount === 0 — the only way to get zero affected rows here is for the version = expectedVersion condition to match nothing, meaning the version was already advanced by another write. The number of columns updated, the state of the connection pool, and the value of patch.name are unrelated to this check."
+  },
+  "data-backpressure-1": {
+    "prompt": "A service lets its internal work queue grow without any size limit during a traffic spike, instead of bounding it. What is the direct consequence backpressure is designed to prevent?",
+    "options": [
+      "Unbounded memory growth that eventually crashes the process, taking down all in-flight work — including requests that would otherwise have succeeded — instead of cleanly rejecting the excess",
+      "The queue automatically starts processing items out of order",
+      "The consumer permanently stops accepting any new work, even after the spike ends",
+      "Requests already fully processed get silently re-executed a second time"
+    ],
+    "explanation": "An unbounded queue under a fast producer grows along with the spike: memory runs out, and the process crashes, taking down everything queued or in progress at that moment — this is exactly the scenario a bounded queue with an explicit rejection policy prevents. Processing order, a permanent stop in accepting work, and re-executing already-completed requests are unrelated consequences that an unbounded queue by itself doesn't cause."
+  },
+  "data-backpressure-2": {
+    "prompt": "A team shrinks their bounded queue's capacity from 10,000 to 100 to fail faster under overload. What do they trade for that faster failure?",
+    "options": [
+      "They reject a larger share of a traffic burst outright — smaller capacity means less of a spike gets absorbed before requests start being turned away",
+      "Nothing — capacity size has no effect on how much of a burst is admitted, only on latency",
+      "They gain unlimited throughput, since a smaller queue always processes items faster",
+      "They eliminate the possibility of ever running out of memory, regardless of item size"
+    ],
+    "explanation": "Queue capacity is precisely the buffer that absorbs a burst before rejections start, so shrinking it a hundredfold directly shrinks how much of a spike the queue can accept before turning requests away — the opposite of the claim that capacity doesn't affect how much of a burst is admitted. Processing throughput is set by the consumer's speed, not the buffer size, and a smaller buffer only reduces the risk of running out of memory, it doesn't eliminate it if the incoming stream is large enough."
+  },
+  "data-backpressure-3": {
+    "prompt": "In this code, what does tryPush() do once the queue already holds `capacity` items?",
+    "code": "class BoundedQueue<T> {\n  private items: T[] = [];\n  constructor(private readonly capacity: number) {}\n\n  tryPush(item: T): boolean {\n    if (this.items.length >= this.capacity) {\n      return false;\n    }\n    this.items.push(item);\n    return true;\n  }\n}",
+    "options": [
+      "It returns false without adding the item, letting the caller reject the request instead of growing the queue further",
+      "It removes the oldest item to make room, then adds the new one",
+      "It blocks until the consumer calls pop() to free up space",
+      "It throws an exception that crashes the process"
+    ],
+    "explanation": "The `if (this.items.length >= this.capacity) return false;` check runs before any change to the items array, so once the queue is full the method simply returns false without adding or removing anything — a backpressure signal, not shedding, blocking, or an exception. The other options describe other, perfectly real strategies for handling a full queue, just not the one implemented in this code."
+  },
+  "data-change-data-capture-1": {
+    "prompt": "Why does a CDC connector read a database's write-ahead/replication log instead of periodically querying its tables for changes?",
+    "options": [
+      "Polling can miss intermediate states between polls and races against concurrent writes, while the log records every committed change exactly once, in true commit order",
+      "Querying tables is technically impossible while a CDC connector is attached to the database",
+      "The replication log is the only place where row data itself is stored, so tables cannot be queried directly",
+      "Log-based reads are always faster than any SQL query regardless of table size"
+    ],
+    "explanation": "Polling's real problem isn't speed but correctness: a row can change several times between two polls and the poll only ever sees the final state, and a concurrent write landing inside the poll window can be missed or double-counted. The log instead records each change individually, in commit order. Tables remain fully queryable even with a CDC connector attached, and the log isn't the only place row data lives — it's a separate structure from the table data itself."
+  },
+  "data-change-data-capture-2": {
+    "prompt": "A team replaces log-based CDC with a nightly snapshot-and-diff job to simplify their pipeline. What do they give up?",
+    "options": [
+      "Visibility into intermediate states — a row updated twice between snapshots shows only its final value, and any change history in between is lost",
+      "Nothing meaningful — snapshot-and-diff captures the exact same information as a log-based connector, just less often",
+      "The ability to ever detect that a row was deleted",
+      "Read load on the source database, which log-based CDC always adds and snapshotting never does"
+    ],
+    "explanation": "Snapshot-and-diff compares state at each snapshot, so any changes between snapshots — including a row updated multiple times, or created and deleted in between — become invisible; that's qualitatively less information, not the same information less often. Deletions can still be detected by comparing key sets between snapshots. And read load on the source is added by the periodic snapshot itself (a full or partial table scan), while log-based CDC is precisely what minimizes that load by reading an already-existing replication log instead."
+  },
+  "data-change-data-capture-3": {
+    "prompt": "In this CdcConsumer, what does checking `event.lsn <= this.lastLsn` before applying an event accomplish?",
+    "code": "class CdcConsumer {\n  private lastLsn = 0n;\n\n  async apply(event: ChangeEvent) {\n    if (event.lsn <= this.lastLsn) return;\n    await this.project(event);\n    this.lastLsn = event.lsn;\n  }\n}",
+    "options": [
+      "It makes redelivery of an already-applied event a safe no-op, since LSNs only increase and a lower-or-equal LSN means this exact change was already processed",
+      "It sorts incoming events into ascending LSN order before they are applied",
+      "It blocks the consumer from ever processing insert operations, only updates and deletes",
+      "It guarantees the source database can never fall behind on replication"
+    ],
+    "explanation": "The check compares the new event's LSN against the last one successfully applied: since LSNs increase monotonically with commit order, a value less than or equal to this.lastLsn unambiguously means an already-processed change, and apply() simply returns without doing anything — that's the dedupe on redelivery. The check itself doesn't reorder events (that would need separate buffering and sorting), doesn't distinguish operation types, and has no bearing on the source database's actual replication lag — that's an infrastructure concern, not the consumer's."
   }
 };
