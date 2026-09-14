@@ -8,9 +8,9 @@ import { conceptProse as enConcepts, questionProse as enQuestions } from './loca
 // resolve) runs at import time via `validateSplit` in ./index (DEV/test), so importing
 // this module already guards it — those invariants aren't re-asserted here.
 describe('content catalog', () => {
-  it('is the complete catalog: 53 concepts across every category', () => {
+  it('is the complete catalog: 59 concepts across every category', () => {
     const byCat = (c: string) => concepts.filter((x) => x.category === c).length;
-    expect(concepts).toHaveLength(53);
+    expect(concepts).toHaveLength(59);
     expect(byCat('solid')).toBe(5);
     // 23 GoF patterns, complete: 5 creational + 7 structural + 11 behavioral.
     expect(byCat('creational')).toBe(5);
@@ -19,6 +19,7 @@ describe('content catalog', () => {
     expect(byCat('architecture')).toBe(8);
     expect(byCat('tradeoff')).toBe(6);
     expect(byCat('microservices')).toBe(11);
+    expect(byCat('data')).toBe(6);
   });
 
   it('every concept meets the depth floor (>=2 tradeoffs via prose, >=2 related via core)', () => {

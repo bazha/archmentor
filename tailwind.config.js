@@ -37,6 +37,7 @@ export default {
           architecture: c('cat-architecture'),
           tradeoff: c('cat-tradeoff'),
           microservices: c('cat-microservices'),
+          data: c('cat-data'),
         },
       },
       fontFamily: {

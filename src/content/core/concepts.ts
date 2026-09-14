@@ -858,7 +858,10 @@ export const conceptsCore: ConceptCore[] = [
       "microservices",
       "saga",
       "cqrs",
-      "api-gateway"
+      "api-gateway",
+      "cap-theorem",
+      "partitioning",
+      "quorum"
     ],
     "tags": [
       "микросервисы",
@@ -1011,7 +1014,8 @@ export const conceptsCore: ConceptCore[] = [
       "microservices",
       "event-driven",
       "database-per-service",
-      "cqrs"
+      "cqrs",
+      "consensus"
     ],
     "tags": [
       "распределённые транзакции",
@@ -1032,7 +1036,9 @@ export const conceptsCore: ConceptCore[] = [
     "related": [
       "event-sourcing",
       "microservices",
-      "database-per-service"
+      "database-per-service",
+      "consistency-models",
+      "replication"
     ],
     "tags": [
       "микросервисы",
@@ -1082,6 +1088,142 @@ export const conceptsCore: ConceptCore[] = [
       "translation"
     ],
     "diagram": "flowchart LR\n  A[\"Domain Model (your bounded context)\"] <--> B[\"Anti-Corruption Layer (translator)\"]\n  B <--> C[\"Legacy / External System\"]",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "cap-theorem",
+    "name": "CAP Theorem",
+    "aka": [
+      "Brewer's Theorem",
+      "CAP"
+    ],
+    "category": "data",
+    "grade": "lead",
+    "related": [
+      "consistency-models",
+      "quorum",
+      "database-per-service"
+    ],
+    "tags": [
+      "cap",
+      "распределённые системы",
+      "сетевые партиции",
+      "доступность"
+    ],
+    "diagram": "flowchart TD\n  P[Network partition detected] --> D{Prioritise}\n  D -->|Consistency| CP[Block/reject until majority reachable]\n  D -->|Availability| AP[Serve local data, mark as possibly stale]\n  CP --> H[Partition heals]\n  AP --> H\n  H --> R[Resume normal reads/writes]",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "consistency-models",
+    "name": "Consistency Models",
+    "aka": [
+      "Strong vs Eventual Consistency",
+      "Linearizability"
+    ],
+    "category": "data",
+    "grade": "senior",
+    "related": [
+      "cap-theorem",
+      "quorum",
+      "cqrs"
+    ],
+    "tags": [
+      "согласованность",
+      "линеаризуемость",
+      "eventual consistency",
+      "распределённые системы"
+    ],
+    "diagram": "flowchart LR\n  W[Client writes v2] --> P[Primary]\n  P -->|async replicate| R1[Replica A - caught up]\n  P -->|async replicate| R2[Replica B - lagging]\n  C[Client reads with session token >= v2] --> R1\n  C -.->|would miss its own write| R2",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "quorum",
+    "name": "Quorum",
+    "aka": [
+      "R+W>N",
+      "Quorum Consensus"
+    ],
+    "category": "data",
+    "grade": "senior",
+    "related": [
+      "replication",
+      "consistency-models",
+      "database-per-service"
+    ],
+    "tags": [
+      "кворум",
+      "репликация",
+      "согласованность",
+      "распределённые системы"
+    ],
+    "diagram": "flowchart LR\n  Client -->|write, W=2 of N=3| N1[Node 1]\n  Client -->|write| N2[Node 2]\n  Client -.->|not required| N3[Node 3]\n  Reader[Reader] -->|read, R=2 of N=3| N2\n  Reader -->|read| N3\n  Reader -.->|not required| N1",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "partitioning",
+    "name": "Partitioning",
+    "aka": [
+      "Sharding",
+      "Data Partitioning"
+    ],
+    "category": "data",
+    "grade": "senior",
+    "related": [
+      "replication",
+      "database-per-service"
+    ],
+    "tags": [
+      "партиционирование",
+      "шардирование",
+      "масштабирование",
+      "распределённые системы"
+    ],
+    "diagram": "flowchart LR\n  K[key] --> H{hash}\n  H --> Ring((Hash ring))\n  Ring --> S1[Shard 1]\n  Ring --> S2[Shard 2]\n  Ring --> S3[Shard 3]\n  NewNode[New shard added] -.->|only nearby keys move| Ring",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "replication",
+    "name": "Replication",
+    "aka": [
+      "Data Replication",
+      "Leader-Follower Replication"
+    ],
+    "category": "data",
+    "grade": "senior",
+    "related": [
+      "partitioning",
+      "quorum",
+      "cqrs"
+    ],
+    "tags": [
+      "репликация",
+      "отказоустойчивость",
+      "лаг репликации",
+      "масштабирование чтения"
+    ],
+    "diagram": "flowchart LR\n  W[Write] --> L[Leader]\n  L -->|async| F1[Follower A - lag 50ms]\n  L -->|async| F2[Follower B - lag 4s]\n  R[Read request] --> G{Router}\n  G -->|lag under budget| F1\n  G -->|lag over budget, reroute| L",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "consensus",
+    "name": "Consensus",
+    "aka": [
+      "Distributed Consensus",
+      "Paxos/Raft"
+    ],
+    "category": "data",
+    "grade": "lead",
+    "related": [
+      "quorum",
+      "saga"
+    ],
+    "tags": [
+      "консенсус",
+      "raft",
+      "paxos",
+      "fencing token"
+    ],
+    "diagram": "sequenceDiagram\n    participant A as Old Leader\n    participant L as Lock Service (Raft/Paxos)\n    participant B as New Leader\n    participant S as Storage\n    A->>L: acquire lock (token=5)\n    L-->>A: granted, fencing token=5\n    Note over A: A stalls (GC pause / network delay)\n    L->>L: lease expires, lock released\n    B->>L: acquire lock\n    L-->>B: granted, fencing token=6\n    A->>S: write (token=5, stale)\n    S-->>A: rejected, token 5 < last seen 6\n    B->>S: write (token=6)\n    S-->>B: accepted",
     "codeLang": "typescript"
   }
 ];

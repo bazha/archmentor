@@ -1250,5 +1250,155 @@ export const questionsCore: QuestionCore[] = [
     "grade": "lead",
     "correctIndex": 0,
     "conceptId": "performance-vs-readability"
+  },
+  {
+    "id": "data-cap-theorem-1",
+    "type": "concept",
+    "category": "data",
+    "grade": "lead",
+    "correctIndex": 0,
+    "conceptId": "cap-theorem"
+  },
+  {
+    "id": "data-cap-theorem-2",
+    "type": "tradeoff",
+    "category": "data",
+    "grade": "lead",
+    "correctIndex": 0,
+    "conceptId": "cap-theorem"
+  },
+  {
+    "id": "data-cap-theorem-3",
+    "type": "concept",
+    "category": "data",
+    "grade": "lead",
+    "correctIndex": 0,
+    "conceptId": "cap-theorem",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "data-consistency-models-1",
+    "type": "concept",
+    "category": "data",
+    "grade": "senior",
+    "correctIndex": 0,
+    "conceptId": "consistency-models"
+  },
+  {
+    "id": "data-consistency-models-2",
+    "type": "tradeoff",
+    "category": "data",
+    "grade": "senior",
+    "correctIndex": 0,
+    "conceptId": "consistency-models"
+  },
+  {
+    "id": "data-consistency-models-3",
+    "type": "concept",
+    "category": "data",
+    "grade": "senior",
+    "correctIndex": 0,
+    "conceptId": "consistency-models",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "data-quorum-1",
+    "type": "concept",
+    "category": "data",
+    "grade": "senior",
+    "correctIndex": 0,
+    "conceptId": "quorum"
+  },
+  {
+    "id": "data-quorum-2",
+    "type": "tradeoff",
+    "category": "data",
+    "grade": "senior",
+    "correctIndex": 0,
+    "conceptId": "quorum"
+  },
+  {
+    "id": "data-quorum-3",
+    "type": "concept",
+    "category": "data",
+    "grade": "senior",
+    "correctIndex": 0,
+    "conceptId": "quorum",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "data-partitioning-1",
+    "type": "concept",
+    "category": "data",
+    "grade": "senior",
+    "correctIndex": 0,
+    "conceptId": "partitioning"
+  },
+  {
+    "id": "data-partitioning-2",
+    "type": "tradeoff",
+    "category": "data",
+    "grade": "senior",
+    "correctIndex": 0,
+    "conceptId": "partitioning"
+  },
+  {
+    "id": "data-partitioning-3",
+    "type": "concept",
+    "category": "data",
+    "grade": "senior",
+    "correctIndex": 0,
+    "conceptId": "partitioning",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "data-replication-1",
+    "type": "concept",
+    "category": "data",
+    "grade": "senior",
+    "correctIndex": 0,
+    "conceptId": "replication"
+  },
+  {
+    "id": "data-replication-2",
+    "type": "tradeoff",
+    "category": "data",
+    "grade": "senior",
+    "correctIndex": 0,
+    "conceptId": "replication"
+  },
+  {
+    "id": "data-replication-3",
+    "type": "concept",
+    "category": "data",
+    "grade": "senior",
+    "correctIndex": 0,
+    "conceptId": "replication",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "data-consensus-1",
+    "type": "concept",
+    "category": "data",
+    "grade": "lead",
+    "correctIndex": 0,
+    "conceptId": "consensus"
+  },
+  {
+    "id": "data-consensus-2",
+    "type": "tradeoff",
+    "category": "data",
+    "grade": "lead",
+    "correctIndex": 0,
+    "conceptId": "consensus"
+  },
+  {
+    "id": "data-consensus-3",
+    "type": "concept",
+    "category": "data",
+    "grade": "lead",
+    "correctIndex": 0,
+    "conceptId": "consensus",
+    "codeLang": "typescript"
   }
 ];
