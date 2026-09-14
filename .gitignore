@@ -9,3 +9,7 @@ dist/
 .trello-result.json
 .fix-context.json
 .fix-result.json
+
+# wrangler: локальные переменные разработки и его кэш сборки
+.dev.vars
+.wrangler/

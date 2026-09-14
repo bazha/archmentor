@@ -1,0 +1,11 @@
+name = "trello-webhook"
+main = "index.ts"
+compatibility_date = "2026-09-09"
+workers_dev = true
+
+# Публичные значения. account_id здесь НЕ указываем: репозиторий публичный,
+# он передаётся через переменную окружения CLOUDFLARE_ACCOUNT_ID.
+[vars]
+GITHUB_REPO   = "bazha/archmentor"
+WORKFLOW_FILE = "trello-agent.yml"
+GIT_REF       = "master"

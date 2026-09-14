@@ -852,7 +852,10 @@ Expected: новых запусков нет. Это проверка насто
 ```bash
 npx wrangler tail --config workers/trello-webhook/wrangler.toml
 ```
-Пока стрим открыт — подвигать карточку. Expected: строки вида `[trello-webhook] updateCard card=… dispatch=true (card moved into In Progress)` и `dispatch=false` на парном pos-экшене. Убедиться, что `WEBHOOK_TOKEN` в логах не появляется.
+Пока стрим открыт — подвигать карточку. Expected: строки вида `[trello-webhook] updateCard card=… dispatch=true (card moved into In Progress)` и `dispatch=false` на парном pos-экшене. Убедиться, что `WEBHOOK_TOKEN` не появляется в **наших** строках `[trello-webhook] …`. Учти:
+собственная строка доступа wrangler (`[wrangler:info] POST /trello/<токен> 200 OK`) URL печатает
+целиком — это свойство платформы, а не наш лог, и видит её только владелец аккаунта. Проверено
+локально в Task 4 Step 3.
 
 - [ ] **Step 5: Перезаписать память проекта**
 
