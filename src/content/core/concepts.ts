@@ -694,7 +694,8 @@ export const conceptsCore: ConceptCore[] = [
       "mediator",
       "microservices",
       "coupling-cohesion",
-      "saga"
+      "saga",
+      "delivery-semantics"
     ],
     "tags": [
       "архитектура",
@@ -946,7 +947,9 @@ export const conceptsCore: ConceptCore[] = [
     "related": [
       "bulkhead",
       "microservices",
-      "api-gateway"
+      "api-gateway",
+      "idempotency",
+      "backpressure"
     ],
     "tags": [
       "микросервисы",
@@ -968,7 +971,8 @@ export const conceptsCore: ConceptCore[] = [
     "grade": "senior",
     "related": [
       "circuit-breaker",
-      "microservices"
+      "microservices",
+      "backpressure"
     ],
     "tags": [
       "устойчивость",
@@ -1015,7 +1019,9 @@ export const conceptsCore: ConceptCore[] = [
       "event-driven",
       "database-per-service",
       "cqrs",
-      "consensus"
+      "consensus",
+      "transactional-outbox",
+      "idempotency"
     ],
     "tags": [
       "распределённые транзакции",
@@ -1038,7 +1044,8 @@ export const conceptsCore: ConceptCore[] = [
       "microservices",
       "database-per-service",
       "consistency-models",
-      "replication"
+      "replication",
+      "change-data-capture"
     ],
     "tags": [
       "микросервисы",
@@ -1057,7 +1064,9 @@ export const conceptsCore: ConceptCore[] = [
     "related": [
       "cqrs",
       "event-driven",
-      "saga"
+      "saga",
+      "transactional-outbox",
+      "change-data-capture"
     ],
     "tags": [
       "микросервисы",
@@ -1125,7 +1134,8 @@ export const conceptsCore: ConceptCore[] = [
     "related": [
       "cap-theorem",
       "quorum",
-      "cqrs"
+      "cqrs",
+      "optimistic-locking"
     ],
     "tags": [
       "согласованность",
@@ -1193,7 +1203,9 @@ export const conceptsCore: ConceptCore[] = [
     "related": [
       "partitioning",
       "quorum",
-      "cqrs"
+      "cqrs",
+      "optimistic-locking",
+      "change-data-capture"
     ],
     "tags": [
       "репликация",
@@ -1224,6 +1236,141 @@ export const conceptsCore: ConceptCore[] = [
       "fencing token"
     ],
     "diagram": "sequenceDiagram\n    participant A as Old Leader\n    participant L as Lock Service (Raft/Paxos)\n    participant B as New Leader\n    participant S as Storage\n    A->>L: acquire lock (token=5)\n    L-->>A: granted, fencing token=5\n    Note over A: A stalls (GC pause / network delay)\n    L->>L: lease expires, lock released\n    B->>L: acquire lock\n    L-->>B: granted, fencing token=6\n    A->>S: write (token=5, stale)\n    S-->>A: rejected, token 5 < last seen 6\n    B->>S: write (token=6)\n    S-->>B: accepted",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "idempotency",
+    "name": "Idempotency",
+    "aka": [
+      "Idempotent Operations",
+      "Idempotency Key"
+    ],
+    "category": "data",
+    "grade": "middle",
+    "related": [
+      "delivery-semantics",
+      "circuit-breaker",
+      "saga"
+    ],
+    "tags": [
+      "идемпотентность",
+      "retry",
+      "idempotency key",
+      "дедупликация"
+    ],
+    "diagram": "flowchart LR\n  C[Client] -->|POST with Idempotency-Key: abc123| S[Server]\n  S --> Store{Key seen before?}\n  Store -->|no| Exec[Execute charge, store result]\n  Store -->|yes| Cached[Return cached result]\n  Exec --> R[Response]\n  Cached --> R",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "transactional-outbox",
+    "name": "Transactional Outbox",
+    "aka": [
+      "Outbox Pattern"
+    ],
+    "category": "data",
+    "grade": "senior",
+    "related": [
+      "saga",
+      "event-sourcing",
+      "delivery-semantics"
+    ],
+    "tags": [
+      "outbox",
+      "распределённые транзакции",
+      "message relay",
+      "at-least-once"
+    ],
+    "diagram": "flowchart LR\n  App[Application] -->|1: insert order + outbox row, one tx| DB[(Database)]\n  Relay[Outbox Relay] -->|poll unpublished rows| DB\n  Relay -->|2: publish| Broker[[Message Broker]]\n  Relay -->|3: mark published| DB",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "delivery-semantics",
+    "name": "Delivery Semantics",
+    "aka": [
+      "At-least-once / At-most-once / Exactly-once",
+      "Message Delivery Guarantees"
+    ],
+    "category": "data",
+    "grade": "senior",
+    "related": [
+      "idempotency",
+      "event-driven",
+      "transactional-outbox"
+    ],
+    "tags": [
+      "at-least-once",
+      "exactly-once",
+      "дедупликация",
+      "message id"
+    ],
+    "diagram": "flowchart LR\n  P[Producer] -->|publish, retries until ack| B[[Broker: at-least-once]]\n  B -->|deliver, maybe redelivered| C[Consumer]\n  C --> D{Message id seen before?}\n  D -->|yes| Skip[Skip: already applied]\n  D -->|no| Apply[Apply + record id]",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "optimistic-locking",
+    "name": "Optimistic Locking",
+    "aka": [
+      "Optimistic Concurrency Control",
+      "Version-based CAS"
+    ],
+    "category": "data",
+    "grade": "middle",
+    "related": [
+      "consistency-models",
+      "replication"
+    ],
+    "tags": [
+      "конкурентный доступ",
+      "version",
+      "compare-and-set",
+      "конфликт"
+    ],
+    "diagram": "sequenceDiagram\n    participant A as Client A\n    participant B as Client B\n    participant D as Database (version=1)\n    A->>D: read (version=1)\n    B->>D: read (version=1)\n    B->>D: UPDATE ... WHERE version=1\n    D-->>B: OK, version=2\n    A->>D: UPDATE ... WHERE version=1\n    D-->>A: 0 rows updated - conflict",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "backpressure",
+    "name": "Backpressure",
+    "aka": [
+      "Load Shedding",
+      "Bounded Queue"
+    ],
+    "category": "data",
+    "grade": "senior",
+    "related": [
+      "bulkhead",
+      "circuit-breaker"
+    ],
+    "tags": [
+      "backpressure",
+      "bounded queue",
+      "load shedding",
+      "устойчивость"
+    ],
+    "diagram": "flowchart LR\n  Producer[Fast producer] --> Q{Bounded queue at capacity?}\n  Q -->|no| Enqueue[Enqueue]\n  Q -->|yes| Reject[Reject / shed, signal backpressure]\n  Enqueue --> Consumer[Slow consumer]\n  Reject --> Caller[Caller backs off or retries elsewhere]",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "change-data-capture",
+    "name": "Change Data Capture",
+    "aka": [
+      "CDC",
+      "Log-based CDC"
+    ],
+    "category": "data",
+    "grade": "senior",
+    "related": [
+      "event-sourcing",
+      "replication",
+      "cqrs"
+    ],
+    "tags": [
+      "cdc",
+      "replication log",
+      "lsn",
+      "event streaming"
+    ],
+    "diagram": "flowchart LR\n  App[Application] --> DB[(Database)]\n  DB -->|write-ahead log| WAL[(Replication log)]\n  Connector[CDC Connector] -->|tail log, ordered by LSN| WAL\n  Connector --> Stream[[Event Stream]]\n  Stream --> Consumer[Consumer: resumes from last LSN]",
     "codeLang": "typescript"
   }
 ];
