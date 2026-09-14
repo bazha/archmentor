@@ -1,0 +1,102 @@
+name: Automation health
+
+# A liveness signal for the board automation. Every failure mode it watches for is
+# silent by nature: the hourly cron in trello-agent.yml keeps picking cards up, so a
+# dead Worker, a deleted webhook or an expired PAT look like "things got slower"
+# rather than like a breakage.
+#
+# The report goes to a card on the board itself: the description is rewritten on every
+# run, so a stale timestamp is the alarm even if this workflow stops running — GitHub
+# disables scheduled workflows after 60 days without repository activity, and a missing
+# email would not be noticed, whereas a stale date on a card is.
+
+on:
+  schedule:
+    - cron: "0 7 * * *"   # daily; GitHub cron is best-effort and may lag
+  workflow_dispatch: {}
+
+concurrency:
+  group: health
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      WORKER_HOST: trello-webhook.bazhanau.workers.dev
+      # The PAT lives only in Cloudflare, so its validity cannot be tested from here without
+      # duplicating the very secret we narrowed. The expiry date is checked instead.
+      PAT_EXPIRES: "2027-09-14"
+      PAT_WARN_DAYS: "30"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run the checks
+        id: checks
+        env:
+          TRELLO_KEY: ${{ secrets.TRELLO_KEY }}
+          TRELLO_TOKEN: ${{ secrets.TRELLO_TOKEN }}
+        run: |
+          # No `set -e`: every check must run, so the report lists all problems at once.
+          set -uo pipefail
+          problems=""
+          notes=""
+
+          # 1. The Worker answers HEAD — the same request Trello makes when creating a webhook.
+          code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 -I \
+                   "https://${WORKER_HOST}/trello/health-probe" || echo 000)"
+          if [ "$code" = "200" ]; then
+            notes="${notes}• Worker отвечает на HEAD (200)"$'\n'
+          else
+            problems="${problems}• Worker не отвечает на HEAD (код ${code})"$'\n'
+          fi
+
+          # 2. Exactly one active Trello webhook, pointing at the Worker.
+          hooks="$(curl -sS --max-time 15 \
+                    "https://api.trello.com/1/tokens/${TRELLO_TOKEN}/webhooks?key=${TRELLO_KEY}")" || hooks='[]'
+          total="$(jq 'length' <<<"$hooks" 2>/dev/null || echo 0)"
+          ours="$(jq -r --arg h "$WORKER_HOST" \
+                   '[ .[] | select(.active == true and (.callbackURL | contains($h))) ] | length' \
+                   <<<"$hooks" 2>/dev/null || echo 0)"
+          if [ "$total" = "1" ] && [ "$ours" = "1" ]; then
+            notes="${notes}• вебхук ровно один, активен и смотрит на Worker"$'\n'
+          else
+            problems="${problems}• вебхуков на токене: ${total}, из них активных на Worker: ${ours} (ожидается 1 и 1)"$'\n'
+          fi
+
+          # 3. The dispatch PAT is not about to expire.
+          left=$(( ( $(date -u -d "$PAT_EXPIRES" +%s) - $(date -u +%s) ) / 86400 ))
+          if [ "$left" -gt "$PAT_WARN_DAYS" ]; then
+            notes="${notes}• PAT для dispatch годен ещё ${left} дн. (до ${PAT_EXPIRES})"$'\n'
+          else
+            problems="${problems}• PAT для dispatch истекает через ${left} дн. (${PAT_EXPIRES}) — перевыпустить и обновить секрет GH_DISPATCH_TOKEN в Cloudflare"$'\n'
+          fi
+
+          if [ -n "$problems" ]; then
+            printf '%s' "$problems" > report.txt
+            echo "state=fail" >> "$GITHUB_OUTPUT"
+          else
+            printf '%s' "$notes" > report.txt
+            echo "state=ok" >> "$GITHUB_OUTPUT"
+          fi
+          cat report.txt
+
+      - name: Report to the board
+        env:
+          TRELLO_KEY: ${{ secrets.TRELLO_KEY }}
+          TRELLO_TOKEN: ${{ secrets.TRELLO_TOKEN }}
+          TRELLO_BOARD_ID: ${{ secrets.TRELLO_BOARD_ID }}
+          TRELLO_DONE_LIST_ID: ${{ secrets.TRELLO_DONE_LIST_ID }}
+        run: |
+          chmod +x .github/scripts/trello.sh
+          .github/scripts/trello.sh health "${{ steps.checks.outputs.state }}" "$(cat report.txt)"
+
+      # Reporting comes first so the board is updated even though the run ends red:
+      # the failing run is a second channel, not the primary one.
+      - name: Fail the run when something is wrong
+        if: steps.checks.outputs.state == 'fail'
+        run: |
+          echo "health check failed:"; cat report.txt; exit 1

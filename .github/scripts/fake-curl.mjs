@@ -11,7 +11,8 @@
 //
 // Scenario shape:
 //   { labels: [{id,name,color}],
-//     cards:  [{id,name,desc,idLabels,pos}],
+//     cards:  [{id,name,desc,idLabels,pos}],       // the In Progress list
+//     boardCards: [{id,name}],                     // every card on the board
 //     comments: { "<cardId>": [{date, data:{text}}] },   // newest first, like Trello
 //     fail: ["PUT /cards/c-1"] }                          // requests that exit non-zero
 import { appendFileSync, readFileSync } from 'node:fs';
@@ -80,6 +81,14 @@ if (method === 'GET' && /^\/boards\/[^/]+\/labels$/.test(path)) {
 
 if (method === 'GET' && /^\/lists\/[^/]+\/cards$/.test(path)) {
   send(scenario.cards ?? []);
+}
+
+if (method === 'GET' && /^\/boards\/[^/]+\/cards$/.test(path)) {
+  send(scenario.boardCards ?? []);
+}
+
+if (method === 'POST' && path === '/cards') {
+  send({ id: 'card-created', name: data.name, idList: data.idList, desc: data.desc });
 }
 
 if (method === 'GET' && (match = path.match(/^\/cards\/([^/]+)\/actions$/))) {

@@ -117,7 +117,12 @@ const labelsRemoved = (calls: Call[]) =>
   calls.filter((c) => c.method === 'DELETE').map((c) => c.path.split('/').pop());
 
 const moves = (calls: Call[]) =>
-  calls.filter((c) => c.method === 'PUT').map((c) => ({ card: c.path.split('/')[2], list: c.query.idList }));
+  calls.filter((c) => c.method === 'PUT' && c.query.idList).map((c) => ({ card: c.path.split('/')[2], list: c.query.idList }));
+
+const descriptions = (calls: Call[]) =>
+  calls.filter((c) => c.method === 'PUT' && c.data.desc !== undefined).map((c) => c.data.desc);
+
+const HEALTH_CARD = '🫀 Health — board automation';
 
 describe('trello.sh select-and-claim', () => {
   it('takes the card with the lowest pos', () => {
@@ -303,5 +308,47 @@ describe('trello.sh done', () => {
     const r = run(['done', 'card-1', prUrl], { fail: ['POST /cards/card-1/actions/comments'] });
     expect(r.status).toBe(0);
     expect(r.stderr).toContain('comment failed');
+  });
+});
+
+describe('trello.sh health', () => {
+  const existing = { boardCards: [{ id: 'card-health', name: HEALTH_CARD }] };
+
+  it('records a successful check in the card description and stays quiet', () => {
+    const r = run(['health', 'ok', 'worker 200, webhook active, PAT 365d left'], existing);
+    expect(r.status).toBe(0);
+    expect(descriptions(r.calls)[0]).toContain('✅');
+    expect(descriptions(r.calls)[0]).toContain('worker 200, webhook active, PAT 365d left');
+    // A daily comment would bury the card in noise; success only rewrites the description.
+    expect(commentTexts(r.calls)).toEqual([]);
+  });
+
+  it('comments as well as updating the description when something is wrong', () => {
+    const r = run(['health', 'fail', 'Worker не отвечает на HEAD (код 000)'], existing);
+    expect(r.status).toBe(0);
+    expect(descriptions(r.calls)[0]).toContain('❌');
+    expect(commentTexts(r.calls)).toHaveLength(1);
+    expect(commentTexts(r.calls)[0]).toContain('Worker не отвечает на HEAD (код 000)');
+  });
+
+  // Without the marker this very comment would dispatch the agent through the Worker.
+  it('prefixes the failure comment with the agent marker so it cannot wake the agent', () => {
+    const r = run(['health', 'fail', 'что-то сломалось'], existing);
+    expect(commentTexts(r.calls)[0]).toMatch(/^🤖/);
+  });
+
+  it('creates the health card in Done when the board does not have it', () => {
+    const r = run(['health', 'ok', 'all good'], { boardCards: [{ id: 'card-other', name: 'Something else' }] });
+    const created = r.calls.filter((c) => c.method === 'POST' && c.path === '/cards');
+    expect(created).toHaveLength(1);
+    expect(created[0].data.name).toBe(HEALTH_CARD);
+    expect(created[0].data.idList).toBe(DONE);
+    expect(r.calls.some((c) => c.method === 'PUT' && c.path === '/cards/card-created')).toBe(true);
+  });
+
+  it('reuses the existing health card instead of creating a second one', () => {
+    const r = run(['health', 'ok', 'all good'], existing);
+    expect(r.calls.filter((c) => c.method === 'POST' && c.path === '/cards')).toEqual([]);
+    expect(r.calls.some((c) => c.method === 'PUT' && c.path === '/cards/card-health')).toBe(true);
   });
 });
