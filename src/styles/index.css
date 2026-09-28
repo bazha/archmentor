@@ -36,7 +36,7 @@
   --cat-tradeoff: 46 90 140;
   --cat-microservices: 176 84 20;
   --cat-data: 74 85 104;
-  --cat-ddd: 138 109 20;
+  --cat-ddd: 160 128 10;         /* #A0800A ochre gold, 3.8:1  */
   --dot: 16 19 48;               /* canvas dot-grid colour     */
   --shadow-sm: 0 1px 2px rgb(16 19 48 / .04), 0 10px 26px -10px rgb(16 19 48 / .10);
   --shadow-md: 0 4px 14px rgb(16 19 48 / .06), 0 30px 64px -26px rgb(16 19 48 / .18);
