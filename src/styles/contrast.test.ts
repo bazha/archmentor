@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import css from './index.css?raw';
+import { CategorySchema } from '@/content/schema';
 
 type RGB = [number, number, number];
 function tokens(selector: string): Record<string, RGB> {
@@ -54,5 +55,22 @@ describe('theme token contrast (WCAG AA)', () => {
     it(`${name}: on-accent text on accent-strong (hover) fill >= 4.5:1`, () => {
       expect(ratio(t['on-accent'], t['accent-strong'])).toBeGreaterThanOrEqual(4.5);
     });
+  }
+});
+
+// Category dots (Badge, ConceptCard, Map node, related chips) are 6–8px non-text
+// UI markers that always sit on `surface-raised`; WCAG 1.4.11 asks 3:1 for those.
+// Discovered from the CSS so a new category cannot ship an unchecked colour.
+describe('category dot contrast (WCAG 1.4.11 non-text)', () => {
+  for (const [name, t] of Object.entries(themes)) {
+    const cats = CategorySchema.options.map((c) => `cat-${c}`);
+    for (const cat of cats) {
+      it(`${name}: defines --${cat}`, () => {
+        expect(t[cat], `--${cat} defined`).toBeDefined();
+      });
+      it(`${name}: --${cat} dot on raised surface >= 3:1`, () => {
+        expect(ratio(t[cat], t['surface-raised'])).toBeGreaterThanOrEqual(3);
+      });
+    }
   }
 });
