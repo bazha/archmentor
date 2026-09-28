@@ -38,6 +38,7 @@ export default {
           tradeoff: c('cat-tradeoff'),
           microservices: c('cat-microservices'),
           data: c('cat-data'),
+          ddd: c('cat-ddd'),
         },
       },
       fontFamily: {

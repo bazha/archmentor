@@ -1550,5 +1550,156 @@ export const questionsCore: QuestionCore[] = [
     "correctIndex": 0,
     "conceptId": "change-data-capture",
     "codeLang": "typescript"
+  },
+  {
+    "id": "c-entity-1",
+    "type": "concept",
+    "category": "ddd",
+    "grade": "middle",
+    "correctIndex": 1,
+    "conceptId": "entity"
+  },
+  {
+    "id": "ip-entity-value-object-1",
+    "type": "identify-pattern",
+    "category": "ddd",
+    "grade": "middle",
+    "correctIndex": 1,
+    "conceptId": "entity",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "cs-entity-1",
+    "type": "code-smell",
+    "category": "ddd",
+    "grade": "middle",
+    "correctIndex": 0,
+    "conceptId": "entity",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "c-value-object-1",
+    "type": "concept",
+    "category": "ddd",
+    "grade": "middle",
+    "correctIndex": 1,
+    "conceptId": "value-object"
+  },
+  {
+    "id": "cs-value-object-1",
+    "type": "code-smell",
+    "category": "ddd",
+    "grade": "middle",
+    "correctIndex": 1,
+    "conceptId": "value-object",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "t-value-object-1",
+    "type": "tradeoff",
+    "category": "ddd",
+    "grade": "middle",
+    "correctIndex": 1,
+    "conceptId": "value-object"
+  },
+  {
+    "id": "c-aggregate-1",
+    "type": "concept",
+    "category": "ddd",
+    "grade": "senior",
+    "correctIndex": 1,
+    "conceptId": "aggregate"
+  },
+  {
+    "id": "cs-aggregate-1",
+    "type": "code-smell",
+    "category": "ddd",
+    "grade": "senior",
+    "correctIndex": 1,
+    "conceptId": "aggregate",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "t-aggregate-1",
+    "type": "tradeoff",
+    "category": "ddd",
+    "grade": "senior",
+    "correctIndex": 1,
+    "conceptId": "aggregate"
+  },
+  {
+    "id": "c-repository-1",
+    "type": "concept",
+    "category": "ddd",
+    "grade": "middle",
+    "correctIndex": 1,
+    "conceptId": "repository"
+  },
+  {
+    "id": "cs-repository-1",
+    "type": "code-smell",
+    "category": "ddd",
+    "grade": "middle",
+    "correctIndex": 1,
+    "conceptId": "repository",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "t-repository-1",
+    "type": "tradeoff",
+    "category": "ddd",
+    "grade": "middle",
+    "correctIndex": 1,
+    "conceptId": "repository"
+  },
+  {
+    "id": "c-domain-event-1",
+    "type": "concept",
+    "category": "ddd",
+    "grade": "senior",
+    "correctIndex": 1,
+    "conceptId": "domain-event"
+  },
+  {
+    "id": "cs-domain-event-1",
+    "type": "code-smell",
+    "category": "ddd",
+    "grade": "senior",
+    "correctIndex": 1,
+    "conceptId": "domain-event",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "t-domain-event-1",
+    "type": "tradeoff",
+    "category": "ddd",
+    "grade": "senior",
+    "correctIndex": 1,
+    "conceptId": "domain-event"
+  },
+  {
+    "id": "c-domain-service-1",
+    "type": "concept",
+    "category": "ddd",
+    "grade": "senior",
+    "correctIndex": 1,
+    "conceptId": "domain-service"
+  },
+  {
+    "id": "cs-domain-service-1",
+    "type": "code-smell",
+    "category": "ddd",
+    "grade": "senior",
+    "correctIndex": 1,
+    "conceptId": "domain-service",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "t-domain-service-1",
+    "type": "tradeoff",
+    "category": "ddd",
+    "grade": "senior",
+    "correctIndex": 1,
+    "conceptId": "domain-service"
   }
 ];

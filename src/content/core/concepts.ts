@@ -13,7 +13,8 @@ export const conceptsCore: ConceptCore[] = [
       "ocp",
       "dip",
       "isp",
-      "coupling-cohesion"
+      "coupling-cohesion",
+      "domain-service"
     ],
     "tags": [
       "принципы",
@@ -139,7 +140,8 @@ export const conceptsCore: ConceptCore[] = [
       "strategy",
       "mediator",
       "event-driven",
-      "command"
+      "command",
+      "domain-event"
     ],
     "tags": [
       "паттерны",
@@ -351,7 +353,8 @@ export const conceptsCore: ConceptCore[] = [
     "related": [
       "adapter",
       "mediator",
-      "proxy"
+      "proxy",
+      "domain-service"
     ],
     "tags": [
       "паттерны",
@@ -372,7 +375,8 @@ export const conceptsCore: ConceptCore[] = [
       "singleton",
       "prototype",
       "composite",
-      "proxy"
+      "proxy",
+      "value-object"
     ],
     "tags": [
       "паттерны",
@@ -654,7 +658,9 @@ export const conceptsCore: ConceptCore[] = [
       "dip",
       "clean-architecture",
       "layered",
-      "adapter"
+      "adapter",
+      "repository",
+      "domain-service"
     ],
     "tags": [
       "архитектура",
@@ -672,7 +678,8 @@ export const conceptsCore: ConceptCore[] = [
     "related": [
       "hexagonal",
       "layered",
-      "dip"
+      "dip",
+      "repository"
     ],
     "tags": [
       "архитектура",
@@ -695,7 +702,8 @@ export const conceptsCore: ConceptCore[] = [
       "microservices",
       "coupling-cohesion",
       "saga",
-      "delivery-semantics"
+      "delivery-semantics",
+      "domain-event"
     ],
     "tags": [
       "архитектура",
@@ -862,7 +870,8 @@ export const conceptsCore: ConceptCore[] = [
       "api-gateway",
       "cap-theorem",
       "partitioning",
-      "quorum"
+      "quorum",
+      "repository"
     ],
     "tags": [
       "микросервисы",
@@ -1021,7 +1030,8 @@ export const conceptsCore: ConceptCore[] = [
       "cqrs",
       "consensus",
       "transactional-outbox",
-      "idempotency"
+      "idempotency",
+      "aggregate"
     ],
     "tags": [
       "распределённые транзакции",
@@ -1066,7 +1076,9 @@ export const conceptsCore: ConceptCore[] = [
       "event-driven",
       "saga",
       "transactional-outbox",
-      "change-data-capture"
+      "change-data-capture",
+      "aggregate",
+      "domain-event"
     ],
     "tags": [
       "микросервисы",
@@ -1272,7 +1284,9 @@ export const conceptsCore: ConceptCore[] = [
     "related": [
       "saga",
       "event-sourcing",
-      "delivery-semantics"
+      "delivery-semantics",
+      "aggregate",
+      "domain-event"
     ],
     "tags": [
       "outbox",
@@ -1317,7 +1331,9 @@ export const conceptsCore: ConceptCore[] = [
     "grade": "middle",
     "related": [
       "consistency-models",
-      "replication"
+      "replication",
+      "entity",
+      "aggregate"
     ],
     "tags": [
       "конкурентный доступ",
@@ -1371,6 +1387,122 @@ export const conceptsCore: ConceptCore[] = [
       "event streaming"
     ],
     "diagram": "flowchart LR\n  App[Application] --> DB[(Database)]\n  DB -->|write-ahead log| WAL[(Replication log)]\n  Connector[CDC Connector] -->|tail log, ordered by LSN| WAL\n  Connector --> Stream[[Event Stream]]\n  Stream --> Consumer[Consumer: resumes from last LSN]",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "entity",
+    "name": "Entity",
+    "category": "ddd",
+    "grade": "middle",
+    "related": [
+      "value-object",
+      "aggregate",
+      "optimistic-locking"
+    ],
+    "tags": [
+      "ddd",
+      "identity",
+      "tactical design"
+    ],
+    "diagram": "classDiagram\n  class Customer {\n    -id: CustomerId\n    -name: string\n    -email: Email\n    +rename(newName: string) void\n  }\n  note for Customer \"equals() compares id only —\\nnever name or email\"",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "value-object",
+    "name": "Value Object",
+    "category": "ddd",
+    "grade": "middle",
+    "related": [
+      "entity",
+      "aggregate",
+      "flyweight"
+    ],
+    "tags": [
+      "ddd",
+      "immutability",
+      "tactical design"
+    ],
+    "diagram": "classDiagram\n  class Money {\n    <<value object>>\n    -amount: number\n    -currency: string\n    +add(other: Money) Money\n    +equals(other: Money) boolean\n  }\n  note for Money \"immutable: add() returns a\\nnew Money, never mutates\"",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "aggregate",
+    "name": "Aggregate",
+    "category": "ddd",
+    "grade": "senior",
+    "related": [
+      "entity",
+      "repository",
+      "domain-event",
+      "transactional-outbox",
+      "saga",
+      "optimistic-locking",
+      "event-sourcing"
+    ],
+    "tags": [
+      "ddd",
+      "consistency boundary",
+      "tactical design"
+    ],
+    "diagram": "classDiagram\n  class Order {\n    <<aggregate root>>\n    -id: OrderId\n    -lines: OrderLine[]\n    +addLine(sku: string, qty: number) void\n    +total() Money\n  }\n  class OrderLine {\n    -sku: string\n    -quantity: number\n  }\n  Order *-- OrderLine : reachable only\\nthrough the root\n  Order ..> CustomerId : other aggregates\\nreferenced by id only",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "repository",
+    "name": "Repository",
+    "category": "ddd",
+    "grade": "middle",
+    "related": [
+      "aggregate",
+      "hexagonal",
+      "clean-architecture",
+      "database-per-service"
+    ],
+    "tags": [
+      "ddd",
+      "persistence",
+      "tactical design"
+    ],
+    "diagram": "classDiagram\n  class OrderRepository {\n    <<interface>>\n    +byId(id: OrderId) Order\n    +save(order: Order) void\n  }\n  class InMemoryOrderRepository\n  class SqlOrderRepository\n  OrderRepository <|.. InMemoryOrderRepository : test double\n  OrderRepository <|.. SqlOrderRepository : infrastructure",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "domain-event",
+    "name": "Domain Event",
+    "category": "ddd",
+    "grade": "senior",
+    "related": [
+      "aggregate",
+      "observer",
+      "event-driven",
+      "event-sourcing",
+      "transactional-outbox"
+    ],
+    "tags": [
+      "ddd",
+      "events",
+      "tactical design"
+    ],
+    "diagram": "sequenceDiagram\n    participant O as Order (aggregate)\n    participant App as Application service\n    participant DB as Database\n    participant Bus as Event bus / outbox\n    App->>O: place()\n    O-->>O: record OrderPlaced\n    App->>DB: commit transaction\n    App->>O: pullDomainEvents()\n    App->>Bus: publish OrderPlaced (after commit)",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "domain-service",
+    "name": "Domain Service",
+    "category": "ddd",
+    "grade": "senior",
+    "related": [
+      "aggregate",
+      "srp",
+      "facade",
+      "hexagonal"
+    ],
+    "tags": [
+      "ddd",
+      "domain logic",
+      "tactical design"
+    ],
+    "diagram": "classDiagram\n  class TransferService {\n    <<domain service>>\n    +transfer(from: Account, to: Account, amount: Money) void\n  }\n  class Account {\n    <<aggregate>>\n    -balance: Money\n    +withdraw(amount: Money) void\n    +deposit(amount: Money) void\n  }\n  TransferService --> Account : from\n  TransferService --> Account : to",
     "codeLang": "typescript"
   }
 ];

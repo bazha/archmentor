@@ -2132,6 +2132,192 @@ export const conceptProse: Record<string, ConceptProse> = {
       "Simple cases already well served by a periodic batch export or ETL job on a schedule that meets freshness requirements — CDC's log-tailing infrastructure is unjustified overhead there.",
       "Source systems that don't expose a stable log or logical-replication feed at all (some managed databases restrict this) — polling or an application-level transactional outbox may be the only option available."
     ]
+  },
+  "entity": {
+    "tagline": "Identity persists even as every attribute changes",
+    "definition": "An Entity is a domain object defined by a thread of continuity and identity, not by the values of its attributes. Two Entity instances with identical attributes are still different objects if their identities differ, and the same Entity remains \"itself\" across a lifetime in which every attribute it holds may change. Identity is carried by an explicit id — often a value object in its own right, such as CustomerId — rather than inferred from the object's current state.",
+    "problem": "A naive Customer class exposes public fields and public setters, and equality is implemented by comparing every field. Two customers who happen to share the same name and email compare as \"equal\" even though they are different people, while the same customer becomes \"unequal to themselves\" the moment they update their email address. Anyone can mutate the object's state directly from outside, bypassing whatever invariants were meant to hold, and the domain model degenerates into a bag of public data with logic scattered across the services that read and write it — an anemic model.",
+    "solution": "Give Customer a stable id, decided once at creation and never recomputed, and make equals() compare that id alone. Hide the mutable state behind private fields and expose only methods that enforce the entity's invariants — rename() validates and updates the name atomically, for example — rather than public setters that let any caller put the object into an invalid state one field at a time.",
+    "code": "class CustomerId {\n  constructor(private readonly value: string) {}\n  equals(other: CustomerId): boolean { return this.value === other.value; }\n  toString(): string { return this.value; }\n}\n\nclass Customer {\n  private name: string;\n\n  constructor(private readonly id: CustomerId, name: string) {\n    this.name = name;\n  }\n\n  // Identity, not attributes, defines equality.\n  equals(other: Customer): boolean {\n    return this.id.equals(other.id);\n  }\n\n  // State changes go through methods that keep invariants — no public setters.\n  rename(newName: string): void {\n    if (!newName.trim()) throw new Error('name cannot be empty');\n    this.name = newName;\n  }\n\n  getId(): CustomerId { return this.id; }\n  getName(): string { return this.name; }\n}\n\nconst a = new Customer(new CustomerId('c-1'), 'Ada Lovelace');\nconst b = new Customer(new CustomerId('c-1'), 'Ada King');\na.equals(b); // true — same identity, even though `name` now differs",
+    "pros": [
+      "Equality and identity match how the business actually thinks about the object — the same customer, order, or account across its whole lifetime",
+      "Invariants stay enforced because state changes are funneled through methods instead of arbitrary field writes",
+      "Safe to mutate: code can update an Entity's attributes without accidentally creating \"a different object\""
+    ],
+    "cons": [
+      "Requires deliberate id management — generation, uniqueness, sometimes a separate id-issuing mechanism",
+      "Mutable state re-introduces the concurrency concerns Value Objects avoid — concurrent edits to the same entity need a strategy such as locking or versioning",
+      "Easy to slip back into an anemic model if the discipline of \"no public setters\" isn't kept"
+    ],
+    "tradeoffs": [
+      "Identity-based equality versus attribute-based equality — the right choice depends on whether the domain concept has a lifecycle or is just a measurement or descriptor",
+      "Encapsulated methods versus getter/setter convenience — validation safety costs a bit of boilerplate",
+      "Mutability enables natural modeling of change over time but requires a concurrency strategy that immutable Value Objects don't need"
+    ],
+    "whenToUse": [
+      "The domain concept has continuity — a Customer, Order, or Account that persists and changes over its lifetime",
+      "Two instances with identical attribute values must still be treated as different domain objects",
+      "Business rules depend on which specific instance changed, not just what its current attributes are"
+    ],
+    "whenNotToUse": [
+      "The concept has no continuity of its own and is fully described by its current attributes — model it as a Value Object instead",
+      "Two \"equal-looking\" instances should really be interchangeable, such as a monetary amount or an address"
+    ]
+  },
+  "value-object": {
+    "tagline": "Defined by its value, not by an identity — and never mutated",
+    "definition": "A Value Object is a domain object with no conceptual identity: it is defined entirely by the values of its attributes, so two instances holding the same values are interchangeable and equal by value. Value Objects are immutable — every operation that would \"change\" one instead returns a new instance — which makes them trivially safe to share, cache, and pass around without defensive copying.",
+    "problem": "Passing an amount and a currency around as a bare number and a string — primitive obsession — lets any two unrelated numbers be added together regardless of currency, lets a caller silently pass cents where the callee expected dollars, and spreads validation (\"is this a real ISO currency code?\") across every call site instead of centralizing it in one place. Because a plain number has no behavior of its own, arithmetic on money ends up reimplemented, inconsistently, wherever it's needed.",
+    "solution": "Wrap the pair in an immutable Money value object with its own add, equals, and formatting logic; the currency-mismatch check happens once, inside add, instead of at every call site. Because Money instances never mutate, two references to \"the same\" $10 are genuinely interchangeable — equality compares values, not identity — and Money can be freely passed, cached, or used as a map key without fear of a caller mutating it out from under others. Email and Address follow the same shape: a set of related primitives replaced by one immutable, self-validating type.",
+    "code": "class Money {\n  constructor(\n    private readonly amount: number,\n    private readonly currency: string,\n  ) {\n    if (!Number.isFinite(amount)) throw new Error('amount must be finite');\n  }\n\n  add(other: Money): Money {\n    if (other.currency !== this.currency) throw new Error(`currency mismatch: ${this.currency} vs ${other.currency}`);\n    return new Money(this.amount + other.amount, this.currency); // returns a new instance\n  }\n\n  equals(other: Money): boolean {\n    return this.amount === other.amount && this.currency === other.currency;\n  }\n\n  toString(): string { return `${this.amount.toFixed(2)} ${this.currency}`; }\n}\n\nconst price = new Money(19.99, 'USD');\nconst shipping = new Money(4.99, 'USD');\nconst total = price.add(shipping); // a new Money — price and shipping are untouched\nprice.equals(new Money(19.99, 'USD')); // true — equal by value, no shared identity needed",
+    "pros": [
+      "Equality by value makes reasoning trivial — no aliasing surprises, no need to track \"which instance is this\"",
+      "Immutability makes Value Objects inherently thread-safe and safe to share without defensive copies",
+      "Centralizes validation and behavior — currency arithmetic, formatting — that would otherwise be duplicated at every call site"
+    ],
+    "cons": [
+      "Every \"change\" allocates a new instance, which can matter in tight loops over very large collections",
+      "Can feel like ceremony for a value that is genuinely used in only one place",
+      "Deciding where the Value Object boundary lies — is an Address one object or four separate fields? — takes judgment"
+    ],
+    "tradeoffs": [
+      "Type safety and centralized behavior versus the extra classes and boilerplate compared to bare primitives",
+      "Immutability's safety versus the allocation cost of creating a new instance on every operation",
+      "A rich domain vocabulary versus the learning curve for a team used to primitives everywhere"
+    ],
+    "whenToUse": [
+      "The concept is fully described by its attributes and has no identity or lifecycle of its own — money, a date range, an email address, coordinates",
+      "The same \"primitive obsession\" data — paired numbers, tagged strings — shows up validated or combined in more than one place",
+      "Two instances with equal attributes should always be treated as interchangeable"
+    ],
+    "whenNotToUse": [
+      "The concept needs to be tracked and mutated over a lifetime distinct from its current attribute values — that's an Entity",
+      "A single untyped primitive is used in exactly one place with no shared validation or behavior to centralize"
+    ]
+  },
+  "aggregate": {
+    "tagline": "One consistency boundary, one root, one transaction",
+    "definition": "An Aggregate is a cluster of Entities and Value Objects treated as a single unit for the purpose of data changes, with one member designated the aggregate root. External code holds a reference only to the root; anything inside the boundary is reached exclusively through it, and the root is responsible for enforcing every invariant that must hold across the whole cluster.",
+    "problem": "Without an aggregate boundary, a caller can load an OrderLine directly from the database, decrement its quantity, and save it back, entirely bypassing the Order that owns it. A rule capped at \"at most one line per SKU\" or \"total can't exceed the customer's credit limit\" then has no single place to be enforced — it either gets duplicated at every call site that touches a line, or, more likely, drifts out of sync and gets silently violated.",
+    "solution": "Model Order as the aggregate root and make OrderLine reachable only through Order's own methods, such as addLine; nothing outside the aggregate holds a direct reference to a line. addLine is where the \"no duplicate SKU\" and \"total cap\" invariants actually live and get checked, in one place, every time. A repository loads and saves the aggregate as a whole by root id, and any reference to a different aggregate — a CustomerId on the order — is held by id only, never by object reference; that other aggregate is modified, if at all, in its own separate transaction.",
+    "code": "class OrderLine {\n  constructor(readonly sku: string, readonly quantity: number, readonly unitPrice: number) {}\n}\n\nclass OrderId { constructor(readonly value: string) {} }\nclass CustomerId { constructor(readonly value: string) {} } // another aggregate — referenced by id only\n\nconst MAX_ORDER_TOTAL = 10_000;\n\nclass Order {\n  private lines: OrderLine[] = [];\n\n  constructor(readonly id: OrderId, private readonly customerId: CustomerId) {}\n\n  // The only way to add a line — invariants are enforced here, in one place.\n  addLine(sku: string, quantity: number, unitPrice: number): void {\n    if (this.lines.some((l) => l.sku === sku)) throw new Error(`duplicate sku: ${sku}`);\n    const newTotal = this.total() + unitPrice * quantity;\n    if (newTotal > MAX_ORDER_TOTAL) throw new Error('order total cap exceeded');\n    this.lines.push(new OrderLine(sku, quantity, unitPrice));\n  }\n\n  total(): number {\n    return this.lines.reduce((sum, l) => sum + l.unitPrice * l.quantity, 0);\n  }\n\n  // Read-only view — callers can inspect lines but can never mutate them directly.\n  getLines(): readonly OrderLine[] { return this.lines; }\n}",
+    "pros": [
+      "One clear place to enforce cross-entity invariants, instead of scattering checks across every call site that touches the internals",
+      "The transaction boundary matches the consistency boundary — one aggregate, one transaction, no partial updates",
+      "Encapsulation limits the blast radius of a change: internals can be refactored freely since nothing outside the aggregate depends on them directly"
+    ],
+    "cons": [
+      "Choosing aggregate boundaries is hard — too large and every write contends on the same root; too small and invariants that should be atomic end up split across aggregates",
+      "Loading a large aggregate just to change one small part can be wasteful",
+      "Cross-aggregate consistency becomes eventual, via domain events or sagas, instead of transactional, which is a genuine design burden"
+    ],
+    "tradeoffs": [
+      "Strong consistency inside the boundary versus eventual consistency between aggregates",
+      "Aggregate size: smaller aggregates reduce contention and lock scope but push more invariants into cross-aggregate, eventually-consistent processes",
+      "Encapsulation and safety versus the friction of never being able to \"just\" update a child entity directly"
+    ],
+    "whenToUse": [
+      "A set of invariants must hold atomically across more than one entity — no duplicate line, a total cap, a status transition that depends on child state",
+      "You need a natural transaction and locking boundary that maps to a real business concept",
+      "Concurrent edits to related entities need to be coordinated rather than applied independently"
+    ],
+    "whenNotToUse": [
+      "The entities involved have no invariant that spans them — model them as independent aggregates instead of forcing an artificial cluster",
+      "A read-only view across many aggregates is needed — that's a query or projection concern, not a reason to enlarge a transactional boundary"
+    ]
+  },
+  "repository": {
+    "tagline": "One interface, load and save whole aggregates by root id",
+    "definition": "A Repository is an abstraction that mediates between the domain model and the data mapping layer, presenting a collection-like interface — byId, save — for loading and persisting whole aggregates. Its interface is declared next to the domain model, in domain terms, while concrete implementations live in infrastructure and are free to use whatever storage technology fits.",
+    "problem": "Without a repository boundary, domain and application code ends up calling an ORM or query builder directly wherever it needs data — a query for order lines scattered across services — which leaks persistence details (table shapes, ORM entity types, SQL) into the domain layer, makes it impossible to swap storage technology without touching business logic, and invites exactly the kind of line-level query that bypasses the aggregate's own invariants.",
+    "solution": "Declare an OrderRepository interface next to Order in the domain layer, with only aggregate-level operations — byId(id): Order, save(order): void — never line-level queries. Provide an in-memory implementation for fast, storage-free unit tests, and a SQL implementation in the infrastructure layer that maps rows to a fully reconstructed Order aggregate and back; callers depend only on the interface, never on the ORM types the SQL implementation happens to use internally.",
+    "code": "interface OrderRepository {\n  byId(id: OrderId): Promise<Order | undefined>;\n  save(order: Order): Promise<void>; // persists the whole aggregate, not individual lines\n}\n\n// Test double — no storage, no I/O.\nclass InMemoryOrderRepository implements OrderRepository {\n  private store = new Map<string, Order>();\n  async byId(id: OrderId) { return this.store.get(id.value); }\n  async save(order: Order) { this.store.set(order.id.value, order); }\n}\n\n// Infrastructure implementation — SQL details never escape this class.\nclass SqlOrderRepository implements OrderRepository {\n  constructor(private readonly db: Database) {}\n\n  async byId(id: OrderId): Promise<Order | undefined> {\n    const row = await this.db.query('SELECT * FROM orders WHERE id = $1', [id.value]);\n    const lineRows = await this.db.query('SELECT * FROM order_lines WHERE order_id = $1', [id.value]);\n    return row ? reconstructOrder(row, lineRows) : undefined; // maps rows -> aggregate\n  }\n\n  async save(order: Order): Promise<void> {\n    await this.db.transaction(async (tx) => {\n      await tx.query('INSERT INTO orders (...) VALUES (...) ON CONFLICT (id) DO UPDATE ...', [/* ... */]);\n      await tx.query('DELETE FROM order_lines WHERE order_id = $1', [order.id.value]);\n      for (const line of order.getLines()) await tx.query('INSERT INTO order_lines (...) VALUES (...)', [/* ... */]);\n    });\n  }\n}",
+    "pros": [
+      "Domain and application code depend only on a domain-shaped interface, never on ORM types or SQL",
+      "Swapping storage technology, or testing with an in-memory double, touches infrastructure only",
+      "Aggregate-level operations naturally prevent the line-level queries that would bypass the root's invariants"
+    ],
+    "cons": [
+      "Writing a full aggregate back on every save can be less efficient than a targeted partial update",
+      "An extra interface and implementation to write and maintain versus calling the ORM directly",
+      "Poorly drawn repository boundaries — one repository per table instead of per aggregate — reintroduce the leaks the pattern is meant to prevent"
+    ],
+    "tradeoffs": [
+      "Persistence ignorance in the domain versus the mapping code needed to reconstruct an aggregate from rows",
+      "Whole-aggregate load/save simplicity versus the cost of not being able to fetch or update just one field",
+      "An extra layer of indirection versus a query builder used directly, which is faster to write but couples the domain to the database"
+    ],
+    "whenToUse": [
+      "The domain model must stay ignorant of how and where aggregates are stored",
+      "Tests need a fast, storage-free double instead of a real database",
+      "More than one storage technology, or a migration between them, is a real possibility"
+    ],
+    "whenNotToUse": [
+      "A simple CRUD script or throwaway prototype where an inline ORM call is clearer than an extra abstraction",
+      "Ad hoc reporting or analytics queries that intentionally cut across many aggregates — those belong in a read-model/query layer, not a repository"
+    ]
+  },
+  "domain-event": {
+    "tagline": "A past-tense fact the aggregate recorded, published after the transaction commits",
+    "definition": "A Domain Event is an immutable record of something that happened in the domain, named in the past tense — OrderPlaced, not PlaceOrder — because it describes a fact, not a request. The aggregate that caused it records the event as part of the same operation that changed its state; the event is then collected and published once the change is durably committed, decoupling \"what happened inside this aggregate\" from \"who else needs to react to it.\"",
+    "problem": "Publishing an event mid-transaction — say, straight from inside Order.place() to a message broker — means a subscriber can react to OrderPlaced for an order whose transaction later rolls back, because nothing guarantees the publish and the commit succeed or fail together. It also entangles the aggregate with messaging infrastructure it has no business knowing about, and makes the aggregate's unit tests depend on a broker being reachable.",
+    "solution": "Have the aggregate append the event to an internal, in-memory list as a side effect of the state change, and expose a way for the application layer to pull those events out after the aggregate is saved. The application service commits the database transaction first, then publishes the pulled events — commonly by writing them to an outbox table in the same transaction as the state change and letting a separate relay process do the actual publish, which is exactly what the Transactional Outbox pattern formalizes.",
+    "code": "interface DomainEvent { readonly occurredAt: Date; }\n\nclass OrderPlaced implements DomainEvent {\n  readonly occurredAt = new Date();\n  constructor(readonly orderId: OrderId, readonly customerId: CustomerId) {}\n}\n\nclass Order {\n  private events: DomainEvent[] = [];\n  private status: 'draft' | 'placed' = 'draft';\n\n  constructor(readonly id: OrderId, private readonly customerId: CustomerId) {}\n\n  place(): void {\n    if (this.status !== 'draft') throw new Error('order already placed');\n    this.status = 'placed';\n    this.events.push(new OrderPlaced(this.id, this.customerId)); // recorded, not published yet\n  }\n\n  // Drains and returns events — the aggregate never talks to a broker directly.\n  pullDomainEvents(): DomainEvent[] {\n    const pending = this.events;\n    this.events = [];\n    return pending;\n  }\n}\n\n// Application service: commit first, publish after.\nasync function placeOrder(repo: OrderRepository, bus: EventBus, id: OrderId): Promise<void> {\n  const order = await repo.byId(id);\n  order!.place();\n  await repo.save(order!);                                                  // 1. durably commit the state change\n  for (const event of order!.pullDomainEvents()) await bus.publish(event);  // 2. publish after commit\n}",
+    "pros": [
+      "Subscribers only ever see events for changes that actually, durably happened",
+      "The aggregate stays free of messaging infrastructure — it just records facts",
+      "Past-tense events form a natural audit trail and a vocabulary the whole team can share"
+    ],
+    "cons": [
+      "\"Commit, then publish\" is two separate steps that can fail independently unless backed by an outbox or similar mechanism",
+      "Extra plumbing — event collection, pulling, publishing — compared to a direct call",
+      "Overusing domain events for simple in-process reactions adds indirection where a plain method call would be clearer"
+    ],
+    "tradeoffs": [
+      "Decoupling producers from consumers versus the harder-to-trace control flow of \"something reacts to this, somewhere\"",
+      "Reliability — publish-after-commit, an outbox — versus the added infrastructure and latency of an extra relay hop",
+      "A rich event vocabulary versus event proliferation, where every trivial state change spawns its own event type"
+    ],
+    "whenToUse": [
+      "Other aggregates or bounded contexts need to react to a change without being coupled to it directly",
+      "An audit trail of \"what happened, and when\" has real business value",
+      "The reaction can tolerate being eventually consistent rather than happening inside the same transaction"
+    ],
+    "whenNotToUse": [
+      "The reaction must happen atomically with the triggering change, inside the same transaction and aggregate boundary — that's just part of the aggregate's own invariant, not a separate event",
+      "A single, simple, synchronous call within the same bounded context is clearer than introducing an event and a subscriber"
+    ]
+  },
+  "domain-service": {
+    "tagline": "Domain logic that doesn't belong to any single entity or value object",
+    "definition": "A Domain Service holds a piece of domain logic that is a first-class domain concept but doesn't naturally fit as a method on any single Entity or Value Object — typically because it operates across more than one aggregate. Unlike an application service, a domain service contains actual business rules; an application service only orchestrates — starting a transaction, calling a repository, publishing events — without deciding anything domain-specific itself.",
+    "problem": "Transferring money between two accounts doesn't belong on Account — withdrawing from one account and depositing into another isn't \"one account's\" responsibility, and putting the whole operation on Account would let one aggregate reach into and mutate another aggregate's internals directly, silently violating the rule that each aggregate is its own transaction and consistency boundary. Bolting the logic onto an application service instead usually means the business rule — can this transfer happen, in what order do the two steps happen — ends up mixed with transaction and infrastructure concerns.",
+    "solution": "Introduce TransferService as a domain service: it takes the two Account aggregates already loaded, calls each one's own methods — withdraw, deposit — so that each aggregate still enforces its own invariants, and contains the actual business rule that spans both. The surrounding application service stays a thin layer of orchestration — load the accounts, call the domain service, save the accounts, publish events — with no business decision of its own beyond wiring those steps together.",
+    "code": "class Account {\n  private balance: Money;\n  constructor(readonly id: AccountId, balance: Money) { this.balance = balance; }\n\n  withdraw(amount: Money): void {\n    if (this.balance.amount < amount.amount) throw new Error('insufficient funds');\n    this.balance = this.balance.subtract(amount);\n  }\n  deposit(amount: Money): void { this.balance = this.balance.add(amount); }\n}\n\n// Domain service: business logic that spans two aggregates, belongs to neither.\nclass TransferService {\n  transfer(from: Account, to: Account, amount: Money): void {\n    from.withdraw(amount); // each aggregate still enforces its own invariant\n    to.deposit(amount);\n  }\n}\n\n// Application service: pure orchestration, no business rule of its own.\nasync function transferFunds(\n  repo: AccountRepository, transfer: TransferService,\n  fromId: AccountId, toId: AccountId, amount: Money,\n) {\n  const from = await repo.byId(fromId);\n  const to = await repo.byId(toId);\n  transfer.transfer(from!, to!, amount); // the domain decision lives in the domain service\n  await repo.save(from!);\n  await repo.save(to!);                  // orchestration only — no rule about transfers here\n}",
+    "pros": [
+      "Keeps each aggregate's own invariants enforced by the aggregate itself, even when logic spans several of them",
+      "Gives cross-aggregate business rules an explicit, named, testable home instead of scattering them in application services",
+      "Clarifies the boundary between a business decision (domain service) and plumbing (application service)"
+    ],
+    "cons": [
+      "Overusing domain services turns them into a dumping ground for logic that should live on an entity — easy to slide back into an anemic model",
+      "One more type to introduce and name well; a badly named domain service (\"OrderHelper\", \"Utils\") signals a modeling failure",
+      "Where the line falls between a domain service and an application service takes judgment and can be argued over"
+    ],
+    "tradeoffs": [
+      "Keeping single-aggregate logic on the aggregate itself versus pulling everything into services \"to be consistent\"",
+      "A stateless domain service versus the temptation to smuggle transaction or infrastructure concerns into it",
+      "One explicit, testable place for cross-aggregate rules versus the extra indirection of calling through yet another type"
+    ],
+    "whenToUse": [
+      "A business rule genuinely spans more than one aggregate and can't be attributed to either one alone",
+      "The operation has no natural owner among existing entities or value objects, but is still a domain decision, not just orchestration",
+      "The logic needs to be unit-tested in isolation from persistence and transaction concerns"
+    ],
+    "whenNotToUse": [
+      "The logic naturally belongs to a single entity or value object — put it there instead of extracting a service",
+      "The code in question only coordinates a transaction, repository calls, and event publishing with no domain decision of its own — that's an application service, not a domain service"
+    ]
   }
 };
 
@@ -4061,5 +4247,192 @@ export const questionProse: Record<string, QuestionProse> = {
       "It guarantees the source database can never fall behind on replication"
     ],
     "explanation": "The check compares the new event's LSN against the last one successfully applied: since LSNs increase monotonically with commit order, a value less than or equal to this.lastLsn unambiguously means an already-processed change, and apply() simply returns without doing anything — that's the dedupe on redelivery. The check itself doesn't reorder events (that would need separate buffering and sorting), doesn't distinguish operation types, and has no bearing on the source database's actual replication lag — that's an infrastructure concern, not the consumer's."
+  },
+  "c-entity-1": {
+    "prompt": "What determines whether two Entity instances are the same domain object?",
+    "options": [
+      "Whether all of their attribute values are currently equal",
+      "Whether they share the same identity (id), regardless of their current attribute values",
+      "Whether they were created at the same time",
+      "Whether they belong to the same aggregate"
+    ],
+    "explanation": "An Entity's equality is defined by its identity — a stable id assigned once — not by the current values of its attributes, which can and do change over its lifetime. Comparing attribute values instead conflates Entity equality with Value Object equality: two entities can hold identical attributes and still be different domain objects, or one entity can be edited and wrongly appear \"different from itself\" under attribute comparison. Creation time and aggregate membership have nothing to do with entity equality — an entity keeps the same identity regardless of when it was created or which aggregate currently contains it."
+  },
+  "ip-entity-value-object-1": {
+    "prompt": "Is this `Customer` an Entity or a Value Object?",
+    "code": "class Customer {\n  constructor(private readonly id: string, private name: string) {}\n  equals(other: Customer): boolean { return this.id === other.id; }\n  rename(newName: string): void { this.name = newName; }\n}\n\nconst a = new Customer('c-1', 'Ada Lovelace');\na.rename('Ada King');\nconst b = new Customer('c-1', 'Ada King');\na.equals(b); // true",
+    "options": [
+      "Value Object",
+      "Entity",
+      "Aggregate",
+      "Repository"
+    ],
+    "explanation": "Customer is compared and tracked by its id alone — equals() ignores name entirely — and its state (name) is mutated in place over time while staying \"the same\" Customer. That combination, continuity of identity independent of attribute values plus in-place mutation, is the signature of an Entity. It isn't a Value Object: a Value Object is defined by its attributes and would never claim two differently-named instances are equal, nor expose a method that mutates it in place — a Value Object's \"changes\" return new instances instead. It isn't an Aggregate: there's no cluster of child objects or a root enforcing invariants across several entities here, just one entity and its own identity. It isn't a Repository: nothing here loads or persists anything."
+  },
+  "cs-entity-1": {
+    "prompt": "What's wrong with this `Customer` class, and how would you fix it?",
+    "code": "class Customer {\n  id: string;\n  name: string;\n  email: string;\n  creditLimit: number;\n}\n\nfunction applyDiscount(c: Customer) {\n  c.creditLimit = c.creditLimit * 1.1; // any code, anywhere, can do this\n}",
+    "options": [
+      "Customer is anemic: it's a bag of public fields with no behavior of its own, so any code anywhere can put it into an invalid state (e.g. a negative credit limit) instead of the invariant being enforced in one place. Fix: make the fields private and expose methods like increaseCreditLimit() that validate before mutating",
+      "The only problem is that email should be a string too, not a class",
+      "Customer should be a Singleton so there's only ever one instance",
+      "creditLimit should be renamed to something more descriptive"
+    ],
+    "explanation": "The first option is correct: Customer is anemic — a bag of public fields with no behavior of its own — so any code anywhere, like applyDiscount here, can push it into an invalid state (e.g. a negative or absurd credit limit) instead of the invariant being enforced in one place. The fix is encapsulation: private fields, and a method like increaseCreditLimit(pct) that validates before assigning. The second option is wrong: email is already a plain string here, and that was never the issue. The third option is wrong: a Singleton restricts how many instances exist and has nothing to do with protecting an object's invariants. The fourth option is wrong: renaming a field doesn't add any validation — the missing encapsulation is the real defect."
+  },
+  "c-value-object-1": {
+    "prompt": "Which property is essential to a Value Object, but not to an Entity?",
+    "options": [
+      "It has a globally unique id assigned at creation",
+      "It is immutable and compared by the equality of its attributes, not by identity",
+      "It must be stored in its own database table",
+      "It can only ever be created by a Repository"
+    ],
+    "explanation": "Value Objects have no identity of their own — two instances holding equal attribute values are simply equal — and typical implementations are immutable, so \"changing\" one always means allocating a new instance rather than mutating a shared one. The first option describes an Entity's defining trait, not a Value Object's — Value Objects are precisely the opposite: no separate id to track. The third option is a persistence-mapping detail with no bearing on the pattern's definition — most Value Objects are stored inline with their owning Entity, not in a separate table. The fourth option is wrong: Value Objects are typically created directly (e.g. `new Money(...)`), with no need for a Repository, which exists to load and save Aggregates."
+  },
+  "cs-value-object-1": {
+    "prompt": "What's the risk in this function signature, and how would introducing a Value Object fix it?",
+    "code": "function charge(amountCents: number, currency: string, amountCents2: number, currency2: string): number {\n  // intended: total = amount + amount2, but nothing stops mixing units or currencies\n  return amountCents + amountCents2;\n}\n\ncharge(1000, 'USD', 500, 'EUR'); // silently adds dollars and euros as if they were the same thing",
+    "options": [
+      "Nothing — the function is correct as long as callers remember the units",
+      "The signature has primitive obsession: raw numbers and strings carry no validation or behavior, so nothing stops adding mismatched currencies; wrapping each amount+currency pair in a Money value object would centralize the currency check inside Money.add and make mixing currencies a caught error instead of a silent bug",
+      "The fix is to rename the parameters to amountCents and amountCents2 more clearly",
+      "The function should be made async so currency conversion can happen automatically"
+    ],
+    "explanation": "This is the textbook primitive obsession smell: two logically-paired values (amount, currency) are passed as separate, untyped primitives, so nothing at the type level prevents combining values that shouldn't be combined — here, silently adding USD cents to EUR cents. Wrapping them in a Money value object moves the currency-match check into Money.add itself, so it runs every time addition happens instead of relying on every caller to remember it. Naming the parameters more clearly doesn't add any actual validation — the bug survives. Making the function async doesn't address the missing validation either, and introducing automatic currency conversion would silently hide a bug behind an unrelated feature rather than fixing the actual defect."
+  },
+  "t-value-object-1": {
+    "prompt": "A team replaces dozens of `{ amount: number, currency: string }` pairs across the codebase with a `Money` value object. What's the trade-off?",
+    "options": [
+      "There is no trade-off — Value Objects are strictly better than primitives in every situation",
+      "Every arithmetic operation now allocates a new Money instance instead of mutating a number in place, and the team pays the cost of introducing and learning a new type — in exchange for centralized validation and eliminating an entire class of currency-mixing bugs",
+      "Money makes the code slower because classes in TypeScript always execute slower than primitive types",
+      "The trade-off is that Money can no longer be compared for equality"
+    ],
+    "explanation": "Introducing a Value Object is a real trade: allocation and a small amount of ceremony — a new type to learn, constructor calls instead of literals — in exchange for centralized validation and behavior, and for making an entire class of bugs (mixing units or currencies) impossible to express instead of merely possible to avoid by discipline. The first option overstates the case: there are situations, a single, local, never-validated primitive, where the ceremony doesn't pay for itself. The third option confuses TypeScript classes in general with an inherent runtime penalty — the allocation cost is real but comes from immutability's copy-on-change, not from \"classes are slow\" as a general claim. The fourth option is simply false: value equality is one of the two defining properties of a Value Object."
+  },
+  "c-aggregate-1": {
+    "prompt": "What is the defining role of an Aggregate's root?",
+    "options": [
+      "It is simply the largest entity in the cluster, by number of fields",
+      "It is the only object outside code may hold a reference to; everything else in the cluster is reached through it, and it enforces the invariants that span the whole cluster",
+      "It is the entity that gets created first, chronologically",
+      "It is whichever entity the Repository happens to load first"
+    ],
+    "explanation": "The aggregate root is the single entry point into the aggregate from outside code, and the place where invariants that involve more than one member of the cluster are actually checked and enforced — for example, \"no duplicate SKU across all of this order's lines.\" Size, creation order, and which entity a Repository loads first are all incidental details with no bearing on which entity is the root — the root is a modeling decision about where consistency is enforced and what the external reference boundary is, not a fact you can read off an entity's size or age."
+  },
+  "cs-aggregate-1": {
+    "prompt": "What's wrong with this code, and how would you fix it?",
+    "code": "class OrderService {\n  constructor(private orderLines: OrderLineRepository, private inventory: InventoryRepository) {}\n\n  async cancelLine(orderId: string, sku: string) {\n    const line = await this.orderLines.findByOrderAndSku(orderId, sku);\n    await this.orderLines.delete(line.id);              // bypasses Order entirely\n\n    const item = await this.inventory.findBySku(sku);\n    item.stockCount += line.quantity;                    // reaches into Inventory's internals directly\n    await this.inventory.save(item);\n  }\n}",
+    "options": [
+      "Nothing is wrong — deleting a line and updating stock in two repository calls is standard practice",
+      "OrderService reaches directly into two aggregates' internals — deleting an OrderLine bypasses Order's own invariant checks, and mutating stockCount directly bypasses whatever invariant Inventory enforces on stock changes. Fix: call order.cancelLine(sku) and inventory.restock(sku, quantity) so each aggregate enforces its own rules, and treat the two aggregate updates as separate transactions, coordinated via a domain event or saga if they must both happen",
+      "The fix is to merge OrderLineRepository and InventoryRepository into a single repository",
+      "The fix is to wrap both calls in a single database transaction spanning both aggregates"
+    ],
+    "explanation": "This is the aggregate-boundary-violation smell: the code operates on OrderLine and on Inventory's stockCount field directly, through repositories that expose line-level and field-level access, instead of going through Order.cancelLine() and Inventory.restock() — the aggregates' own methods, where each aggregate's invariants actually live. Merging the repositories (third option) doesn't fix anything — it just moves the same direct field access under one roof. Wrapping both in one transaction (fourth option) treats a modeling problem as an infrastructure problem: even with a shared transaction, the code still bypasses both aggregates' own invariant checks, and in a real distributed or microservice setting a single cross-aggregate transaction usually isn't available anyway — that's exactly why patterns like domain events or sagas exist for coordinating separate aggregates."
+  },
+  "t-aggregate-1": {
+    "prompt": "A team splits one large `Order` aggregate — order plus shipment plus invoice — into three smaller aggregates linked by id. What's the trade-off?",
+    "options": [
+      "No trade-off: smaller aggregates are always strictly better because they always reduce lock contention",
+      "Splitting reduces contention on any single aggregate and lets each one be simpler, but any invariant that used to span order/shipment/invoice atomically now has to be enforced across separate transactions — eventually, not immediately",
+      "Splitting is only about code organization and has no effect on transactions or consistency at all",
+      "Splitting eliminates the need for a Repository, since there's no longer one large object to load"
+    ],
+    "explanation": "Aggregate size is a real design trade-off, not a free win: a smaller aggregate means less contention (fewer transactions try to modify the same root at once) and a simpler root to reason about, but it also means any rule that used to be enforced atomically within one big aggregate — for instance, \"invoice total must match shipped quantity\" — now spans separate transactional boundaries and can only be enforced eventually, typically via domain events. The first option overstates the benefit: a rule genuinely needing atomicity across the split parts is harder to guarantee afterward, so it isn't strictly better in every case. The third option is wrong: splitting is precisely a change to the transactional and consistency boundary, not a cosmetic reorganization. The fourth option is wrong: each of the three smaller aggregates still needs its own Repository — splitting doesn't remove the need to load and save aggregates, it just changes how many roots there are."
+  },
+  "c-repository-1": {
+    "prompt": "What does a Repository's interface expose, according to the pattern?",
+    "options": [
+      "Arbitrary SQL queries against any table the aggregate happens to touch",
+      "Collection-like operations — load and save — for whole aggregates by their root id, with no line-level queries or leaked ORM types",
+      "Direct access to the ORM's query builder, re-exported for convenience",
+      "CRUD endpoints for every entity inside the aggregate, including its children"
+    ],
+    "explanation": "A Repository presents a small, domain-shaped, collection-like interface — typically byId and save — that operates on whole aggregates identified by their root id; it hides the mapping to storage entirely. Exposing arbitrary SQL (first option) or the ORM's query builder (third option) defeats the purpose: the domain layer would then depend on infrastructure details. Exposing CRUD for the aggregate's children individually (fourth option) is exactly the line-level access the pattern is meant to prevent, since it lets callers bypass the aggregate root's own invariant checks."
+  },
+  "cs-repository-1": {
+    "prompt": "What's wrong with this repository interface?",
+    "code": "interface OrderRepository {\n  findOrderRow(id: string): Promise<OrderRow>;                          // OrderRow is a raw ORM entity\n  updateOrderLineQuantity(lineId: string, qty: number): Promise<void>;  // line-level write\n  getQueryBuilder(): QueryBuilder;                                       // escape hatch to raw SQL\n}",
+    "options": [
+      "Nothing — a Repository should expose as many convenience methods as callers need",
+      "It leaks persistence details into the domain-facing interface in three ways: it returns a raw ORM entity instead of the domain aggregate, it exposes a line-level write that bypasses the aggregate root's invariants, and it hands out a raw query builder — an escape hatch that defeats the abstraction entirely. Fix: expose only byId(id): Promise<Order> and save(order: Order): Promise<void>, operating on the whole aggregate",
+      "The only problem is that method names should use camelCase consistently",
+      "getQueryBuilder() is fine as long as it's only called from tests"
+    ],
+    "explanation": "Each of the three methods leaks a different persistence detail across the boundary the Repository is supposed to hold: OrderRow is an ORM type, not a domain type, so callers now depend on the ORM's shape; updateOrderLineQuantity operates below the aggregate root, letting callers change a line without going through Order's own invariant checks; and getQueryBuilder() hands raw SQL-building capability to the domain layer, which removes any benefit of having an interface at all. Naming style (third option) isn't the defect here. Restricting the escape hatch to tests (fourth option) doesn't fix the leak — a Repository used by tests still shapes what the interface teaches callers is acceptable, and it's simpler and safer to just not expose it."
+  },
+  "t-repository-1": {
+    "prompt": "A team's Repository always loads and saves the entire aggregate, even to change one field. What's the trade-off being made?",
+    "options": [
+      "No trade-off: loading and saving whole aggregates has no downside compared to partial updates",
+      "Simplicity and correctness — the whole aggregate is always consistent, and invariants are always checked against the full object — versus the performance cost of reading and writing more data than strictly necessary for a small change",
+      "The trade-off is that the aggregate can no longer have more than one entity inside it",
+      "The trade-off only matters for SQL repositories, never for in-memory ones"
+    ],
+    "explanation": "Whole-aggregate load/save keeps the Repository simple and keeps every invariant check working against the complete, consistent object — there's never a risk of validating a rule against a partially-loaded aggregate — but it does cost more I/O than a targeted update to a single field, which matters at scale for large aggregates or high write volume. The third option is unrelated: aggregate size (how many entities it contains) is a separate modeling decision, not a consequence of this load/save strategy. The fourth option is wrong: the same trade-off applies to in-memory or any other implementation — the cost is proportional to aggregate size and change frequency, not to the storage technology specifically, though it's most visible with real I/O."
+  },
+  "c-domain-event-1": {
+    "prompt": "Why is a Domain Event named in the past tense, like `OrderPlaced` rather than `PlaceOrder`?",
+    "options": [
+      "Past tense is just a team style convention with no real meaning behind it",
+      "It records a fact that already happened and is immutable — a request or command (like PlaceOrder) asks for something to happen and can be rejected, while an event reports something that already, irreversibly did",
+      "Past tense makes the event easier to serialize to JSON",
+      "It's required by the message broker's naming rules"
+    ],
+    "explanation": "The past tense is a deliberate signal of what kind of message this is: a command like PlaceOrder is a request that can still fail or be rejected, whereas an event like OrderPlaced reports something that has already, irrevocably happened inside the aggregate that recorded it — there's nothing left to approve or deny. Serialization (third option) doesn't care about verb tense at all. Message brokers (fourth option) don't enforce naming conventions on payloads — this is a domain-modeling convention, not an infrastructure requirement."
+  },
+  "cs-domain-event-1": {
+    "prompt": "What's wrong with this `place()` method?",
+    "code": "class Order {\n  place(bus: EventBus): void {\n    this.status = 'placed';\n    bus.publish(new OrderPlaced(this.id)); // published immediately, inside the method\n  }\n}\n\nasync function placeOrder(repo: OrderRepository, bus: EventBus, order: Order) {\n  order.place(bus);\n  await repo.save(order); // if this fails, the event was already published for a change that never persisted\n}",
+    "options": [
+      "Nothing is wrong — publishing as early as possible minimizes latency for subscribers",
+      "The event is published before the state change is durably committed, and the aggregate itself depends on an EventBus — if repo.save fails afterward, subscribers have already reacted to an OrderPlaced that never actually happened. Fix: have place() only record the event internally, and have the application service pull and publish it only after repo.save succeeds",
+      "The fix is to make bus.publish() synchronous so it can't fail",
+      "The fix is to call repo.save() before order.place()"
+    ],
+    "explanation": "Publishing inside place() couples the aggregate to messaging infrastructure it shouldn't know about, and, more importantly, publishes before the change is guaranteed to be durable: if repo.save() throws afterward, every subscriber has already reacted to an order placement that, from the database's point of view, never happened. The fix is the standard pattern: place() only records the event in memory, and the application service publishes it — directly or via an outbox — only once save() has succeeded. Making publish synchronous (third option) doesn't address ordering relative to the commit; a synchronous call can still run before a save that later fails. Saving before place() (fourth option) doesn't make sense: place() is what produces the state change that save() is supposed to persist, so it must run first — the ordering problem is between publish and commit, not between place and save."
+  },
+  "t-domain-event-1": {
+    "prompt": "A team starts publishing a Domain Event for every state change on every aggregate, including trivial ones like `NameChanged`. What's the trade-off?",
+    "options": [
+      "No trade-off — more events always make a system easier to understand",
+      "Fine-grained events give other parts of the system rich hooks to react to, but event proliferation makes the domain harder to read — every tiny change now has its own type and subscriber graph to trace — and increases the volume of messages the infrastructure has to carry and consumers have to handle",
+      "The only cost is a larger bundle size in the frontend",
+      "Publishing more events removes the need for an outbox, since failures average out over more messages"
+    ],
+    "explanation": "Domain events are a real tool, but every event adds a type, a publish call, and a piece of the system's control flow that now happens \"somewhere, asynchronously, in reaction to this\" rather than being visible at the call site — that cost is worth paying for changes other bounded contexts genuinely need to react to, and not worth paying for every trivial internal field change. Bundle size (third option) has nothing to do with a backend domain model. Publishing more events (fourth option) doesn't reduce the need for reliable delivery — if anything, more events means more opportunities for the publish-vs-commit race the outbox pattern exists to close, not fewer."
+  },
+  "c-domain-service-1": {
+    "prompt": "What makes `TransferService.transfer(from, to, amount)` a Domain Service rather than a method on `Account`?",
+    "options": [
+      "It's stateless, and Domain Services are simply defined as any class with no fields",
+      "The operation is a genuine business rule that spans two Account aggregates at once, and placing it on either Account would force that aggregate to reach into and mutate the other one's internals directly",
+      "It's a Domain Service because it's named with the suffix \"Service\"",
+      "It's a Domain Service because it's called from an HTTP controller"
+    ],
+    "explanation": "What makes an operation belong in a domain service is that it's a real domain decision that doesn't fit on any single entity because it inherently involves more than one aggregate — here, moving money necessarily touches two separate Account aggregates, and putting the whole operation inside one of them would mean that Account reaching into and mutating the other Account's balance directly, breaking the rule that each aggregate is its own consistency boundary. Statelessness (first option) and a \"Service\" suffix (third option) are surface traits, not the reason — plenty of non-domain-service classes are stateless, and naming something \"...Service\" doesn't make it one by definition. Being called from a controller (fourth option) says nothing about where the logic belongs — an application service is also typically called from a controller, and that's exactly the distinction this concept draws."
+  },
+  "cs-domain-service-1": {
+    "prompt": "What's wrong with this `TransferService`?",
+    "code": "class TransferService {\n  transfer(from: Account, to: Account, amount: Money) {\n    (from as any).balance = (from as any).balance.subtract(amount); // reaches past Account's own methods\n    (to as any).balance = (to as any).balance.add(amount);\n  }\n}",
+    "options": [
+      "Nothing is wrong — a domain service is allowed to touch any field on the aggregates it coordinates",
+      "TransferService bypasses Account's own withdraw/deposit methods and mutates the private balance field directly, so whatever validation Account.withdraw would normally do (e.g. rejecting a withdrawal that overdraws the account) never runs. Fix: call from.withdraw(amount) and to.deposit(amount) so each aggregate still enforces its own invariant",
+      "The fix is to make TransferService a static function instead of a class",
+      "The fix is to give TransferService direct access to the database instead of working with Account objects"
+    ],
+    "explanation": "A domain service is supposed to coordinate aggregates by calling their own methods, not by reaching past encapsulation — here the cast to any and direct field assignment skip whatever invariant Account.withdraw() enforces (for instance, refusing to overdraw), which is exactly the bug a domain service must not introduce. The fix is to call from.withdraw(amount) and to.deposit(amount), letting each Account keep enforcing its own rule. Making the service a static function (third option) doesn't touch the actual defect — the same bypass would happen either way. Giving it direct database access (fourth option) makes things worse, not better: it would let the domain service skip both Account's invariants and the Repository's aggregate-shaped persistence boundary at once."
+  },
+  "t-domain-service-1": {
+    "prompt": "A team keeps adding methods to their domain services until almost every business rule lives in a service rather than on an entity or value object. What's the trade-off they're making?",
+    "options": [
+      "No trade-off — putting all logic in services is always the cleanest design",
+      "Concentrating logic in services can make entities anemic again — data holders with no behavior of their own — trading away the locality and encapsulation of \"the object that owns the data also enforces its own rules\" for a single place to look for logic, at the risk of that place becoming a dumping ground",
+      "The trade-off is purely about file count, with no effect on encapsulation",
+      "The trade-off is that domain services can no longer be unit-tested"
+    ],
+    "explanation": "A domain service should hold logic that genuinely doesn't belong to any single entity — logic spanning several aggregates. If a team defaults to putting everything there, entities end up back to being anemic data holders, and the team loses the main benefit of Entities and Value Objects enforcing their own invariants locally; the domain service becomes a single sprawling place that knows about everyone else's data instead of a small set of well-scoped cross-aggregate operations. The third option understates the issue: this is exactly an encapsulation problem, not just a matter of where files live. The fourth option is backwards: domain services are usually easier to unit-test in isolation, with no aggregate state to set up beyond the aggregates passed in — testability isn't what's lost here."
   }
 };
