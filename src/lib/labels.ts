@@ -11,11 +11,11 @@ export const CATEGORY_LABEL: Record<Lang, Record<Category, string>> = {
   ru: {
     solid: 'SOLID', creational: 'Порождающие', structural: 'Структурные',
     behavioral: 'Поведенческие', architecture: 'Архитектурные стили', tradeoff: 'Trade-offs',
-    microservices: 'Микросервисы', data: 'Данные',
+    microservices: 'Микросервисы', data: 'Данные', ddd: 'DDD',
   },
   en: {
     solid: 'SOLID', creational: 'Creational', structural: 'Structural',
     behavioral: 'Behavioral', architecture: 'Architecture styles', tradeoff: 'Trade-offs',
-    microservices: 'Microservices', data: 'Data-intensive',
+    microservices: 'Microservices', data: 'Data-intensive', ddd: 'DDD',
   },
 };
