@@ -1701,5 +1701,155 @@ export const questionsCore: QuestionCore[] = [
     "grade": "senior",
     "correctIndex": 1,
     "conceptId": "domain-service"
+  },
+  {
+    "id": "c-ubiquitous-language-1",
+    "type": "concept",
+    "category": "ddd",
+    "grade": "middle",
+    "correctIndex": 1,
+    "conceptId": "ubiquitous-language"
+  },
+  {
+    "id": "cs-ubiquitous-language-1",
+    "type": "code-smell",
+    "category": "ddd",
+    "grade": "middle",
+    "correctIndex": 1,
+    "conceptId": "ubiquitous-language",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "t-ubiquitous-language-1",
+    "type": "tradeoff",
+    "category": "ddd",
+    "grade": "middle",
+    "correctIndex": 1,
+    "conceptId": "ubiquitous-language"
+  },
+  {
+    "id": "c-bounded-context-1",
+    "type": "concept",
+    "category": "ddd",
+    "grade": "senior",
+    "correctIndex": 1,
+    "conceptId": "bounded-context"
+  },
+  {
+    "id": "cs-bounded-context-1",
+    "type": "code-smell",
+    "category": "ddd",
+    "grade": "senior",
+    "correctIndex": 1,
+    "conceptId": "bounded-context",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "t-bounded-context-1",
+    "type": "tradeoff",
+    "category": "ddd",
+    "grade": "senior",
+    "correctIndex": 1,
+    "conceptId": "bounded-context"
+  },
+  {
+    "id": "c-subdomains-1",
+    "type": "concept",
+    "category": "ddd",
+    "grade": "lead",
+    "correctIndex": 1,
+    "conceptId": "subdomains"
+  },
+  {
+    "id": "cs-subdomains-1",
+    "type": "code-smell",
+    "category": "ddd",
+    "grade": "lead",
+    "correctIndex": 1,
+    "conceptId": "subdomains",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "t-subdomains-1",
+    "type": "tradeoff",
+    "category": "ddd",
+    "grade": "lead",
+    "correctIndex": 1,
+    "conceptId": "subdomains"
+  },
+  {
+    "id": "c-context-mapping-1",
+    "type": "concept",
+    "category": "ddd",
+    "grade": "lead",
+    "correctIndex": 1,
+    "conceptId": "context-mapping"
+  },
+  {
+    "id": "cs-context-mapping-1",
+    "type": "code-smell",
+    "category": "ddd",
+    "grade": "lead",
+    "correctIndex": 1,
+    "conceptId": "context-mapping",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "t-context-mapping-1",
+    "type": "tradeoff",
+    "category": "ddd",
+    "grade": "lead",
+    "correctIndex": 1,
+    "conceptId": "context-mapping"
+  },
+  {
+    "id": "c-shared-kernel-1",
+    "type": "concept",
+    "category": "ddd",
+    "grade": "senior",
+    "correctIndex": 1,
+    "conceptId": "shared-kernel"
+  },
+  {
+    "id": "cs-shared-kernel-1",
+    "type": "code-smell",
+    "category": "ddd",
+    "grade": "senior",
+    "correctIndex": 1,
+    "conceptId": "shared-kernel",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "t-shared-kernel-1",
+    "type": "tradeoff",
+    "category": "ddd",
+    "grade": "senior",
+    "correctIndex": 1,
+    "conceptId": "shared-kernel"
+  },
+  {
+    "id": "c-event-storming-1",
+    "type": "concept",
+    "category": "ddd",
+    "grade": "senior",
+    "correctIndex": 1,
+    "conceptId": "event-storming"
+  },
+  {
+    "id": "cs-event-storming-1",
+    "type": "code-smell",
+    "category": "ddd",
+    "grade": "senior",
+    "correctIndex": 1,
+    "conceptId": "event-storming",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "t-event-storming-1",
+    "type": "tradeoff",
+    "category": "ddd",
+    "grade": "senior",
+    "correctIndex": 1,
+    "conceptId": "event-storming"
   }
 ];

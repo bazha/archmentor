@@ -2318,6 +2318,192 @@ export const conceptProse: Record<string, ConceptProse> = {
       "The logic naturally belongs to a single entity or value object — put it there instead of extracting a service",
       "The code in question only coordinates a transaction, repository calls, and event publishing with no domain decision of its own — that's an application service, not a domain service"
     ]
+  },
+  "ubiquitous-language": {
+    "tagline": "The same words in code, tests, and the domain expert's conversation",
+    "definition": "Ubiquitous Language is a shared vocabulary, built jointly by developers and domain experts, that names domain concepts consistently across conversation, code, tests, and documentation — the same term means exactly one thing everywhere it is used, inside a given bounded context.",
+    "problem": "Teams often keep two vocabularies — the \"business\" one used in meetings and requirements, and the \"technical\" one baked into method and field names like updateStatus(3) or a scattering of boolean flags. Every conversation across that gap requires mental translation, requirements drift as they're re-expressed in code, and a rule the domain expert states in plain language (\"an order can't ship after it's been cancelled\") has no obvious home in a codebase full of numeric status codes and independent booleans that can be set into contradictory combinations.",
+    "solution": "Replace the numeric/boolean vocabulary with methods and types named after exactly what the domain expert says: order.ship() and order.cancel(reason) instead of updateStatus(3) and setCancelled(true). The language work happens continuously, in conversation with the domain expert, not once at the start — when a new term surfaces in a meeting, the code is renamed to match immediately, so code review and domain conversation reinforce the same words instead of diverging.",
+    "code": "// Before: numeric status + independent flags — no shared vocabulary with the business\nclass OrderBefore {\n  status: number = 0; // 0=draft, 1=placed, 2=shipped, 3=cancelled — meaning lives in a comment\n  isCancelled: boolean = false;\n\n  updateStatus(code: number): void {\n    this.status = code; // nothing stops status=2 (shipped) after isCancelled=true\n  }\n}\n\n// After: the domain expert's own verbs, enforcing the rule they stated in conversation\nclass Order {\n  private status: 'draft' | 'placed' | 'shipped' | 'cancelled' = 'draft';\n\n  ship(): void {\n    if (this.status === 'cancelled') throw new Error('cannot ship a cancelled order');\n    this.status = 'shipped';\n  }\n\n  cancel(reason: string): void {\n    if (this.status === 'shipped') throw new Error('cannot cancel a shipped order');\n    this.status = 'cancelled';\n    // reason is part of the language too — the expert always asks \"why was it cancelled?\"\n  }\n}",
+    "pros": [
+      "Conversation with domain experts translates directly into code review, cutting out a whole layer of \"what did they mean by X\" ambiguity",
+      "Business rules become visible as named operations rather than as inferred side effects of some flag combination",
+      "Onboarding is faster because new team members learn one vocabulary, not two"
+    ],
+    "cons": [
+      "Requires continuous access to a domain expert, and discipline to actually rename code when the language shifts",
+      "A term that is genuinely ambiguous across the organization is a signal to split contexts (see Bounded Context), not to force one meaning — resisting that split distorts the model",
+      "Renaming propagates: a name change in conversation should force a matching rename in code, which is friction some teams skip under deadline pressure"
+    ],
+    "tradeoffs": [
+      "Precision of a shared vocabulary versus the ongoing cost of keeping code, tests, and conversation in sync as the language evolves",
+      "One consistent name per concept versus the reality that the same word can mean different things in different bounded contexts",
+      "Naming after the domain expert's language versus naming after implementation convenience — the two pull in different directions when a term is awkward in code"
+    ],
+    "whenToUse": [
+      "Building or refactoring a codebase in direct contact with a domain expert who uses a stable, opinionated vocabulary",
+      "Business rules currently live as inferred side effects of status codes, flags, or comments rather than as named operations",
+      "The team wants code review and domain conversation to be legible to non-engineers, e.g. a domain expert reviewing a diff"
+    ],
+    "whenNotToUse": [
+      "Building a purely technical or generic component (a cache, a logging library) with no domain expert or business vocabulary to align with",
+      "A prototype thrown away within days, where the cost of aligning vocabulary won't be recovered"
+    ]
+  },
+  "bounded-context": {
+    "tagline": "One model per boundary — the same word can mean something else outside it",
+    "definition": "A Bounded Context is an explicit boundary — a module in a modular monolith or a separately deployable service — inside which a single model and its Ubiquitous Language apply consistently; outside that boundary, the same word is allowed to mean something else, modeled by a different type with different fields and rules. The boundary is drawn around a cohesive part of the business, not around a technical layer.",
+    "problem": "A single Customer class shared across Sales, Billing, and Support accretes fields for every team's needs — creditLimit for Sales, taxId for Billing, ticketHistory for Support — until it satisfies no one well and every team's schema migration risks breaking someone else's code. Worse, \"customer\" doesn't even mean the same thing to each team: Sales cares about a prospect who hasn't paid yet, Billing cares about a legal entity with a tax id, Support cares about whoever opened a ticket — forcing them into one shared class hides those differences instead of making them explicit.",
+    "solution": "Give each context its own Customer type, scoped to what that context actually needs: Sales's Customer carries creditLimit and salesRep, Billing's carries billingAddress and taxId, and neither imports the other's type. The boundary is drawn along the seam the teams already have — a package/module boundary in a modular monolith, or a service boundary once contexts scale independently — and each context's Customer is translated at the boundary (see Context Mapping) rather than shared as one class that quietly means different things to different callers.",
+    "code": "// sales/customer.ts — this context's Customer, scoped to what Sales needs\nexport class Customer {\n  constructor(\n    readonly id: string,\n    readonly name: string,\n    private creditLimit: number,\n    readonly salesRep: string,\n  ) {}\n\n  canPlaceOrder(orderTotal: number): boolean {\n    return orderTotal <= this.creditLimit;\n  }\n}\n\n// billing/customer.ts — same real-world \"customer\", different model, different rules\nexport class Customer {\n  constructor(\n    readonly id: string,\n    readonly legalName: string,\n    readonly billingAddress: string,\n    readonly taxId: string,\n  ) {}\n\n  invoiceLineFor(amount: number): string {\n    return `${this.legalName} (${this.taxId}): ${amount}`;\n  }\n}\n\n// Neither module imports the other's Customer — the shared id is the only link,\n// resolved at the context boundary if one side needs the other's data.",
+    "pros": [
+      "Each team's model stays small and honest about what that context actually cares about, instead of one class trying to satisfy everyone",
+      "A schema change inside one context can't accidentally break another team's invariants, because there's no shared class to break",
+      "The boundary matches how the organization is actually structured, so team ownership and code ownership line up"
+    ],
+    "cons": [
+      "The same real-world entity now has several representations, and keeping them consistent (even just the shared id) takes explicit translation work",
+      "Drawing the boundary too fine-grained creates chatty cross-context calls for data that would have been a single query in one shared model",
+      "Newcomers used to \"one class per real-world thing\" need to unlearn that instinct"
+    ],
+    "tradeoffs": [
+      "One shared model that's simple to query versus several context-scoped models that are simple to reason about but require translation between them",
+      "Team autonomy to evolve a context's model independently versus the coordination cost of keeping cross-context references consistent",
+      "Fine-grained contexts that map cleanly to team boundaries versus the chattiness of calls between too many small contexts"
+    ],
+    "whenToUse": [
+      "Different teams already use the same business term to mean visibly different things, each with its own rules",
+      "A shared class has accreted fields and methods for multiple unrelated purposes and every change to it risks breaking an unrelated team",
+      "The organization is moving toward team- or service-level ownership and needs the code boundary to match"
+    ],
+    "whenNotToUse": [
+      "A small system with one team and one genuinely shared meaning for every business term — the boundary would add indirection with no corresponding benefit",
+      "Early-stage exploration where the domain's real boundaries aren't understood yet — premature boundaries lock in guesses that are expensive to undo later (see YAGNI vs Flexibility)"
+    ]
+  },
+  "subdomains": {
+    "tagline": "Core, supporting, generic — spend engineering effort where it's actually a differentiator",
+    "definition": "Subdomain classification splits the overall problem space into a core domain — the part that is the actual competitive differentiator and deserves the best engineers and the most design effort — supporting subdomains that are necessary but not differentiating, and generic subdomains that are solved problems available off the shelf (payments, authentication, email delivery). The classification drives where to invest scarce design and engineering effort, not where to draw bounded contexts as such, though the two often align.",
+    "problem": "Teams often spend equal design effort everywhere, hand-rolling an authentication system or a payments integration with the same care as the algorithm that actually makes the product valuable — while the core domain, the thing customers actually pay for, gets whatever time is left over. The result is mediocre everywhere: a bespoke auth system that's worse than what a vendor offers, and a core domain that never gets the deep modeling work it needed to become a real advantage.",
+    "solution": "Identify the core domain — for a pricing/quoting product, that's the pricing engine itself — and make sure its module imports nothing from the generic subdomains, so its design stays uncoupled from vendor churn. Put the generic subdomains (payments, auth) behind an adapter to a bought SaaS product rather than building them, and reserve the \"build vs. buy\" question for the core: build the core because that's the differentiator, buy the generic because reinventing it earns nothing.",
+    "code": "// core/pricing-engine.ts — the core domain: this is what the business actually\n// differentiates on, so it's built in-house and depends on nothing generic.\nexport class PricingEngine {\n  quote(itemCount: number, customerTier: 'standard' | 'enterprise'): number {\n    const base = itemCount * 9.99;\n    return customerTier === 'enterprise' ? base * 0.85 : base;\n  }\n}\n\n// generic/payment-gateway.ts — a generic subdomain: solved by every payments\n// vendor, so it's bought and hidden behind an adapter, not built.\nexport interface PaymentGateway {\n  charge(amountCents: number, token: string): Promise<{ success: boolean }>;\n}\n\nexport class StripePaymentGateway implements PaymentGateway {\n  async charge(amountCents: number, token: string) {\n    // ... calls the vendor SDK; the rest of the app only ever sees PaymentGateway\n    return { success: true };\n  }\n}\n\n// core/pricing-engine.ts never imports from generic/* — the dependency\n// only flows the other way, through the PaymentGateway interface at call sites.",
+    "pros": [
+      "Scarce senior-engineering time goes to the part of the system that actually differentiates the product",
+      "Buying generic subdomains means shipping faster and inheriting a vendor's ongoing security/compliance work instead of owning it",
+      "Makes \"why are we building this ourselves?\" an explicit, answerable question instead of an unexamined default"
+    ],
+    "cons": [
+      "Classifying a subdomain wrong — treating something core as generic — means underinvesting in the thing that actually needed the most design care",
+      "Vendor lock-in and per-transaction costs are the price of buying a generic subdomain instead of owning it",
+      "What's core can shift over time (a supporting subdomain can become core as the business pivots), and the classification needs revisiting, not a one-time decision"
+    ],
+    "tradeoffs": [
+      "Depth of investment in the core versus the opportunity cost of that same effort spent polishing a generic subdomain nobody will notice",
+      "Buying a generic subdomain for speed and vendor expertise versus the recurring cost and lock-in of depending on that vendor",
+      "A stable subdomain map that's easy to plan around versus the reality that core/supporting/generic boundaries move as the business strategy changes"
+    ],
+    "whenToUse": [
+      "Prioritizing where a small senior team should spend its limited design and review effort across a large system",
+      "Deciding whether to build or buy a piece of functionality (auth, payments, search, email) that isn't the product's differentiator",
+      "Justifying resourcing decisions to stakeholders who default to \"build everything ourselves\""
+    ],
+    "whenNotToUse": [
+      "A system small enough that there's effectively one subdomain and the classification adds ceremony without changing any decision",
+      "Very early discovery, before it's clear what the product's actual differentiator even is"
+    ]
+  },
+  "context-mapping": {
+    "tagline": "Naming how bounded contexts actually relate, and protecting yours at the seam",
+    "definition": "Context Mapping names the relationships between bounded contexts — upstream/downstream, who depends on whom, and by what contract — so that the nature of each integration is an explicit, discussed decision rather than an accident of whichever team wrote the first integration code. The map itself is a diagram plus a name for each relationship: partnership, customer–supplier, conformist, anti-corruption layer, open-host service with a published language, or separate ways.",
+    "problem": "Downstream teams commonly integrate with an upstream service by taking whatever shape its API happens to return and threading that shape through their own domain code, so an upstream field rename or restructuring breaks the downstream team with no warning and no negotiation. Nobody has named what kind of relationship this even is, so nobody notices that the downstream team has quietly become dependent on internal decisions the upstream team never promised to keep stable.",
+    "solution": "Name the relationship on purpose. If the downstream team has no leverage and the upstream's model is a reasonable fit, be a conformist and accept the upstream shape as-is — cheap, but every upstream change ripples through. If the upstream model doesn't fit the downstream's own domain, put a translator — an Anti-Corruption Layer — at the boundary that converts the upstream's shape into the downstream's own types, so upstream changes are absorbed in one place instead of leaking through the whole codebase. Other relationships (partnership: two teams co-evolve a contract together; customer–supplier: the downstream has influence over the upstream's roadmap; open-host service: the upstream publishes a stable, versioned contract for many consumers; separate ways: not worth integrating at all) are named the same way, up front.",
+    "code": "// Upstream's published shape — Shipping owns this and can change it.\ninterface ShippingApiOrder {\n  order_ref: string;\n  ship_to: { line1: string; zip: string };\n  carrier_code: string;\n}\n\n// Conformist: Downstream A accepts the upstream shape as its own domain type.\n// Cheap today; every upstream rename becomes this team's problem tomorrow.\nfunction trackConformist(order: ShippingApiOrder): string {\n  return `${order.order_ref} via ${order.carrier_code}`;\n}\n\n// Anti-Corruption Layer: Downstream B translates at the boundary, once.\ninterface Shipment { orderId: string; address: string; carrier: string; }\n\nfunction translate(apiOrder: ShippingApiOrder): Shipment {\n  return {\n    orderId: apiOrder.order_ref,\n    address: `${apiOrder.ship_to.line1}, ${apiOrder.ship_to.zip}`,\n    carrier: apiOrder.carrier_code,\n  };\n}\n// The rest of Downstream B's codebase only ever sees Shipment — an upstream\n// rename means editing `translate`, not every call site.",
+    "pros": [
+      "Every integration's failure mode is predictable up front — a conformist relationship is known to be fragile to upstream change, an ACL is known to cost translation code but absorb that change",
+      "Makes the cost of an integration decision visible and negotiable between teams, instead of silently accepted",
+      "The reciprocal relationship types (partnership, customer–supplier) surface where the org actually needs closer coordination between teams, not just code-level fixes"
+    ],
+    "cons": [
+      "Naming and agreeing on the relationship is a cross-team conversation that takes real time, especially for a customer–supplier or partnership relationship",
+      "An Anti-Corruption Layer is genuine ongoing code to write and maintain, not a free win",
+      "The map can go stale if a relationship's real nature shifts (a conformist integration quietly becomes load-bearing) and nobody revisits it"
+    ],
+    "tradeoffs": [
+      "The low cost of conforming to an upstream's shape versus the fragility of being coupled to decisions the upstream never promised to keep stable",
+      "The insulation an Anti-Corruption Layer buys versus the translation code it costs to write and keep in sync",
+      "A negotiated, higher-coordination relationship (partnership, customer–supplier) versus a cheaper, lower-coordination one (conformist, separate ways) — the org's actual leverage decides which is realistic"
+    ],
+    "whenToUse": [
+      "Integrating with an upstream system, whether external or another team's bounded context, and the nature of that dependency hasn't been made explicit",
+      "An upstream's API changes have repeatedly broken downstream code with no warning",
+      "Onboarding a new integration and deciding up front how much insulation it's worth building"
+    ],
+    "whenNotToUse": [
+      "A single team owns both sides of the integration and can change them atomically in the same change — there's no real boundary to map",
+      "The two systems are so unrelated that \"separate ways\" is obviously correct and a formal map adds no information"
+    ]
+  },
+  "shared-kernel": {
+    "tagline": "A small, jointly-owned piece of model shared on purpose — kept small on purpose",
+    "definition": "A Shared Kernel is a small, explicitly agreed subset of the domain model — typically a handful of Value Objects like Money or an id type like CustomerId — that two or more bounded contexts share as actual code, with joint ownership and a change process both teams agree to, rather than each context reimplementing its own version. It differs from a plain shared library in that it's an explicit strategic choice to couple two contexts on purpose, versioned and reviewed by both owning teams.",
+    "problem": "If every context reimplements its own Money type, subtle bugs creep in from divergent rounding or currency-handling rules between Sales's Money and Billing's Money, and a value that crosses the boundary between them needs constant, error-prone conversion. Duplicating the type avoids coupling but at the cost of correctness drift; sharing it via a normal dependency avoids the drift but re-introduces exactly the tight coupling that bounded contexts exist to avoid, unless the sharing is deliberate and scoped.",
+    "solution": "Extract the truly stable, rarely-changing pieces — Money, CustomerId — into a small package, own it jointly (both teams review and approve changes, and a change requires both teams' sign-off before release), and version it explicitly so consuming contexts can upgrade on their own schedule. Keep the kernel deliberately small: the moment it grows to include anything with context-specific behavior or anything that changes often, it becomes a source of the coupling and cross-team blocking that bounded contexts were meant to eliminate.",
+    "code": "// @acme/domain-kernel — a small package, versioned, jointly owned by Sales + Billing.\n// A change here needs sign-off from both teams before it ships.\nexport class Money {\n  constructor(\n    private readonly cents: number,\n    readonly currency: string,\n  ) {}\n\n  add(other: Money): Money {\n    if (other.currency !== this.currency) throw new Error('currency mismatch');\n    return new Money(this.cents + other.cents, this.currency);\n  }\n}\n\nexport class CustomerId {\n  constructor(readonly value: string) {}\n  equals(other: CustomerId): boolean { return this.value === other.value; }\n}\n\n// sales/quote.ts and billing/invoice.ts both import from @acme/domain-kernel —\n// this is the one place they agree to be coupled, and nowhere else.",
+    "pros": [
+      "Eliminates a specific, real source of bugs: two contexts silently disagreeing about how Money rounds or how an id is formatted",
+      "Cheaper than translating at every boundary crossing when the shared concept truly is identical across contexts, not just similar",
+      "Makes the coupling explicit and governed (joint review, versioning) instead of an implicit assumption nobody checks"
+    ],
+    "cons": [
+      "Reintroduces cross-team coordination on every kernel change — exactly the coupling bounded contexts are meant to reduce elsewhere",
+      "A kernel that grows past a handful of pure, stable types becomes a bottleneck: every team waits on every other team's review to ship",
+      "A version mismatch between two contexts consuming different kernel versions can reintroduce the very inconsistency the kernel was meant to prevent"
+    ],
+    "tradeoffs": [
+      "Sharing one true implementation versus each context translating its own — sharing wins only while the concept is genuinely identical and rarely changes",
+      "The correctness gained from one shared implementation versus the cross-team coordination cost of changing it",
+      "A small, stable kernel that's cheap to govern versus the temptation to grow it, which re-creates tight coupling between contexts"
+    ],
+    "whenToUse": [
+      "Two or more contexts need the exact same low-level concept (a currency type, a shared id format) with identical rules, not just similar ones",
+      "The concept in question rarely changes, so joint review is an occasional cost, not a constant one",
+      "The teams involved are willing to commit to joint ownership and a shared change process — without that agreement, don't share the code"
+    ],
+    "whenNotToUse": [
+      "The concept differs even slightly between contexts (Sales's Money handles a promotional-credit rule Billing doesn't need) — that's a sign to keep them separate and translate at the boundary instead",
+      "The teams can't realistically commit to joint review and versioning discipline — an ungoverned shared kernel decays into exactly the coupling problem it was meant to solve"
+    ]
+  },
+  "event-storming": {
+    "tagline": "The workshop's output, written down as a typed catalogue: events, commands, aggregates, boundaries",
+    "definition": "Event Storming is a collaborative modeling technique — a workshop where domain experts and engineers put orange stickies for domain events, blue for the commands that trigger them, and yellow for the aggregates that own them, along a timeline — that surfaces the domain's real process and its natural context boundaries before a line of code is written. What survives the workshop as a durable, reusable artifact is the typed catalogue: the concrete list of events, the commands that cause them, and the aggregates and boundaries they imply.",
+    "problem": "Without a shared, visual model-building session, the process by which a domain actually operates lives in the heads of a few domain experts and gets rediscovered piecemeal by engineers reading old code and asking scattered questions. Aggregate and context boundaries end up drawn by whoever wrote the first version of the code, guessing rather than working from an explicit map of what actually happens and in what order, and disagreements between people who model the same process differently surface only after the code is built around one guess.",
+    "solution": "Run the workshop: orange stickies for every domain event that matters (\"OrderPlaced\", \"StockReserved\"), placed on a timeline in the order they actually happen; blue stickies for the command that causes each event; yellow stickies clustering the events and commands that belong to the same aggregate. Pivotal events — the ones where a natural context boundary sits, because responsibility for what happens next shifts to a different part of the business — get marked explicitly. Afterward, write down what the workshop produced as a typed catalogue, so it survives as code-adjacent documentation instead of living only in whoever attended and remembers the sticky-note wall.",
+    "code": "// The catalogue written down after the workshop — not a fake implementation of the\n// workshop itself, which is stickies-and-a-timeline, not code.\ninterface DomainEvent { readonly type: string; readonly aggregate: string; }\ninterface Command { readonly type: string; readonly triggers: string; }\n\nconst events: DomainEvent[] = [\n  { type: 'OrderPlaced', aggregate: 'Order' },\n  { type: 'StockReserved', aggregate: 'Inventory' },\n  { type: 'PaymentCaptured', aggregate: 'Payment' },\n];\n\nconst commands: Command[] = [\n  { type: 'PlaceOrder', triggers: 'OrderPlaced' },\n  { type: 'ReserveStock', triggers: 'StockReserved' },\n  { type: 'CapturePayment', triggers: 'PaymentCaptured' },\n];\n\n// StockReserved is pivotal: everything after it is a different bounded context\n// (Fulfillment) than everything before it (Sales) — the workshop found this boundary\n// before any code enforced it.\nconst pivotalEvents = ['StockReserved'];",
+    "pros": [
+      "Surfaces disagreements between domain experts and engineers about how the process actually works before any of it is built into code, when a wrong assumption is cheapest to fix",
+      "Finds aggregate and bounded-context boundaries from the actual shape of the process, rather than from whoever's technical guess got written down first",
+      "Produces a concrete, reviewable artifact (the event/command/aggregate catalogue) rather than a boundary that only exists as an unstated assumption in someone's head"
+    ],
+    "cons": [
+      "Needs real time from domain experts and a facilitator who can keep a room of stakeholders converging rather than diverging",
+      "The workshop's insights decay if nobody writes them down afterward as the typed catalogue — the sticky-note wall itself doesn't survive the meeting",
+      "Works best in person or with genuine synchronous engagement; a purely asynchronous, written version loses much of the technique's value"
+    ],
+    "tradeoffs": [
+      "The upfront time cost of a workshop with several stakeholders versus the cost of discovering the same disagreements piecemeal, later, after code is already built around a wrong assumption",
+      "A rich, visual, in-the-room collaborative process versus a durable, typed artifact that's actually reusable by people who weren't there",
+      "Broad, big-picture event storming (the whole domain, in one long timeline) versus a narrower, deep-dive session on one process — different problems call for different scope"
+    ],
+    "whenToUse": [
+      "Starting on a new domain, or a significant new area of an existing one, where the actual process isn't yet shared knowledge across the team",
+      "Suspecting that aggregate or bounded-context boundaries were guessed rather than derived from how the business process actually flows",
+      "Domain experts and engineers need a shared artifact to point at when they disagree about \"what happens when\""
+    ],
+    "whenNotToUse": [
+      "A small, well-understood process where the events, commands, and aggregate boundaries are already obvious and agreed",
+      "No domain expert is available to participate — the technique depends on their knowledge surfacing in the room, not on engineers guessing on their behalf"
+    ]
   }
 };
 
@@ -4434,5 +4620,191 @@ export const questionProse: Record<string, QuestionProse> = {
       "The trade-off is that domain services can no longer be unit-tested"
     ],
     "explanation": "A domain service should hold logic that genuinely doesn't belong to any single entity — logic spanning several aggregates. If a team defaults to putting everything there, entities end up back to being anemic data holders, and the team loses the main benefit of Entities and Value Objects enforcing their own invariants locally; the domain service becomes a single sprawling place that knows about everyone else's data instead of a small set of well-scoped cross-aggregate operations. The third option understates the issue: this is exactly an encapsulation problem, not just a matter of where files live. The fourth option is backwards: domain services are usually easier to unit-test in isolation, with no aggregate state to set up beyond the aggregates passed in — testability isn't what's lost here."
+  },
+  "c-ubiquitous-language-1": {
+    "prompt": "Two developers implement the same business rule differently after a domain expert describes it in a meeting. What does Ubiquitous Language recommend to prevent this?",
+    "options": [
+      "Write a comment above the code explaining what the domain expert said",
+      "Name the method or type in code with the exact term the domain expert used, and update it immediately whenever that term changes in conversation",
+      "Have a technical lead translate business requirements into technical specifications before any code is written",
+      "Keep a separate glossary document that developers consult but don't reference in code"
+    ],
+    "explanation": "Ubiquitous Language means the vocabulary used in code IS the vocabulary used in conversation — not a comment next to different code, not a separate spec that translates it, not a glossary kept apart from the code it describes. When the domain expert's term changes, the code's names change with it, in the same commit, so the two never drift apart. The first option keeps a translation gap between the comment (aligned with the expert) and the code (not aligned) — the two can still diverge silently. The third option reintroduces exactly the translation step Ubiquitous Language exists to remove — a technical lead's spec can still misrepresent what the expert meant, with no cheap way for the expert to check code review against it. The fourth option keeps the glossary and the code as two artifacts that can disagree, exactly the two-vocabulary problem Ubiquitous Language solves by making the code itself the vocabulary."
+  },
+  "cs-ubiquitous-language-1": {
+    "prompt": "What's the vocabulary problem with this `Order` class, and how would you fix it?",
+    "code": "class Order {\n  status: number = 0; // 0=draft, 1=placed, 2=shipped, 3=cancelled\n  isCancelled: boolean = false;\n\n  updateStatus(code: number): void {\n    this.status = code;\n  }\n}\n\norder.updateStatus(2); // ships the order — or does it? nothing checks isCancelled",
+    "options": [
+      "Nothing is wrong — status codes are a standard, efficient way to represent state",
+      "updateStatus(2) has no connection to the domain expert's vocabulary — the domain expert says \"ship the order,\" not \"set status to 2\"; replacing it with a ship() method (and cancel(reason)) that enforces the business rule (can't ship a cancelled order) makes the rule visible and lets code review use the same words as the conversation with the expert",
+      "The fix is to rename `status` to `orderStatus` for clarity",
+      "The fix is to make `updateStatus` private so external code can't call it directly"
+    ],
+    "explanation": "The core defect isn't performance or naming style — it's that the method name and its numeric argument carry none of the domain expert's actual language (\"ship\", \"cancel\") or their stated rule (\"can't ship a cancelled order\"). Replacing updateStatus(2) with ship() (and cancel(reason)) does two things at once: it uses the words the domain expert actually says, and it gives the rule a home to be enforced, instead of leaving it as an implicit expectation nobody checks. The first option is wrong: status codes work fine as an implementation detail, but hiding the domain's actual verbs behind them is exactly the smell. The third option changes nothing about the actual problem — orderStatus is still a number with no enforced rule. The fourth option restricts callers but does nothing to name the operation after the domain's language or enforce the cancellation rule."
+  },
+  "t-ubiquitous-language-1": {
+    "prompt": "A team commits to renaming code every time a domain expert introduces new terminology in conversation. What's the trade-off?",
+    "options": [
+      "There's no trade-off — more precise naming is strictly better with no cost",
+      "Continuous renaming keeps code and conversation aligned, which pays off in code review clarity and fewer translation errors, but it's ongoing work that competes with feature work, and it only pays off if the team actually has continuous access to a domain expert to check the language against",
+      "The trade-off is that renaming always requires a database migration",
+      "The trade-off is that Ubiquitous Language only works for greenfield projects, never for existing codebases"
+    ],
+    "explanation": "Keeping the vocabulary current is real, ongoing work — every renamed term is a diff to write and review — and it only makes sense when there's an actual domain expert whose language is worth chasing; without that access, the team is just renaming things based on guesses. The first option ignores that renaming has a real, continuing cost in developer time. The third option is a fabricated constraint — renaming a method or type doesn't inherently require a database migration (that depends on whether the name is persisted anywhere, e.g. as a serialized enum value, which is a separate concern). The fourth option is false: existing codebases can and do adopt Ubiquitous Language incrementally, renaming as terms are touched, rather than needing a greenfield start."
+  },
+  "c-bounded-context-1": {
+    "prompt": "Sales and Billing both need a concept called \"Customer,\" but Sales cares about credit limits and sales reps while Billing cares about tax ids and legal names. What does Bounded Context recommend?",
+    "options": [
+      "Merge all the fields into one Customer class so both teams can use it",
+      "Each context defines its own Customer type scoped to what it actually needs, translating between them at the boundary rather than sharing one class",
+      "Sales should own the one true Customer class, and Billing should be granted read access to its private fields",
+      "Rename Sales's concept to `Prospect` and Billing's to `Account` so there's no naming collision"
+    ],
+    "explanation": "Bounded Context says each context is entitled to its own model, scoped to its own needs and rules — Sales's Customer and Billing's Customer can legitimately have different fields and different invariants, because they represent different concerns even though they refer to \"the same\" real-world person. The first option recreates the original problem: one class trying to satisfy two contexts' unrelated needs, which is exactly what accretes unrelated fields and turns every change into a cross-team risk. The third option just relocates the same problem — one team's internals become another team's dependency, coupling both to whichever team happens to \"own\" the shared class. The fourth option treats this as a naming collision to dodge rather than a genuine modeling difference — the fix isn't finding two different names for one shared class, it's recognizing that these are legitimately two different models tied together only by a shared real-world reference (e.g. a shared id)."
+  },
+  "cs-bounded-context-1": {
+    "prompt": "What's the problem with this shared `Customer` class, and how would Bounded Context fix it?",
+    "code": "class Customer {\n  id: string;\n  name: string;\n  creditLimit: number;     // only Sales cares about this\n  salesRep: string;        // only Sales cares about this\n  taxId: string;           // only Billing cares about this\n  billingAddress: string;  // only Billing cares about this\n  ticketHistory: string[]; // only Support cares about this\n}",
+    "options": [
+      "Nothing is wrong — sharing one class avoids duplicating the `id` field across teams",
+      "This class conflates three teams' unrelated concerns into one type, so a change made for Support's ticketHistory can break Sales's or Billing's code, and each team must understand fields it doesn't own; the fix is to split it into a Sales Customer, a Billing Customer, and a Support Customer, each scoped to its own context, linked only by the shared id",
+      "The fix is to add more fields as new teams need them, since one shared class is easier to maintain than several",
+      "The fix is to rename the class to `CustomerRecord` to signal that it's shared"
+    ],
+    "explanation": "The class has accreted fields for three teams' unrelated purposes, so every team's changes carry risk for the other two, and nobody's model is actually scoped to what they need — the textbook symptom of skipping Bounded Context. Splitting it into per-context types, each with only its own fields and rules, and linking them by a shared id resolved at the boundary (see Context Mapping) removes that cross-team blast radius. The first option defends the status quo and ignores the real cost: teams stepping on each other's fields and invariants. The third option makes the actual problem worse — more fields from more teams means more ways for one team's change to break another's code. The fourth option is cosmetic — renaming the class changes nothing about the coupling between three unrelated sets of concerns."
+  },
+  "t-bounded-context-1": {
+    "prompt": "A team splits one shared `Customer` class into three context-scoped `Customer` types (Sales, Billing, Support). What's the trade-off?",
+    "options": [
+      "There's no trade-off — splitting types is always strictly better than sharing one",
+      "Each context's model becomes simpler and safer to change in isolation, but the same real-world customer now has multiple representations that must be kept consistent (at least via a shared id), and any code that genuinely needs a cross-context view now has to assemble or translate between the three types",
+      "The only trade-off is extra disk space used to store the customer's data three times",
+      "The trade-off is that TypeScript doesn't allow two classes with the same name in the same project"
+    ],
+    "explanation": "Splitting the type is a real trade: each team's model gets simpler and more protected from the others' changes, but the organization now needs deliberate work — even if just agreeing on a shared id — to keep the three representations connected, and any feature that spans contexts (e.g. a support dashboard showing billing status) has to do the assembly that one shared class used to give for free. The first option overclaims — the split adds real translation and coordination cost, it isn't free. The third option misidentifies the cost: this is about maintaining a consistent, coherent picture of \"the customer\" across contexts, not disk usage — the fields aren't actually duplicated across the three types, since each holds only what it needs. The fourth option is a fabricated technical constraint — TypeScript modules can absolutely each export their own `Customer` class; that's exactly what the pattern relies on."
+  },
+  "c-subdomains-1": {
+    "prompt": "A company builds its own authentication system with the same engineering rigor as its core pricing algorithm. What does subdomain classification say about this choice?",
+    "options": [
+      "It's correct — every part of the system deserves equal engineering rigor",
+      "Authentication is very likely a generic subdomain — a problem solved by many vendors — so building it in-house spends scarce senior-engineering effort on something that doesn't differentiate the product, effort that would pay off more if spent on the core domain (the pricing algorithm)",
+      "It's correct, because authentication is always the core domain for any product with users",
+      "It's incorrect only because authentication should be a supporting subdomain, never a generic one, in any company"
+    ],
+    "explanation": "The whole point of the core/supporting/generic split is to route scarce senior-engineering effort toward whatever part of the system is the actual competitive differentiator — for a pricing product, that's the pricing algorithm, not the login flow. Authentication is a textbook generic subdomain: it's the same problem for almost every company, already solved well by vendors, so building it in-house at the same standard as the core domain is effort spent where it doesn't differentiate. The first option ignores the entire premise of subdomain classification — treating everything as equally important is exactly what it argues against. The third option is a sweeping generalization; whether something is core depends on what the specific business actually differentiates on, and for most products authentication is not that thing. The fourth option asserts a classification (\"always supporting, never generic\") without the reasoning that actually determines it — whether a subdomain is generic depends on whether it's a solved, off-the-shelf problem, which authentication usually is."
+  },
+  "cs-subdomains-1": {
+    "prompt": "What's the subdomain problem in this `PricingEngine`, and how would you fix it?",
+    "code": "// core/pricing-engine.ts — supposedly the product's differentiator\nimport { verifyPassword, hashWithVendorSpecificSalt } from '../auth/internal-crypto';\n\nexport class PricingEngine {\n  quote(itemCount: number, userToken: string): number {\n    if (!verifyPassword(userToken)) throw new Error('bad token');\n    return itemCount * 9.99;\n  }\n}",
+    "options": [
+      "Nothing is wrong — checking authentication inline keeps the pricing logic self-contained",
+      "The core domain (pricing) directly imports from a generic subdomain's internals (auth/crypto), coupling the part of the system that should stay focused on the business differentiator to implementation details of a solved, off-the-shelf problem; the fix is to keep auth behind its own adapter/interface and never import its internals from core",
+      "The fix is to rename `hashWithVendorSpecificSalt` to something shorter",
+      "The fix is to move the pricing logic into the auth module instead"
+    ],
+    "explanation": "The core domain is supposed to depend on nothing generic, precisely so its design stays focused on the business differentiator and insulated from vendor/implementation churn in solved problems like authentication. Here PricingEngine reaches directly into auth internals, coupling the one part of the system that should get the most design care to a generic concern that should sit behind an adapter. The fix is architectural, not cosmetic: give auth its own interface (e.g. a simple `isAuthenticated(token)` check) and never let core import from its internal implementation. The first option accepts the coupling as fine, which is exactly the smell. The third option is purely cosmetic and doesn't address the dependency direction. The fourth option inverts the architecture entirely — pricing is the core domain and shouldn't be absorbed into a generic subdomain's module."
+  },
+  "t-subdomains-1": {
+    "prompt": "A company buys a third-party payments SaaS product instead of building its own payment processing. What's the trade-off?",
+    "options": [
+      "There's no trade-off — buying is always strictly better than building for any subdomain",
+      "Buying gets a solved, compliance-heavy problem shipped faster and inherits the vendor's ongoing security work, at the cost of recurring fees, vendor lock-in, and depending on the vendor's roadmap and reliability",
+      "The only trade-off is a one-time integration cost, with no ongoing cost afterward",
+      "The trade-off is that bought software can never be replaced later if the vendor becomes unsuitable"
+    ],
+    "explanation": "Buying a generic subdomain is a genuine trade: speed, and inheriting a vendor's ongoing investment in security and compliance, against recurring cost and being at the mercy of that vendor's pricing, roadmap, and uptime. The first option overclaims — buying is the right call for generic subdomains specifically, precisely because reinventing them earns nothing, but that's a situational argument, not a universal one (the core domain is the counterexample). The third option understates the ongoing cost — a payments SaaS charges per-transaction or subscription fees indefinitely, not just once at integration time. The fourth option overstates the lock-in as permanent — vendors can be swapped, though usually at real migration cost, which is exactly why the choice deserves deliberate evaluation rather than being assumed irreversible."
+  },
+  "c-context-mapping-1": {
+    "prompt": "A downstream team's code repeatedly breaks whenever an upstream service changes its API, and nobody had discussed what kind of dependency this integration actually is. What does Context Mapping recommend?",
+    "options": [
+      "Stop integrating with the upstream service entirely",
+      "Name the relationship explicitly — e.g. decide whether the downstream will conform to the upstream's shape as-is, or build a translator (Anti-Corruption Layer) at the boundary — so the cost and fragility of the integration is a discussed decision rather than an unnoticed accident",
+      "Have the downstream team rewrite the upstream service so both teams share one codebase",
+      "Add more automated tests to the downstream code so the upstream's changes are caught faster"
+    ],
+    "explanation": "Context Mapping's core move is making the nature of an integration explicit and named — conformist, Anti-Corruption Layer, partnership, and so on — so its cost and fragility are a decision the teams actually made, not a default nobody examined. The first option is an overreaction not implied by the concept — many integrations are entirely worth keeping, just worth naming honestly. The third option erases the bounded context entirely rather than mapping the relationship between two contexts that are meant to stay separate. The fourth option treats the symptom (breakage discovered late) rather than the cause (an unexamined, unnamed dependency) — better tests catch breakage sooner but don't reduce how fragile the relationship actually is or make its cost visible upfront."
+  },
+  "cs-context-mapping-1": {
+    "prompt": "What's the integration problem in this downstream code, and how would Context Mapping fix it?",
+    "code": "// Scattered across a dozen files in the downstream codebase:\nfunction renderTracking(o: { order_ref: string; ship_to: { line1: string }; carrier_code: string }) { /* ... */ }\nfunction computeEta(o: { order_ref: string; carrier_code: string }) { /* ... */ }\nfunction logDelivery(o: { order_ref: string; ship_to: { line1: string } }) { /* ... */ }\n// Every one of these takes the upstream Shipping API's raw shape directly.",
+    "options": [
+      "Nothing is wrong — reusing the upstream's exact shape avoids writing conversion code",
+      "The upstream's raw shape (order_ref, ship_to, carrier_code) is threaded unconverted through a dozen call sites — an unmanaged conformist relationship — so an upstream rename breaks all of them at once; introducing a single Anti-Corruption Layer that translates once, at the boundary, into the downstream's own type would contain the blast radius of any future upstream change to one place",
+      "The fix is to rename `order_ref` to `orderRef` in each function for consistency",
+      "The fix is to ask the upstream team to never change their API again"
+    ],
+    "explanation": "This is conformism spread across the whole codebase instead of contained at one boundary: a dozen functions each depend directly on the upstream's exact field names, so a single upstream rename (order_ref → orderId, say) has to be hunted down and fixed in every one of them. An Anti-Corruption Layer moves that translation to one place — a single function or module — so the rest of the codebase depends on a local, stable type instead of the upstream's raw shape. The first option accepts the current fragility as a feature rather than the actual defect. The third option only renames the symptom in each of the many call sites — it doesn't reduce how many places break on the next upstream change. The fourth option asks for a commitment the upstream team almost never can or will make — the fix has to live on the downstream side, since that's the side with the leverage to protect itself."
+  },
+  "t-context-mapping-1": {
+    "prompt": "A downstream team chooses to be a conformist — accepting an upstream API's shape as-is — instead of building an Anti-Corruption Layer. What's the trade-off?",
+    "options": [
+      "There's no trade-off — conforming is always the wrong choice compared to building an ACL",
+      "Conforming is cheap up front — no translation code to write — but couples the downstream directly to internal decisions the upstream never promised to keep stable, so every upstream change ripples through; an ACL costs real translation code to build and maintain but absorbs upstream changes in one place",
+      "The trade-off only matters if the upstream service is external to the company",
+      "Conforming and building an ACL cost exactly the same amount of engineering effort, so the choice doesn't matter"
+    ],
+    "explanation": "This is a genuine, situational trade-off: conforming is cheap today because it skips writing any translation code, but it leaves the downstream fully exposed to every upstream change; an ACL costs real, ongoing code to build and keep in sync, in exchange for absorbing that instability in one place instead of letting it spread. The first option overclaims — conforming is entirely reasonable when the downstream has no real leverage and the upstream's model is a good fit, which is exactly why Context Mapping treats it as one of several legitimate relationship types, not an automatic mistake. The third option is an arbitrary restriction — the same trade-off applies whether the upstream is external or just another team's bounded context inside the same company. The fourth option is false: the two options have clearly different, not equal, cost profiles, which is the entire point of naming and choosing between them deliberately."
+  },
+  "c-shared-kernel-1": {
+    "prompt": "Sales and Billing both need an identical `Money` type with the exact same rounding and currency rules. What does Shared Kernel recommend over having each context reimplement its own version?",
+    "options": [
+      "Each context should keep its own independent Money implementation to preserve isolation",
+      "Extract Money into a small, jointly-owned package that both teams review and version together, kept deliberately small so it doesn't become a source of cross-team blocking",
+      "Sales should own Money outright, and Billing should be required to depend on Sales's entire codebase",
+      "Money should be duplicated in each context's codebase, with a script that keeps the two copies in sync automatically"
+    ],
+    "explanation": "When a concept is genuinely identical across contexts and rarely changes, Shared Kernel says share the actual code, not a copy — but do it deliberately: a small package, jointly owned, versioned, with both teams reviewing changes before release. The first option protects isolation at the cost of correctness drift — two independently maintained \"identical\" implementations reliably diverge over time in rounding or edge cases, exactly the bug Shared Kernel is meant to prevent. The third option isn't a shared kernel at all — it's one team's internals becoming a hard dependency for another, without any joint ownership or governance. The fourth option is a fragile workaround: an auto-sync script is itself more to build and maintain than just sharing the package, and a bug in the sync script reintroduces silent divergence anyway."
+  },
+  "cs-shared-kernel-1": {
+    "prompt": "What's the problem with adding `applyLateFeeRule` to this shared kernel's `Money` class?",
+    "code": "// @acme/domain-kernel — shared by Sales and Billing\nexport class Money {\n  constructor(private readonly cents: number, readonly currency: string) {}\n  add(other: Money): Money { /* ... */ return this; }\n\n  // Added last sprint, only Billing uses this — Sales doesn't even know it exists\n  applyLateFeeRule(daysOverdue: number): Money { /* Billing-specific logic */ return this; }\n}",
+    "options": [
+      "Nothing is wrong — adding more methods to a shared package makes it more useful to more teams",
+      "applyLateFeeRule is Billing-specific behavior with no relevance to Sales, so it doesn't belong in a shared kernel that both teams jointly own and must review; growing the kernel with context-specific logic reintroduces the cross-team coordination and blocking that a small, stable kernel is meant to avoid",
+      "The fix is to rename the method to something more generic-sounding, like `applyFeeRule`",
+      "The fix is to make the method private so Sales can't accidentally call it"
+    ],
+    "explanation": "A shared kernel earns its coupling cost only by staying small and genuinely shared — every method in it should be something both owning teams actually need and would jointly review. applyLateFeeRule is Billing-only logic; adding it here means Sales now has to review and be aware of changes to code they don't use, which is exactly the cross-team blocking a shared kernel is supposed to minimize by staying small. The fix is to move it into Billing's own context-scoped code, not the shared package. The first option treats growing the kernel as a pure win, ignoring that its value depends on staying small and genuinely mutual. The third option only disguises the problem — a generic-sounding name doesn't make Billing-specific logic relevant to Sales. The fourth option restricts access but leaves the actual defect (context-specific logic living in a jointly-reviewed shared package) unaddressed."
+  },
+  "t-shared-kernel-1": {
+    "prompt": "Two teams agree to share a `Money` type as a Shared Kernel instead of each maintaining their own copy. What's the ongoing cost of this choice?",
+    "options": [
+      "There is no ongoing cost — once the kernel is extracted, both teams are fully independent again",
+      "Every change to the kernel now needs both teams' review and sign-off before release, reintroducing cross-team coordination — exactly the kind of coupling bounded contexts otherwise avoid — in exchange for eliminating divergence bugs between two \"identical\" implementations",
+      "The only cost is a one-time migration effort when the kernel is first extracted",
+      "The cost is that neither team can use the shared Money type in their own tests"
+    ],
+    "explanation": "A shared kernel is a real, ongoing coupling choice: because both teams own the code jointly, every future change needs both teams' agreement, which is coordination overhead that persists for as long as the kernel exists — not a one-time cost paid at extraction. That's the deliberate price for eliminating a genuine source of bugs (two contexts silently disagreeing about rounding or currency rules). The first option is wrong precisely because the whole design implies ongoing joint governance, not independence after extraction. The third option understates it as one-time when the coordination recurs on every subsequent kernel change. The fourth option is a fabricated constraint with no basis — a shared package is used in each team's tests exactly like any other dependency."
+  },
+  "c-event-storming-1": {
+    "prompt": "Before writing any code for a new order-fulfillment process, a team runs a workshop where domain experts and engineers place stickies for events, commands, and aggregates along a timeline. What is this technique, and what's its main output?",
+    "options": [
+      "Event Storming — its main output is working code generated directly from the stickies",
+      "Event Storming — its main output is a typed catalogue of domain events, the commands that trigger them, and the aggregates and context boundaries they imply, written down after the workshop",
+      "Event Storming — its main output is a finalized database schema for the new process",
+      "Event Storming — its main output is a sign-off document that skips the need for any further design discussion"
+    ],
+    "explanation": "Event Storming is a collaborative workshop, and its durable value is the catalogue written down afterward — the concrete events, the commands causing them, and the aggregate/context boundaries the process implies — not any of the artifacts the wrong options suggest. The first option overstates the technique into a code generator; the workshop surfaces the model, but writing the actual code (entities, aggregates, event types) is separate follow-up work. The third option is a category error — Event Storming works at the domain-event level, not the schema level, and deliberately stays independent of storage decisions. The fourth option misrepresents the point entirely: the workshop is meant to surface disagreements and open questions early, not to produce a document that shuts down further discussion."
+  },
+  "cs-event-storming-1": {
+    "prompt": "What's missing from this event catalogue, and why does it matter?",
+    "code": "// Written down after a rushed workshop — every event lumped together, no boundaries marked\nconst events = [\n  'OrderPlaced', 'StockReserved', 'PaymentCaptured',\n  'InvoiceGenerated', 'ShipmentDispatched', 'CustomerNotified',\n];\n// No indication of which events are pivotal, which aggregate owns which event,\n// or where one bounded context's responsibility ends and another's begins.",
+    "options": [
+      "Nothing is missing — a flat list of event names is exactly what Event Storming is supposed to produce",
+      "The catalogue lists events but drops the two things that make Event Storming's output useful: which aggregate owns each event, and which events are pivotal — marking where responsibility shifts to a different part of the business, i.e. a bounded-context boundary; without those, the workshop's actual finding (where the natural boundaries are) is lost",
+      "The fix is to sort the events alphabetically instead of chronologically",
+      "The fix is to rename each event to start with a verb instead of ending with one"
+    ],
+    "explanation": "A flat, undifferentiated list of event names throws away the two things that actually make Event Storming valuable: the aggregate each event belongs to, and which events are pivotal — the ones marking a shift in responsibility to a different part of the business, which is exactly how the workshop surfaces bounded-context boundaries. Without that structure, the catalogue is barely more useful than a to-do list; nobody reading it later can tell where one context's responsibility ends and another begins. The first option accepts the flattened list as sufficient, missing the entire point of running the workshop. The third and fourth options are surface-level naming/ordering concerns that don't restore the lost information about ownership and boundaries."
+  },
+  "t-event-storming-1": {
+    "prompt": "A team spends a full day running an Event Storming workshop with domain experts before writing any code for a new process. What's the trade-off?",
+    "options": [
+      "There's no trade-off — the workshop is free since it doesn't involve writing any code",
+      "The workshop costs real time from several people, including domain experts who are often in high demand, but it surfaces modeling disagreements and finds context boundaries while they're still cheap to fix, instead of discovering the same disagreements later, piecemeal, after code has already been built around a wrong assumption",
+      "The only trade-off is that the stickies used in the workshop are a recurring material cost",
+      "The trade-off is that Event Storming can only be done with fully remote, asynchronous participation"
+    ],
+    "explanation": "The real trade is time from multiple people, domain experts included, spent up front — against the far more expensive alternative of discovering the same modeling disagreements later, after code has already been shaped around an assumption nobody actually agreed on. The first option ignores the actual cost: a room full of stakeholders for a day is a substantial, real expense in people's time, not a free activity. The third option fixates on a trivial, non-recurring material cost and misses the actual time-cost trade-off. The fourth option inverts a real caveat about the technique — Event Storming works best with synchronous, often in-person engagement; framing that limitation as a required mode gets the direction backwards."
   }
 };

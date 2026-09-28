@@ -637,7 +637,8 @@ export const conceptsCore: ConceptCore[] = [
       "microservices",
       "layered",
       "hexagonal",
-      "coupling-cohesion"
+      "coupling-cohesion",
+      "bounded-context"
     ],
     "tags": [
       "архитектура",
@@ -660,7 +661,8 @@ export const conceptsCore: ConceptCore[] = [
       "layered",
       "adapter",
       "repository",
-      "domain-service"
+      "domain-service",
+      "subdomains"
     ],
     "tags": [
       "архитектура",
@@ -703,7 +705,8 @@ export const conceptsCore: ConceptCore[] = [
       "coupling-cohesion",
       "saga",
       "delivery-semantics",
-      "domain-event"
+      "domain-event",
+      "event-storming"
     ],
     "tags": [
       "архитектура",
@@ -725,7 +728,9 @@ export const conceptsCore: ConceptCore[] = [
       "monolith",
       "event-driven",
       "hexagonal",
-      "coupling-cohesion"
+      "coupling-cohesion",
+      "bounded-context",
+      "context-mapping"
     ],
     "tags": [
       "архитектура",
@@ -762,7 +767,9 @@ export const conceptsCore: ConceptCore[] = [
       "srp",
       "dip",
       "isp",
-      "facade"
+      "facade",
+      "bounded-context",
+      "shared-kernel"
     ],
     "tags": [
       "trade-offs",
@@ -784,7 +791,9 @@ export const conceptsCore: ConceptCore[] = [
       "srp",
       "abstraction-cost",
       "yagni-vs-flexibility",
-      "coupling-cohesion"
+      "coupling-cohesion",
+      "ubiquitous-language",
+      "shared-kernel"
     ],
     "tags": [
       "компромиссы",
@@ -826,7 +835,8 @@ export const conceptsCore: ConceptCore[] = [
       "abstraction-cost",
       "ocp",
       "dry-vs-duplication",
-      "strategy"
+      "strategy",
+      "subdomains"
     ],
     "tags": [
       "компромиссы",
@@ -871,7 +881,8 @@ export const conceptsCore: ConceptCore[] = [
       "cap-theorem",
       "partitioning",
       "quorum",
-      "repository"
+      "repository",
+      "bounded-context"
     ],
     "tags": [
       "микросервисы",
@@ -894,7 +905,8 @@ export const conceptsCore: ConceptCore[] = [
       "bff",
       "aggregator",
       "circuit-breaker",
-      "microservices"
+      "microservices",
+      "context-mapping"
     ],
     "tags": [
       "микросервисы",
@@ -1055,7 +1067,8 @@ export const conceptsCore: ConceptCore[] = [
       "database-per-service",
       "consistency-models",
       "replication",
-      "change-data-capture"
+      "change-data-capture",
+      "event-storming"
     ],
     "tags": [
       "микросервисы",
@@ -1099,7 +1112,9 @@ export const conceptsCore: ConceptCore[] = [
     "related": [
       "adapter",
       "microservices",
-      "hexagonal"
+      "hexagonal",
+      "context-mapping",
+      "shared-kernel"
     ],
     "tags": [
       "ddd",
@@ -1397,7 +1412,8 @@ export const conceptsCore: ConceptCore[] = [
     "related": [
       "value-object",
       "aggregate",
-      "optimistic-locking"
+      "optimistic-locking",
+      "ubiquitous-language"
     ],
     "tags": [
       "ddd",
@@ -1415,7 +1431,8 @@ export const conceptsCore: ConceptCore[] = [
     "related": [
       "entity",
       "aggregate",
-      "flyweight"
+      "flyweight",
+      "shared-kernel"
     ],
     "tags": [
       "ddd",
@@ -1437,7 +1454,9 @@ export const conceptsCore: ConceptCore[] = [
       "transactional-outbox",
       "saga",
       "optimistic-locking",
-      "event-sourcing"
+      "event-sourcing",
+      "ubiquitous-language",
+      "event-storming"
     ],
     "tags": [
       "ddd",
@@ -1476,7 +1495,8 @@ export const conceptsCore: ConceptCore[] = [
       "observer",
       "event-driven",
       "event-sourcing",
-      "transactional-outbox"
+      "transactional-outbox",
+      "event-storming"
     ],
     "tags": [
       "ddd",
@@ -1503,6 +1523,128 @@ export const conceptsCore: ConceptCore[] = [
       "tactical design"
     ],
     "diagram": "classDiagram\n  class TransferService {\n    <<domain service>>\n    +transfer(from: Account, to: Account, amount: Money) void\n  }\n  class Account {\n    <<aggregate>>\n    -balance: Money\n    +withdraw(amount: Money) void\n    +deposit(amount: Money) void\n  }\n  TransferService --> Account : from\n  TransferService --> Account : to",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "ubiquitous-language",
+    "name": "Ubiquitous Language",
+    "category": "ddd",
+    "grade": "middle",
+    "related": [
+      "bounded-context",
+      "entity",
+      "aggregate",
+      "dry-vs-duplication"
+    ],
+    "tags": [
+      "ddd",
+      "strategic design",
+      "domain modeling"
+    ],
+    "diagram": "flowchart LR\n  A[\"updateStatus(3)\"] -->|refactor toward the\\ndomain expert's words| B[\"order.ship()\"]\n  C[\"isPaid && !isShipped\"] -->|refactor| D[\"order.cancel(reason)\"]\n  E[Conversation with domain expert] <-->|same words| F[Code, tests, docs]",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "bounded-context",
+    "name": "Bounded Context",
+    "category": "ddd",
+    "grade": "senior",
+    "related": [
+      "ubiquitous-language",
+      "context-mapping",
+      "subdomains",
+      "event-storming",
+      "microservices",
+      "database-per-service",
+      "monolith",
+      "coupling-cohesion"
+    ],
+    "tags": [
+      "ddd",
+      "strategic design",
+      "boundaries"
+    ],
+    "diagram": "flowchart TB\n  subgraph Sales[\"Sales context\"]\n    C1[\"Customer\\n(name, creditLimit, salesRep)\"]\n  end\n  subgraph Billing[\"Billing context\"]\n    C2[\"Customer\\n(name, billingAddress, taxId)\"]\n  end\n  Sales -.->|no shared class| Billing",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "subdomains",
+    "name": "Subdomains",
+    "category": "ddd",
+    "grade": "lead",
+    "related": [
+      "bounded-context",
+      "context-mapping",
+      "yagni-vs-flexibility",
+      "hexagonal"
+    ],
+    "tags": [
+      "ddd",
+      "strategic design",
+      "prioritization"
+    ],
+    "diagram": "flowchart TB\n  subgraph Core[\"Core domain — build\"]\n    P[Pricing engine]\n  end\n  subgraph Supporting[\"Supporting — build, simple\"]\n    S[Shipment tracking]\n  end\n  subgraph Generic[\"Generic — buy\"]\n    Pay[Payments]\n    Auth[Auth]\n  end\n  P -.->|imports nothing from| Generic\n  P --> S\n  P -->|adapter| Pay\n  P -->|adapter| Auth",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "context-mapping",
+    "name": "Context Mapping",
+    "category": "ddd",
+    "grade": "lead",
+    "related": [
+      "bounded-context",
+      "subdomains",
+      "shared-kernel",
+      "anti-corruption-layer",
+      "api-gateway",
+      "microservices"
+    ],
+    "tags": [
+      "ddd",
+      "strategic design",
+      "integration"
+    ],
+    "diagram": "flowchart LR\n  Upstream[\"Upstream: Shipping\\n(published DTO)\"]\n  Conformist[\"Downstream A\\n(conformist — uses DTO as-is)\"]\n  ACL[\"Downstream B\\nAnti-Corruption Layer\"]\n  Local[\"Downstream B's\\nlocal model\"]\n  Upstream -->|published language| Conformist\n  Upstream -->|published language| ACL\n  ACL -->|translates| Local",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "shared-kernel",
+    "name": "Shared Kernel",
+    "category": "ddd",
+    "grade": "senior",
+    "related": [
+      "context-mapping",
+      "anti-corruption-layer",
+      "value-object",
+      "dry-vs-duplication",
+      "coupling-cohesion"
+    ],
+    "tags": [
+      "ddd",
+      "strategic design",
+      "integration"
+    ],
+    "diagram": "flowchart TB\n  subgraph Kernel[\"@acme/domain-kernel v3.2.0\\nowned jointly by Sales + Billing\"]\n    Money[Money]\n    CustomerId[CustomerId]\n  end\n  Sales[Sales context] --> Kernel\n  Billing[Billing context] --> Kernel\n  Note[\"Change requires both teams'\\nsign-off — keep it small\"]",
+    "codeLang": "typescript"
+  },
+  {
+    "id": "event-storming",
+    "name": "Event Storming",
+    "category": "ddd",
+    "grade": "senior",
+    "related": [
+      "domain-event",
+      "aggregate",
+      "bounded-context",
+      "event-driven",
+      "cqrs"
+    ],
+    "tags": [
+      "ddd",
+      "strategic design",
+      "collaborative modeling"
+    ],
+    "diagram": "flowchart LR\n  Cmd1[\"Command:\\nPlaceOrder\"] --> Ev1(\"Event:\\nOrderPlaced\")\n  Ev1 --> Agg1[[\"Aggregate:\\nOrder\"]]\n  Ev1 --> Cmd2[\"Command:\\nReserveStock\"]\n  Cmd2 --> Ev2(\"Event:\\nStockReserved\")\n  Ev2 --> Agg2[[\"Aggregate:\\nInventory\"]]\n  Ev2 -.->|context boundary| Ctx[\"Fulfillment context\"]",
     "codeLang": "typescript"
   }
 ];

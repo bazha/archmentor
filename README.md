@@ -1,6 +1,6 @@
 # ArchMentor
 
-A client-side SPA for learning software architecture — from Junior to Lead: **SOLID**, the **23 GoF design patterns**, **architectural styles**, **microservices patterns**, and cross-cutting **trade-offs**. Flashcards, spaced repetition (SM-2), quizzes, an adaptive mock interview, side-by-side pattern comparison, a daily challenge, a hands-on system-design diagram builder, and an interactive concept map.
+A client-side SPA for learning software architecture — from Junior to Lead: **SOLID**, the **23 GoF design patterns**, **architectural styles**, **microservices patterns**, **data-intensive systems**, **domain-driven design**, and cross-cutting **trade-offs**. Flashcards, spaced repetition (SM-2), quizzes, an adaptive mock interview, side-by-side pattern comparison, a daily challenge, a hands-on system-design diagram builder, and an interactive concept map.
 
 **Live:** https://bazha.github.io/archmentor/
 
@@ -23,7 +23,7 @@ A client-side SPA for learning software architecture — from Junior to Lead: **
 
 ## Content
 
-**53 concepts** (5 SOLID + all 23 GoF patterns + 8 architectural styles + 6 cross-cutting trade-offs + 11 microservices patterns) and **~152 questions** (110 multiple-choice + 42 fill-in-the-blank), plus **8 system-design scenarios** for the Diagram Builder across four difficulty grades. Content is generated via a multi-agent workflow with adversarial verification (checked against the GoF / Fowler / Martin canon, single defensible answer per quiz question) and validated with zod at import time; each diagram scenario's reference solution is tested to pass its own constraints. Every concept is written to a consistent depth (definition, problem, solution, code, pros/cons, trade-offs, when-to-use, related links, and an explanatory diagram), guarded by a depth-floor test.
+**77 concepts** (5 SOLID + all 23 GoF patterns + 8 architectural styles + 6 cross-cutting trade-offs + 11 microservices patterns + 12 data-intensive systems concepts + 12 domain-driven design concepts) and **224 questions** (182 multiple-choice + 42 fill-in-the-blank), plus **8 system-design scenarios** for the Diagram Builder across four difficulty grades. Content is generated via a multi-agent workflow with adversarial verification (checked against the GoF / Fowler / Martin canon, single defensible answer per quiz question) and validated with zod at import time; each diagram scenario's reference solution is tested to pass its own constraints. Every concept is written to a consistent depth (definition, problem, solution, code, pros/cons, trade-offs, when-to-use, related links, and an explanatory diagram), guarded by a depth-floor test.
 
 ## Stack
 
@@ -47,6 +47,6 @@ Pushing to `master` deploys to GitHub Pages via GitHub Actions (`.github/workflo
 
 ## Status
 
-Feature-complete and deployed. Eleven sidebar modes plus a daily challenge, fully bilingual (RU/EN) with light/dark themes, WCAG AA-guarded accessibility (skip link, visible focus rings, ARIA, `prefers-reduced-motion`, a contrast test), and 226 passing tests.
+Feature-complete and deployed. Eleven sidebar modes plus a daily challenge, fully bilingual (RU/EN) with light/dark themes, WCAG AA-guarded accessibility (skip link, visible focus rings, ARIA, `prefers-reduced-motion`, a contrast test), and 323 passing tests.
 
 Design and implementation docs live in `docs/superpowers/specs/` and `docs/superpowers/plans/`.
