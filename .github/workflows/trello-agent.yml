@@ -21,9 +21,30 @@ jobs:
   run:
     runs-on: ubuntu-latest
     steps:
+      # Checkout with the built-in GITHUB_TOKEN: a stale GH_PAT must not break checkout.
+      # GH_PAT is only needed for push + PR (as a real user so CodeRabbit auto-reviews);
+      # the "Open PR" step sets it on the remote explicitly.
       - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GH_PAT }}   # PR/push as a real user so CodeRabbit auto-reviews
+
+      # Fail fast with a clear message BEFORE a card is claimed and Claude spends a run,
+      # instead of failing later on push.
+      - name: Verify GH_PAT
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error title=GH_PAT missing::Secret GH_PAT is empty or not set for this repo."
+            exit 1
+          fi
+          if ! perm="$(gh api "repos/${GITHUB_REPOSITORY}" --jq '.permissions.push' 2>&1)"; then
+            echo "::error title=GH_PAT invalid::GitHub rejected GH_PAT (expired, revoked or mis-pasted): ${perm}"
+            exit 1
+          fi
+          if [ "$perm" != "true" ]; then
+            echo "::error title=GH_PAT lacks access::GH_PAT is valid but has no push access to ${GITHUB_REPOSITORY}."
+            exit 1
+          fi
+          echo "GH_PAT OK (push access confirmed)."
 
       - uses: actions/setup-node@v4
         with:
