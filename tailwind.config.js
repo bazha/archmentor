@@ -43,7 +43,7 @@ export default {
       },
       fontFamily: {
         sans: ['Onest', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
-        mono: ['Source Code Pro', 'ui-monospace', 'SF Mono', 'Menlo', 'Consolas', 'monospace'],
+        mono: ['Roboto', 'ui-monospace', 'SF Mono', 'Menlo', 'Consolas', 'monospace'],
       },
       boxShadow: {
         card: 'var(--shadow-sm)',
